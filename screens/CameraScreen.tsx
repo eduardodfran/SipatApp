@@ -149,40 +149,39 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
         mode="video"
         videoQuality="720p"
         audio={false}
-      >
-        <View style={styles.cameraOverlay}>
-          <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
-            <Ionicons name="close" size={28} color="#fff" />
+      />
+      <View style={styles.cameraOverlay}>
+        <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
+          <Ionicons name="close" size={28} color="#fff" />
+        </TouchableOpacity>
+
+        <View style={styles.bottomRow}>
+          <View style={styles.timerBadge}>
+            <Ionicons
+              name={recording ? 'radio-button-on' : 'radio-button-off'}
+              size={14}
+              color={recording ? '#ff4444' : '#888'}
+            />
+            <Text style={styles.timerText}>
+              {recording ? 'Recording...' : 'Ready'}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.recordBtn}
+            onPress={recording ? stopRecording : startRecording}
+          >
+            <View
+              style={[
+                styles.recordInner,
+                recording && styles.recordInnerActive,
+              ]}
+            />
           </TouchableOpacity>
 
-          <View style={styles.bottomRow}>
-            <View style={styles.timerBadge}>
-              <Ionicons
-                name={recording ? 'radio-button-on' : 'radio-button-off'}
-                size={14}
-                color={recording ? '#ff4444' : '#888'}
-              />
-              <Text style={styles.timerText}>
-                {recording ? 'Recording...' : 'Ready'}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.recordBtn}
-              onPress={recording ? stopRecording : startRecording}
-            >
-              <View
-                style={[
-                  styles.recordInner,
-                  recording && styles.recordInnerActive,
-                ]}
-              />
-            </TouchableOpacity>
-
-            <View style={{ width: 60 }} />
-          </View>
+          <View style={{ width: 60 }} />
         </View>
-      </CameraView>
+      </View>
     </View>
   )
 }
@@ -196,7 +195,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cameraOverlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
     padding: 24,
     paddingTop: 60,

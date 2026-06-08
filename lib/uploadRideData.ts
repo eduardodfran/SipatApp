@@ -1,8 +1,7 @@
 import { File, Paths } from 'expo-file-system'
 import { fetch } from 'expo/fetch'
 import { supabase } from './supabase'
-
-const FASTAPI_URL = process.env.EXPO_PUBLIC_FASTAPI_URL
+import { FASTAPI_URL } from './env'
 
 export type GpsTrackingPoint = {
   lat: number
@@ -238,10 +237,6 @@ export async function uploadRideData(
 
   if (!csvUri?.trim()) {
     throw new Error('csvUri is required')
-  }
-
-  if (!FASTAPI_URL) {
-    throw new Error('Missing EXPO_PUBLIC_FASTAPI_URL environment variable')
   }
 
   const rideId = generateRideId()

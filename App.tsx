@@ -9,6 +9,7 @@ import DashboardScreen from './screens/DashboardScreen'
 import CameraScreen from './screens/CameraScreen'
 import MapVerificationScreen from './screens/MapVerificationScreen'
 import type { Recording } from './lib/types'
+import { FASTAPI_URL } from './lib/env'
 import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRideData'
 
 type Screen = 'login' | 'dashboard' | 'camera' | 'map'
@@ -131,7 +132,7 @@ export default function App() {
       if (recording.rideId) {
         try {
           const token = (await supabase.auth.getSession()).data.session?.access_token
-          await fetch(`${process.env.EXPO_PUBLIC_FASTAPI_URL}/rides/${recording.rideId}`, {
+          await fetch(`${FASTAPI_URL}/rides/${recording.rideId}`, {
             method: 'DELETE',
             headers: {
               Authorization: `Bearer ${token}`,
