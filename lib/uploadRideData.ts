@@ -13,7 +13,7 @@ async function fetchWithTimeout(
   const { timeout = API_TIMEOUT, ...rest } = options
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`Request timed out after ${timeout / 1000}s — could not reach ${url}`)), timeout)
-    fetch(url, rest)
+    fetch(url, rest as any)
       .then(resolve, reject)
       .finally(() => clearTimeout(timer))
   })

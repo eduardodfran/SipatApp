@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   Alert,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -17,14 +18,32 @@ type Props = {
   onCancel: () => void
 }
 
+function gpsStatus(accuracy: number | null): { label: string; color: string } {
+  if (accuracy === null) return { label: 'No GPS', color: '#ff4444' }
+  if (accuracy <= 10) return { label: 'GPS', color: '#4caf50' }
+  if (accuracy <= 30) return { label: 'GPS', color: '#8bc34a' }
+  if (accuracy <= 100) return { label: 'GPS', color: '#ffc107' }
+  return { label: 'GPS', color: '#ff9800' }
+}
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 export default function CameraScreen({ onFinish, onCancel }: Props) {
   const [permission, requestPermission] = useCameraPermissions()
   const [recording, setRecording] = useState(false)
   const [videoUri, setVideoUri] = useState<string | null>(null)
+  const [gpsCount, setGpsCount] = useState(0)
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
+  const [elapsed, setElapsed] = useState(0)
+
   const cameraRef = useRef<CameraView>(null)
   const gpsDataRef = useRef<Location.LocationObject[]>([])
   const locationSubRef = useRef<Location.LocationSubscription | null>(null)
-  const [gpsCount, setGpsCount] = useState(0)
+  const recordingRef = useRef(false)
 
   useEffect(() => {
     ;(async () => {
@@ -36,6 +55,7 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
         (loc) => {
           gpsDataRef.current.push(loc)
           setGpsCount(gpsDataRef.current.length)
+          if (loc.coords.accuracy != null) setGpsAccuracy(loc.coords.accuracy)
         },
       )
       locationSubRef.current = sub
@@ -45,6 +65,13 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
       locationSubRef.current?.remove()
     }
   }, [])
+
+  useEffect(() => {
+    recordingRef.current = recording
+    if (!recording) { setElapsed(0); return }
+    const interval = setInterval(() => setElapsed((e) => e + 1), 1000)
+    return () => clearInterval(interval)
+  }, [recording])
 
   if (!permission) return null
   if (!permission.granted) {
@@ -72,6 +99,7 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
         setVideoUri(result.uri)
       }
     } catch (err: any) {
+      if (!recordingRef.current) return
       Alert.alert('Recording failed', err?.message ?? 'Unknown error')
     }
     setRecording(false)
@@ -127,35 +155,43 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
     return (
       <View style={styles.container}>
         <View style={styles.previewOverlay}>
-          <Ionicons name="checkmark-circle" size={64} color="#4caf50" />
+          <View style={styles.previewIcon}>
+            <Ionicons name="checkmark-circle" size={72} color="#4caf50" />
+          </View>
           <Text style={styles.previewTitle}>Recording Complete</Text>
-          <Text style={styles.previewSub}>
-            {gpsCount} GPS points collected
-          </Text>
+          <View style={styles.previewStats}>
+            <View style={styles.previewStatItem}>
+              <Ionicons name="time-outline" size={16} color="#888" />
+              <Text style={styles.previewStatText}>{formatTime(elapsed)}</Text>
+            </View>
+            <View style={styles.previewStatDot} />
+            <View style={styles.previewStatItem}>
+              <Ionicons name="locate" size={16} color="#888" />
+              <Text style={styles.previewStatText}>{gpsCount} pts</Text>
+            </View>
+          </View>
           <View style={styles.previewActions}>
             <TouchableOpacity
               style={[styles.previewBtn, styles.discardBtn]}
               onPress={discardRecording}
             >
               <Ionicons name="trash-outline" size={18} color="#ff4444" />
-              <Text style={[styles.previewBtnText, { color: '#ff4444' }]}>
-                Discard
-              </Text>
+              <Text style={styles.discardBtnText}>Discard</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.previewBtn, styles.saveBtn]}
               onPress={saveRecording}
             >
               <Ionicons name="checkmark-outline" size={18} color="#fff" />
-              <Text style={[styles.previewBtnText, { color: '#fff' }]}>
-                Save Ride
-              </Text>
+              <Text style={styles.saveBtnText}>Save Ride</Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
     )
   }
+
+  const gps = gpsStatus(gpsAccuracy)
 
   return (
     <View style={styles.container}>
@@ -164,28 +200,37 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
         style={styles.camera}
         mode="video"
         videoQuality="720p"
-        audio={false}
       />
       <View style={styles.cameraOverlay}>
-        <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
-          <Ionicons name="close" size={28} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.topRow}>
+          <TouchableOpacity style={styles.topBtn} onPress={onCancel}>
+            <Ionicons name="close" size={26} color="#fff" />
+          </TouchableOpacity>
 
-        <View style={styles.bottomRow}>
-          <View style={styles.timerBadge}>
-            <Ionicons
-              name={recording ? 'radio-button-on' : 'radio-button-off'}
-              size={14}
-              color={recording ? '#ff4444' : '#888'}
-            />
-            <Text style={styles.timerText}>
-              {recording ? 'Recording...' : 'Ready'}
-            </Text>
+          <View style={[styles.gpsBadge, { borderColor: gps.color }]}>
+            <View style={[styles.gpsDot, { backgroundColor: gps.color }]} />
+            <Ionicons name="locate" size={13} color={gps.color} />
+            <Text style={[styles.gpsLabel, { color: gps.color }]}>{gps.label}</Text>
+            {gpsAccuracy != null && (
+              <Text style={styles.gpsAccuracy}>{Math.round(gpsAccuracy)}m</Text>
+            )}
+            {gpsCount > 0 && (
+              <Text style={styles.gpsCount}>{gpsCount}pts</Text>
+            )}
           </View>
+        </View>
 
+        <View style={styles.bottomSection}>
+          {recording && (
+            <View style={styles.recordingBadge}>
+              <View style={styles.recordingDot} />
+              <Text style={styles.elapsedText}>{formatTime(elapsed)}</Text>
+            </View>
+          )}
           <TouchableOpacity
             style={styles.recordBtn}
             onPress={recording ? stopRecording : startRecording}
+            activeOpacity={0.8}
           >
             <View
               style={[
@@ -195,7 +240,12 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
             />
           </TouchableOpacity>
 
-          <View style={{ width: 60 }} />
+          {recording && (
+            <View style={styles.gpsCountBadge}>
+              <Ionicons name="locate" size={14} color="#8bc34a" />
+              <Text style={styles.gpsCountText}>{gpsCount} GPS</Text>
+            </View>
+          )}
         </View>
       </View>
     </View>
@@ -213,56 +263,112 @@ const styles = StyleSheet.create({
   cameraOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
-    padding: 24,
-    paddingTop: 60,
   },
-  cancelBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 48,
+  },
+  topBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  bottomRow: {
+  gpsBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 40,
+    gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    borderWidth: 1,
   },
-  timerBadge: {
+  gpsDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  gpsLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  gpsAccuracy: {
+    fontSize: 11,
+    color: '#aaa',
+    fontWeight: '500',
+  },
+  gpsCount: {
+    fontSize: 11,
+    color: '#fff',
+    fontWeight: '600',
+    marginLeft: 2,
+  },
+  recordingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    gap: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     borderRadius: 20,
   },
-  timerText: {
+  recordingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#ff4444',
+  },
+  elapsedText: {
     color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  bottomSection: {
+    alignItems: 'center',
+    paddingBottom: Platform.OS === 'ios' ? 50 : 36,
+    gap: 14,
   },
   recordBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    borderWidth: 4,
+    borderColor: 'rgba(255,255,255,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   recordInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#ff4444',
   },
   recordInnerActive: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
+    width: 30,
+    height: 30,
+    borderRadius: 5,
     backgroundColor: '#ff4444',
+  },
+  gpsCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+  },
+  gpsCountText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
   permissionText: {
     color: '#fff',
@@ -288,37 +394,62 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 40,
   },
+  previewIcon: {
+    marginBottom: 8,
+  },
   previewTitle: {
     color: '#fff',
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
-    marginTop: 16,
   },
-  previewSub: {
-    color: '#888',
+  previewStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 12,
+  },
+  previewStatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  previewStatText: {
+    color: '#aaa',
     fontSize: 14,
-    marginTop: 4,
+    fontWeight: '500',
+  },
+  previewStatDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#555',
   },
   previewActions: {
     flexDirection: 'row',
     gap: 16,
-    marginTop: 32,
+    marginTop: 40,
   },
   previewBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingVertical: 14,
-    paddingHorizontal: 24,
+    paddingHorizontal: 28,
     borderRadius: 14,
   },
   discardBtn: {
     backgroundColor: 'rgba(255,68,68,0.1)',
   },
+  discardBtnText: {
+    color: '#ff4444',
+    fontSize: 15,
+    fontWeight: '700',
+  },
   saveBtn: {
     backgroundColor: '#4363d8',
   },
-  previewBtnText: {
+  saveBtnText: {
+    color: '#fff',
     fontSize: 15,
     fontWeight: '700',
   },
