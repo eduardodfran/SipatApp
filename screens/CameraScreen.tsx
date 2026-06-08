@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Alert,
   StyleSheet,
@@ -8,6 +8,7 @@ import {
 } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Location from 'expo-location'
+import { File, Paths } from 'expo-file-system'
 import { Ionicons } from '@expo/vector-icons'
 import type { Recording } from '../lib/types'
 
@@ -22,7 +23,28 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
   const [videoUri, setVideoUri] = useState<string | null>(null)
   const cameraRef = useRef<CameraView>(null)
   const gpsDataRef = useRef<Location.LocationObject[]>([])
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const locationSubRef = useRef<Location.LocationSubscription | null>(null)
+  const [gpsCount, setGpsCount] = useState(0)
+
+  useEffect(() => {
+    ;(async () => {
+      const locPerm = await Location.requestForegroundPermissionsAsync()
+      if (!locPerm.granted) return
+
+      const sub = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.High, timeInterval: 1000, distanceInterval: 1 },
+        (loc) => {
+          gpsDataRef.current.push(loc)
+          setGpsCount(gpsDataRef.current.length)
+        },
+      )
+      locationSubRef.current = sub
+    })()
+
+    return () => {
+      locationSubRef.current?.remove()
+    }
+  }, [])
 
   if (!permission) return null
   if (!permission.granted) {
@@ -37,26 +59,14 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
   }
 
   const startRecording = async () => {
-    const locPerm = await Location.requestForegroundPermissionsAsync()
-    if (!locPerm.granted) {
-      Alert.alert('Location Required', 'GPS data is needed for processing.')
-      return
-    }
-
     if (!cameraRef.current) return
     gpsDataRef.current = []
-
-    timerRef.current = setInterval(async () => {
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      })
-      gpsDataRef.current.push(loc)
-    }, 1000)
+    setGpsCount(0)
+    setRecording(true)
 
     try {
       const result = await cameraRef.current.recordAsync({
         maxDuration: 300,
-        quality: '720p',
       })
       if (result?.uri) {
         setVideoUri(result.uri)
@@ -65,17 +75,20 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
       Alert.alert('Recording failed', err?.message ?? 'Unknown error')
     }
     setRecording(false)
-    if (timerRef.current) clearInterval(timerRef.current)
   }
 
   const stopRecording = () => {
-    if (timerRef.current) clearInterval(timerRef.current)
     cameraRef.current?.stopRecording()
     setRecording(false)
   }
 
   const saveRecording = async () => {
     if (!videoUri) return
+
+    if (gpsCount === 0) {
+      Alert.alert('No GPS Data', 'No GPS points were recorded. Try again with a clear sky view or outdoors.')
+      return
+    }
 
     try {
       const gpsPoints = gpsDataRef.current.map((loc, idx) => ({
@@ -84,17 +97,20 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
         timestamp_seconds: idx,
       }))
 
-      const csvHeader = 'timestamp_seconds,latitude,longitude'
+      const csvHeader = 'timestamp,latitude,longitude'
       const csvRows = gpsPoints.map(
         (p) => `${p.timestamp_seconds},${p.lat},${p.lng}`,
       )
       const csvContent = [csvHeader, ...csvRows].join('\n')
 
       const id = `rec_${Date.now()}`
+      const csvFile = new File(Paths.cache, `${id}.csv`)
+      csvFile.create()
+      csvFile.write(csvContent)
       onFinish({
         id,
         videoUri,
-        csvUri: `data:text/csv;base64,${btoa(csvContent)}`,
+        csvUri: csvFile.uri,
         timestamp: Date.now(),
         uploaded: false,
       })
@@ -114,7 +130,7 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
           <Ionicons name="checkmark-circle" size={64} color="#4caf50" />
           <Text style={styles.previewTitle}>Recording Complete</Text>
           <Text style={styles.previewSub}>
-            {gpsDataRef.current.length} GPS points collected
+            {gpsCount} GPS points collected
           </Text>
           <View style={styles.previewActions}>
             <TouchableOpacity

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, Platform, Text, TouchableOpacity, View } from 'react-native'
 import { User } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
+import { fetchFastApi } from './lib/fastapi'
 import LoginScreen from './screens/LoginScreen'
 import DashboardScreen from './screens/DashboardScreen'
 import CameraScreen from './screens/CameraScreen'
@@ -132,7 +133,7 @@ export default function App() {
       if (recording.rideId) {
         try {
           const token = (await supabase.auth.getSession()).data.session?.access_token
-          await fetch(`${FASTAPI_URL}/rides/${recording.rideId}`, {
+          await fetchFastApi(`/rides/${recording.rideId}`, {
             method: 'DELETE',
             headers: {
               Authorization: `Bearer ${token}`,

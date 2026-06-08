@@ -1,7 +1,23 @@
 import { File, Paths } from 'expo-file-system'
 import { fetch } from 'expo/fetch'
 import { supabase } from './supabase'
-import { FASTAPI_URL } from './env'
+import { fetchFastApi } from './fastapi'
+
+const API_TIMEOUT = 15_000
+const UPLOAD_TIMEOUT = 120_000
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit & { timeout?: number } = {},
+): Promise<Response> {
+  const { timeout = API_TIMEOUT, ...rest } = options
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`Request timed out after ${timeout / 1000}s — could not reach ${url}`)), timeout)
+    fetch(url, rest)
+      .then(resolve, reject)
+      .finally(() => clearTimeout(timer))
+  })
+}
 
 export type GpsTrackingPoint = {
   lat: number
@@ -41,7 +57,10 @@ async function csvUriToGpsTrackingArray(
     .filter((line) => line.trim().length > 0)
 
   if (lines.length < 2) {
-    throw new Error('CSV file must contain a header and at least one data row')
+    throw new Error(
+      'No GPS data in this recording. The file has only a header with zero GPS points. ' +
+      'Record a new ride and ensure you are outdoors with GPS signal.',
+    )
   }
 
   const header = lines[0].split(',').map((column) => column.trim())
@@ -97,7 +116,7 @@ async function initUpload(
   expires_at: string
 }> {
   const token = await getAccessToken()
-  const response = await fetch(`${FASTAPI_URL}/upload/init`, {
+  const response = await fetchFastApi('/upload/init', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -129,7 +148,7 @@ export type MyRide = {
 
 export async function fetchMyRides(): Promise<MyRide[]> {
   const token = await getAccessToken()
-  const response = await fetch(`${FASTAPI_URL}/rides`, {
+  const response = await fetchFastApi('/rides', {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -146,7 +165,7 @@ export async function fetchMyRides(): Promise<MyRide[]> {
 
 export async function triggerProcessing(rideId: string): Promise<void> {
   const token = await getAccessToken()
-  const response = await fetch(`${FASTAPI_URL}/process/${rideId}`, {
+  const response = await fetchFastApi(`/process/${rideId}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -162,12 +181,13 @@ export async function triggerProcessing(rideId: string): Promise<void> {
 }
 
 async function uploadBlob(sasUrl: string, file: File) {
-  const response = await fetch(sasUrl, {
+  const response = await fetchWithTimeout(sasUrl, {
     method: 'PUT',
     headers: {
       'x-ms-blob-type': 'BlockBlob',
     },
     body: file,
+    timeout: UPLOAD_TIMEOUT,
   })
 
   if (!response.ok) {
@@ -182,7 +202,7 @@ async function completeUpload(
   gpsPath: string,
 ) {
   const token = await getAccessToken()
-  const response = await fetch(`${FASTAPI_URL}/upload/complete`, {
+  const response = await fetchFastApi('/upload/complete', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -206,7 +226,7 @@ async function completeUpload(
 async function abortUpload(videoPath: string, gpsPath: string) {
   try {
     const token = await getAccessToken()
-    await fetch(`${FASTAPI_URL}/upload/abort`, {
+    await fetchFastApi('/upload/abort', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
