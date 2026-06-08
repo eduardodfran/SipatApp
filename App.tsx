@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, Platform, Text, TouchableOpacity, View } from 'react-native'
 import { User } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
-import { fetchFastApi } from './lib/fastapi'
+import { fetchFastApi, resetFastApiPreference } from './lib/fastapi'
 import LoginScreen from './screens/LoginScreen'
 import DashboardScreen from './screens/DashboardScreen'
 import CameraScreen from './screens/CameraScreen'
@@ -100,6 +100,7 @@ export default function App() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
+    resetFastApiPreference()
     try {
       const rides = await fetchMyRides()
       const serverRecordings: Recording[] = rides.map((r) => ({
