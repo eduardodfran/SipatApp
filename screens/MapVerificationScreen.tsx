@@ -26,9 +26,10 @@ type RouteData = {
 
 type PotholeData = {
   id: string
-  latitude: number
-  longitude: number
-  detection_count: number
+  consolidated_latitude: number
+  consolidated_longitude: number
+  worst_severity: string
+  total_detection_hits: number
   status: string
   updated_at: string
 }
@@ -56,11 +57,21 @@ function parseCsv(csv: string): RouteCoord[] {
   }, [])
 }
 
-function potholeColor(count: number): string {
-  if (count >= 10) return '#ff4444'
-  if (count >= 5) return '#ff8800'
-  if (count >= 2) return '#ffbb00'
-  return '#43a047'
+function severityColor(severity: string): string {
+  switch (severity?.toLowerCase()) {
+    case 'severe':   return '#ff4444'
+    case 'moderate': return '#ffbb00'
+    case 'minor':    return '#43a047'
+    default:         return '#888'
+  }
+}
+
+function severityLabel(severity: string): string {
+  const s = severity?.toLowerCase()
+  if (s === 'severe')   return '🔴 Severe'
+  if (s === 'moderate') return '🟡 Moderate'
+  if (s === 'minor')    return '🟢 Minor'
+  return severity || 'Unknown'
 }
 
 function buildMapHtml(
@@ -84,10 +95,12 @@ function buildMapHtml(
 
   const potholeFeatures = showPotholes
     ? potholes.map((p) => ({
-        lat: p.latitude,
-        lng: p.longitude,
-        count: p.detection_count,
-        color: potholeColor(p.detection_count),
+        lat: p.consolidated_latitude,
+        lng: p.consolidated_longitude,
+        severity: p.worst_severity,
+        hits: p.total_detection_hits,
+        color: severityColor(p.worst_severity),
+        severityLabel: severityLabel(p.worst_severity),
       }))
     : []
 
@@ -100,6 +113,9 @@ function buildMapHtml(
 <style>
   body { margin: 0; padding: 0; }
   #map { width: 100vw; height: 100vh; }
+  .hazard-label { background: none; border: none; box-shadow: none; color: #fff; font-weight: bold; font-size: 11px; }
+  .hazard-popup { font-family: sans-serif; font-size: 13px; }
+  .hazard-popup strong { display: block; margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -133,7 +149,16 @@ function buildMapHtml(
       fillOpacity: 0.8,
       weight: 2
     }).addTo(map);
-    marker.bindTooltip(p.count.toString(), { permanent: true, direction: 'center', className: 'pothole-label' });
+
+    var label = p.severity === 'Severe' ? '!' : p.hits.toString();
+    marker.bindTooltip(label, { permanent: true, direction: 'center', className: 'hazard-label' });
+
+    var popupHtml = '<div class="hazard-popup">' +
+      '<strong>' + p.severityLabel + '</strong>' +
+      '<span>This hazard has been reported <b>' + p.hits + '</b> times</span>' +
+      '</div>';
+    marker.bindPopup(popupHtml);
+
     bounds.push([p.lat, p.lng]);
   });
 
@@ -141,9 +166,6 @@ function buildMapHtml(
     map.fitBounds(bounds, { padding: [40, 40] });
   }
 </script>
-<style>
-  .pothole-label { background: none; border: none; box-shadow: none; color: #fff; font-weight: bold; font-size: 11px; }
-</style>
 </body>
 </html>`
 }
@@ -182,17 +204,18 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
 
       try {
         const { data, error } = await supabase
-          .from('verified_potholes')
-          .select('id, lat, lng, detection_count, status, updated_at')
-          .order('detection_count', { ascending: false })
+          .from('v_unified_potholes')
+          .select('id, consolidated_latitude, consolidated_longitude, worst_severity, total_detection_hits, status, updated_at')
+          .order('total_detection_hits', { ascending: false })
 
         if (!error && data) {
           setPotholes(
             data.map((p) => ({
               id: p.id,
-              latitude: p.lat,
-              longitude: p.lng,
-              detection_count: p.detection_count ?? 0,
+              consolidated_latitude: p.consolidated_latitude,
+              consolidated_longitude: p.consolidated_longitude,
+              worst_severity: p.worst_severity ?? 'unknown',
+              total_detection_hits: p.total_detection_hits ?? 0,
               status: p.status ?? 'queued',
               updated_at: p.updated_at ?? '',
             })),
@@ -217,12 +240,10 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
     <View style={styles.container}>
       <WebView source={{ html }} style={styles.map} />
 
-      {/* Back button */}
       <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
         <Ionicons name="arrow-back" size={20} color="#fff" />
       </TouchableOpacity>
 
-      {/* View mode toggle */}
       <View style={styles.toggleRow}>
         {(['routes', 'potholes', 'both'] as ViewMode[]).map((mode) => (
           <TouchableOpacity
@@ -237,7 +258,6 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
         ))}
       </View>
 
-      {/* Summary panel */}
       {!loading && (routes.length > 0 || potholes.length > 0) && (
         <View style={styles.summaryPanel}>
           <View style={styles.summaryRow}>
@@ -259,7 +279,6 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
         </View>
       )}
 
-      {/* Empty state */}
       {!loading && routes.length === 0 && potholes.length === 0 && (
         <View style={styles.emptyOverlay}>
           <Ionicons name="map-outline" size={36} color="#444" />
@@ -267,7 +286,6 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
         </View>
       )}
 
-      {/* Loading */}
       {loading && (
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingCard}>
