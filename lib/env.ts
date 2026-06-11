@@ -1,4 +1,4 @@
-const DEV_URL = 'http://172.23.16.1:8000'
+const DEV_URL = 'http://192.168.1.12:8000'
 const PROD_URL = 'http://20.17.182.83:8000'
 
 export const AZURE_URL = PROD_URL

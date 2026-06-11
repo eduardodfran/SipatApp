@@ -15,7 +15,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window')
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.55
 
 type PotholeDetail = {
-  id: string
+  pothole_id: string
   worst_severity: string
   total_detection_hits: number
   image_url: string | null
@@ -173,29 +173,29 @@ export default function PotholeDetailSheet({ visible, pothole, onClose }: Props)
 function ImageFrame({ uri }: { uri: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const imageUri = uri?.trim() || ''
 
   return (
     <View style={styles.imageFrame}>
+      <Image
+        source={{ uri: imageUri }}
+        style={styles.evidenceImage}
+        resizeMode="contain"
+        onLoadStart={() => setLoading(true)}
+        onLoadEnd={() => setLoading(false)}
+        onError={() => { setLoading(false); setError(true) }}
+      />
       {loading && (
         <View style={styles.imageLoader}>
           <ActivityIndicator size="small" color="#4363d8" />
           <Text style={styles.imageLoaderText}>Loading evidence...</Text>
         </View>
       )}
-      {error ? (
+      {error && !loading && (
         <View style={styles.imageError}>
           <Ionicons name="alert-circle-outline" size={32} color="#ff4444" />
           <Text style={styles.imageErrorText}>Failed to load image</Text>
         </View>
-      ) : (
-        <Image
-          source={{ uri }}
-          style={styles.evidenceImage}
-          resizeMode="contain"
-          onLoadStart={() => setLoading(true)}
-          onLoadEnd={() => setLoading(false)}
-          onError={() => { setLoading(false); setError(true) }}
-        />
       )}
     </View>
   )

@@ -26,7 +26,7 @@ type RouteData = {
 }
 
 type PotholeData = {
-  id: string
+  pothole_id: string
   consolidated_latitude: number
   consolidated_longitude: number
   worst_severity: string
@@ -97,7 +97,7 @@ function buildMapHtml(
 
   const potholeFeatures = showPotholes
     ? potholes.map((p) => ({
-        id: p.id,
+        id: p.pothole_id,
         lat: p.consolidated_latitude,
         lng: p.consolidated_longitude,
         severity: p.worst_severity,
@@ -217,25 +217,30 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
       try {
         const { data, error } = await supabase
           .from('v_unified_potholes')
-          .select('id, consolidated_latitude, consolidated_longitude, worst_severity, total_detection_hits, image_url, status, updated_at')
+          .select('*')
           .order('total_detection_hits', { ascending: false })
 
+        if (error) {
+          console.log('[MapScreen] pothole query error:', error.message, error.details, error.hint)
+        }
+
         if (!error && data) {
+          console.log('[MapScreen] pothole rows:', data.length)
           setPotholes(
-            data.map((p) => ({
-              id: p.id,
-              consolidated_latitude: p.consolidated_latitude,
-              consolidated_longitude: p.consolidated_longitude,
-              worst_severity: p.worst_severity ?? 'unknown',
-              total_detection_hits: p.total_detection_hits ?? 0,
+            data.map((p: any) => ({
+              pothole_id: String(p.pothole_id ?? p.id ?? ''),
+              consolidated_latitude: Number(p.consolidated_latitude ?? p.lat ?? 0),
+              consolidated_longitude: Number(p.consolidated_longitude ?? p.lng ?? 0),
+              worst_severity: String(p.worst_severity ?? 'unknown'),
+              total_detection_hits: Number(p.total_detection_hits ?? p.detection_count ?? 0),
               image_url: p.image_url ?? null,
-              status: p.status ?? 'queued',
-              updated_at: p.updated_at ?? '',
+              status: String(p.status ?? 'queued'),
+              updated_at: String(p.updated_at ?? ''),
             })),
           )
         }
-      } catch {
-        // silently fail
+      } catch (e) {
+        console.log('[MapScreen] pothole fetch failed:', e)
       }
 
       setLoading(false)
@@ -254,7 +259,7 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
       const data = JSON.parse(event.nativeEvent.data)
       if (data.type === 'pothole_tap') {
         setSelectedPothole({
-          id: data.id,
+          pothole_id: data.id,
           worst_severity: data.worst_severity,
           total_detection_hits: data.total_detection_hits,
           image_url: data.image_url,
@@ -275,6 +280,8 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
         ref={webViewRef}
         source={{ html }}
         style={styles.map}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
         onMessage={handleWebViewMessage}
       />
 
