@@ -13,7 +13,7 @@ function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: numbe
 
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`Timed out after ${timeout / 1000}s — ${url}`)), timeout)
-    fetch(url, opts).then(resolve, reject).finally(() => clearTimeout(timer))
+    fetch(url, opts as any).then(resolve, reject).finally(() => clearTimeout(timer))
   })
 }
 

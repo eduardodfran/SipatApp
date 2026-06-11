@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import { WebView } from 'react-native-webview'
+import { WebView, WebViewMessageEvent } from 'react-native-webview'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import type { Recording } from '../lib/types'
+import PotholeDetailSheet from '../components/PotholeDetailSheet'
 
 type ViewMode = 'routes' | 'potholes' | 'both'
 
@@ -30,6 +31,7 @@ type PotholeData = {
   consolidated_longitude: number
   worst_severity: string
   total_detection_hits: number
+  image_url: string | null
   status: string
   updated_at: string
 }
@@ -95,10 +97,12 @@ function buildMapHtml(
 
   const potholeFeatures = showPotholes
     ? potholes.map((p) => ({
+        id: p.id,
         lat: p.consolidated_latitude,
         lng: p.consolidated_longitude,
         severity: p.worst_severity,
         hits: p.total_detection_hits,
+        image_url: p.image_url,
         color: severityColor(p.worst_severity),
         severityLabel: severityLabel(p.worst_severity),
       }))
@@ -153,11 +157,17 @@ function buildMapHtml(
     var label = p.severity === 'Severe' ? '!' : p.hits.toString();
     marker.bindTooltip(label, { permanent: true, direction: 'center', className: 'hazard-label' });
 
-    var popupHtml = '<div class="hazard-popup">' +
-      '<strong>' + p.severityLabel + '</strong>' +
-      '<span>This hazard has been reported <b>' + p.hits + '</b> times</span>' +
-      '</div>';
-    marker.bindPopup(popupHtml);
+    marker.on('click', function() {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'pothole_tap',
+        id: p.id,
+        worst_severity: p.severity,
+        total_detection_hits: p.hits,
+        image_url: p.image_url,
+        consolidated_latitude: p.lat,
+        consolidated_longitude: p.lng,
+      }));
+    });
 
     bounds.push([p.lat, p.lng]);
   });
@@ -175,6 +185,8 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
   const [potholes, setPotholes] = useState<PotholeData[]>([])
   const [loading, setLoading] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('both')
+  const [selectedPothole, setSelectedPothole] = useState<PotholeData | null>(null)
+  const webViewRef = useRef<WebView>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -205,7 +217,7 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
       try {
         const { data, error } = await supabase
           .from('v_unified_potholes')
-          .select('id, consolidated_latitude, consolidated_longitude, worst_severity, total_detection_hits, status, updated_at')
+          .select('id, consolidated_latitude, consolidated_longitude, worst_severity, total_detection_hits, image_url, status, updated_at')
           .order('total_detection_hits', { ascending: false })
 
         if (!error && data) {
@@ -216,6 +228,7 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
               consolidated_longitude: p.consolidated_longitude,
               worst_severity: p.worst_severity ?? 'unknown',
               total_detection_hits: p.total_detection_hits ?? 0,
+              image_url: p.image_url ?? null,
               status: p.status ?? 'queued',
               updated_at: p.updated_at ?? '',
             })),
@@ -236,9 +249,34 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
 
   const totalPoints = routes.reduce((s, r) => s + r.coords.length, 0)
 
+  const handleWebViewMessage = useCallback((event: WebViewMessageEvent) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data)
+      if (data.type === 'pothole_tap') {
+        setSelectedPothole({
+          id: data.id,
+          worst_severity: data.worst_severity,
+          total_detection_hits: data.total_detection_hits,
+          image_url: data.image_url,
+          consolidated_latitude: data.consolidated_latitude,
+          consolidated_longitude: data.consolidated_longitude,
+          status: '',
+          updated_at: '',
+        })
+      }
+    } catch {
+      // ignore non-JSON messages
+    }
+  }, [])
+
   return (
     <View style={styles.container}>
-      <WebView source={{ html }} style={styles.map} />
+      <WebView
+        ref={webViewRef}
+        source={{ html }}
+        style={styles.map}
+        onMessage={handleWebViewMessage}
+      />
 
       <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
         <Ionicons name="arrow-back" size={20} color="#fff" />
@@ -294,6 +332,12 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
           </View>
         </View>
       )}
+
+      <PotholeDetailSheet
+        visible={selectedPothole !== null}
+        pothole={selectedPothole}
+        onClose={() => setSelectedPothole(null)}
+      />
     </View>
   )
 }
