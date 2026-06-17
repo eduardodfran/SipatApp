@@ -40,10 +40,14 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
   const [elapsed, setElapsed] = useState(0)
 
+  const [recordingGpsCount, setRecordingGpsCount] = useState(0)
+
   const cameraRef = useRef<CameraView>(null)
   const gpsDataRef = useRef<Location.LocationObject[]>([])
   const locationSubRef = useRef<Location.LocationSubscription | null>(null)
   const recordingRef = useRef(false)
+  const recordingStartTimeRef = useRef<number | null>(null)
+  const lastPreRecordPointRef = useRef<Location.LocationObject | null>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -54,7 +58,11 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
         { accuracy: Location.Accuracy.High, timeInterval: 1000, distanceInterval: 1 },
         (loc) => {
           gpsDataRef.current.push(loc)
+          lastPreRecordPointRef.current = loc
           setGpsCount(gpsDataRef.current.length)
+          if (recordingRef.current) {
+            setRecordingGpsCount((c) => c + 1)
+          }
           if (loc.coords.accuracy != null) setGpsAccuracy(loc.coords.accuracy)
         },
       )
@@ -87,9 +95,15 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
 
   const startRecording = async () => {
     if (!cameraRef.current) return
-    gpsDataRef.current = []
-    setGpsCount(0)
+    recordingStartTimeRef.current = Date.now()
+    setRecordingGpsCount(0)
     setRecording(true)
+
+    try {
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
+        .then((loc) => { gpsDataRef.current.push(loc); setGpsCount(gpsDataRef.current.length) })
+        .catch(() => {})
+    } catch {}
 
     try {
       const result = await cameraRef.current.recordAsync({
@@ -113,17 +127,35 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
   const saveRecording = async () => {
     if (!videoUri) return
 
-    if (gpsCount === 0) {
+    if (gpsDataRef.current.length === 0) {
       Alert.alert('No GPS Data', 'No GPS points were recorded. Try again with a clear sky view or outdoors.')
       return
     }
 
     try {
-      const gpsPoints = gpsDataRef.current.map((loc, idx) => ({
-        lat: loc.coords.latitude,
-        lng: loc.coords.longitude,
-        timestamp_seconds: idx,
-      }))
+      const startTime = recordingStartTimeRef.current!
+      let gpsPoints = gpsDataRef.current
+        .filter((loc) => loc.timestamp >= startTime)
+        .map((loc) => ({
+          lat: loc.coords.latitude,
+          lng: loc.coords.longitude,
+          timestamp_seconds: (loc.timestamp - startTime) / 1000,
+        }))
+
+      // If no points fell within the recording, include the most recent pre-record point as fallback
+      if (gpsPoints.length === 0 && lastPreRecordPointRef.current) {
+        const loc = lastPreRecordPointRef.current
+        gpsPoints = [{
+          lat: loc.coords.latitude,
+          lng: loc.coords.longitude,
+          timestamp_seconds: 0,
+        }]
+      }
+
+      if (gpsPoints.length === 0) {
+        Alert.alert('No GPS Data', 'No GPS points were recorded. Try again with a clear sky view or outdoors.')
+        return
+      }
 
       const csvHeader = 'timestamp,latitude,longitude'
       const csvRows = gpsPoints.map(
@@ -167,7 +199,7 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
             <View style={styles.previewStatDot} />
             <View style={styles.previewStatItem}>
               <Ionicons name="locate" size={16} color="#888" />
-              <Text style={styles.previewStatText}>{gpsCount} pts</Text>
+              <Text style={styles.previewStatText}>{recordingGpsCount} pts</Text>
             </View>
           </View>
           <View style={styles.previewActions}>
@@ -243,7 +275,7 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
           {recording && (
             <View style={styles.gpsCountBadge}>
               <Ionicons name="locate" size={14} color="#8bc34a" />
-              <Text style={styles.gpsCountText}>{gpsCount} GPS</Text>
+              <Text style={styles.gpsCountText}>{recordingGpsCount} GPS</Text>
             </View>
           )}
         </View>
