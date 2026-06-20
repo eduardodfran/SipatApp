@@ -165,9 +165,9 @@ export default function PotholeDetailSheet({ visible, pothole, detectors, detect
         <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Ionicons name="warning" size={18} color={severity.bg} />
-              <Text style={styles.statValue}>{pothole.total_detection_hits}</Text>
-              <Text style={styles.statLabel}>Detections</Text>
+              <Ionicons name="people" size={18} color={severity.bg} />
+              <Text style={styles.statValue}>{detectors.length}</Text>
+              <Text style={styles.statLabel}>Confirmed By</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
