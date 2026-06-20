@@ -4,15 +4,17 @@ import {
   Animated,
   Dimensions,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import type { Detector } from '../lib/usePotholeDetectors'
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
-const SHEET_HEIGHT = SCREEN_HEIGHT * 0.55
+const SHEET_HEIGHT = SCREEN_HEIGHT * 0.65
 
 type PotholeDetail = {
   pothole_id: string
@@ -26,6 +28,8 @@ type PotholeDetail = {
 type Props = {
   visible: boolean
   pothole: PotholeDetail | null
+  detectors: Detector[]
+  detectorsLoading: boolean
   onClose: () => void
 }
 
@@ -62,7 +66,7 @@ function severityConfig(severity: string): { label: string; color: string; bg: s
   }
 }
 
-export default function PotholeDetailSheet({ visible, pothole, onClose }: Props) {
+export default function PotholeDetailSheet({ visible, pothole, detectors, detectorsLoading, onClose }: Props) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const backdropOpacity = useRef(new Animated.Value(0)).current
 
@@ -142,29 +146,75 @@ export default function PotholeDetailSheet({ visible, pothole, onClose }: Props)
           )}
         </View>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Ionicons name="warning" size={18} color={severity.bg} />
-            <Text style={styles.statValue}>{pothole.total_detection_hits}</Text>
-            <Text style={styles.statLabel}>Detections</Text>
+        <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Ionicons name="warning" size={18} color={severity.bg} />
+              <Text style={styles.statValue}>{pothole.total_detection_hits}</Text>
+              <Text style={styles.statLabel}>Detections</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Ionicons name="location" size={18} color="#4363d8" />
+              <Text style={styles.statValue}>
+                {pothole.consolidated_latitude.toFixed(4)}
+              </Text>
+              <Text style={styles.statLabel}>Latitude</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Ionicons name="location" size={18} color="#4363d8" />
+              <Text style={styles.statValue}>
+                {pothole.consolidated_longitude.toFixed(4)}
+              </Text>
+              <Text style={styles.statLabel}>Longitude</Text>
+            </View>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Ionicons name="location" size={18} color="#4363d8" />
-            <Text style={styles.statValue}>
-              {pothole.consolidated_latitude.toFixed(4)}
-            </Text>
-            <Text style={styles.statLabel}>Latitude</Text>
+
+          <View style={styles.detectorsSection}>
+            <View style={styles.detectorsHeader}>
+              <Ionicons name="people" size={16} color="#888" />
+              <Text style={styles.detectorsTitle}>
+                Detected by ({detectors.length})
+              </Text>
+              {detectorsLoading && (
+                <ActivityIndicator size="small" color="#888" />
+              )}
+            </View>
+
+            {detectors.length === 0 && !detectorsLoading && (
+              <Text style={styles.noDetectors}>No detector data</Text>
+            )}
+
+            {detectors.map((d, i) => (
+              <View key={`${d.user_id}-${i}`} style={styles.detectorRow}>
+                <View style={styles.avatarCircle}>
+                  <Text style={styles.avatarText}>
+                    {(d.username ?? d.full_name ?? '?').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={styles.detectorInfo}>
+                  <Text style={styles.detectorName}>
+                    {d.username ?? d.full_name ?? 'Unknown'}
+                  </Text>
+                  <Text style={styles.detectorDate}>
+                    {new Date(d.detected_at).toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Text>
+                </View>
+                {i === detectors.length - 1 && (
+                  <View style={styles.latestBadge}>
+                    <Text style={styles.latestBadgeText}>Latest</Text>
+                  </View>
+                )}
+              </View>
+            ))}
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Ionicons name="location" size={18} color="#4363d8" />
-            <Text style={styles.statValue}>
-              {pothole.consolidated_longitude.toFixed(4)}
-            </Text>
-            <Text style={styles.statLabel}>Longitude</Text>
-          </View>
-        </View>
+        </ScrollView>
       </Animated.View>
     </View>
   )
@@ -357,5 +407,85 @@ const styles = StyleSheet.create({
     width: 1,
     height: 30,
     backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  scrollBody: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  detectorsSection: {
+    marginTop: 14,
+    marginBottom: 20,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.04)',
+  },
+  detectorsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  detectorsTitle: {
+    color: '#888',
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    flex: 1,
+  },
+  noDetectors: {
+    color: '#555',
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 8,
+  },
+  detectorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.04)',
+  },
+  avatarCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(67, 99, 216, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  avatarText: {
+    color: '#4363d8',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  detectorInfo: {
+    flex: 1,
+  },
+  detectorName: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  detectorDate: {
+    color: '#666',
+    fontSize: 11,
+    marginTop: 1,
+  },
+  latestBadge: {
+    backgroundColor: 'rgba(67, 99, 216, 0.15)',
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  latestBadgeText: {
+    color: '#4363d8',
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 })

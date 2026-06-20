@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { WebView, WebViewMessageEvent } from 'react-native-webview'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { usePotholeDetectors } from '../lib/usePotholeDetectors'
 import type { Recording } from '../lib/types'
 import PotholeDetailSheet from '../components/PotholeDetailSheet'
 
@@ -188,6 +189,11 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
   const [selectedPothole, setSelectedPothole] = useState<PotholeData | null>(null)
   const webViewRef = useRef<WebView>(null)
 
+  const { detectors, loading: detectorsLoading } = usePotholeDetectors(
+    selectedPothole?.consolidated_latitude ?? null,
+    selectedPothole?.consolidated_longitude ?? null,
+  )
+
   useEffect(() => {
     ;(async () => {
       setLoading(true)
@@ -274,6 +280,10 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
     }
   }, [])
 
+  const handleCloseSheet = useCallback(() => {
+    setSelectedPothole(null)
+  }, [])
+
   return (
     <View style={styles.container}>
       <WebView
@@ -343,7 +353,9 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
       <PotholeDetailSheet
         visible={selectedPothole !== null}
         pothole={selectedPothole}
-        onClose={() => setSelectedPothole(null)}
+        detectors={detectors}
+        detectorsLoading={detectorsLoading}
+        onClose={handleCloseSheet}
       />
     </View>
   )
