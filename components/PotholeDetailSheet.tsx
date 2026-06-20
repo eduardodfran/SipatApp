@@ -4,13 +4,18 @@ import {
   Animated,
   Dimensions,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { supabase } from '../lib/supabase'
+import { useDetectionComments } from '../lib/useDetectionComments'
 import type { Detector } from '../lib/usePotholeDetectors'
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
@@ -67,8 +72,19 @@ function severityConfig(severity: string): { label: string; color: string; bg: s
 }
 
 export default function PotholeDetailSheet({ visible, pothole, detectors, detectorsLoading, onClose }: Props) {
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [commentDraft, setCommentDraft] = useState('')
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const backdropOpacity = useRef(new Animated.Value(0)).current
+  const { comments, loading: commentsLoading, posting, postComment } = useDetectionComments(
+    pothole?.pothole_id ?? null,
+  )
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUserId(data.user?.id ?? null)
+    })
+  }, [])
 
   useEffect(() => {
     if (visible && pothole) {
@@ -213,6 +229,81 @@ export default function PotholeDetailSheet({ visible, pothole, detectors, detect
                 )}
               </View>
             ))}
+          </View>
+
+          {/* Detection comments */}
+          <View style={styles.commentsSection}>
+            <View style={styles.commentsHeader}>
+              <Ionicons name="chatbubble" size={16} color="#888" />
+              <Text style={styles.commentsTitle}>
+                Detection comments ({comments.length})
+              </Text>
+              {commentsLoading && (
+                <ActivityIndicator size="small" color="#888" />
+              )}
+            </View>
+
+            {comments.length === 0 && !commentsLoading && (
+              <Text style={styles.noComments}>No comments yet</Text>
+            )}
+
+            {comments.map((c) => (
+              <View key={c.id} style={styles.commentRow}>
+                <View style={styles.commentAvatar}>
+                  <Text style={styles.commentAvatarText}>
+                    {(c.username ?? '?').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={styles.commentBody}>
+                  <View style={styles.commentMeta}>
+                    <Text style={styles.commentUsername}>
+                      {c.username ?? 'Unknown'}
+                    </Text>
+                    <Text style={styles.commentDate}>
+                      {new Date(c.created_at).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </Text>
+                  </View>
+                  <Text style={styles.commentText}>{c.body}</Text>
+                </View>
+              </View>
+            ))}
+
+            {currentUserId ? (
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              >
+                <View style={styles.commentInputRow}>
+                  <TextInput
+                    style={styles.commentInput}
+                    value={commentDraft}
+                    onChangeText={setCommentDraft}
+                    placeholder="Write a comment..."
+                    placeholderTextColor="#555"
+                    multiline={false}
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.commentSendBtn,
+                      (!commentDraft.trim() || posting) && styles.commentSendBtnDisabled,
+                    ]}
+                    disabled={!commentDraft.trim() || posting}
+                    onPress={() => {
+                      postComment(commentDraft)
+                      setCommentDraft('')
+                    }}
+                  >
+                    <Text style={styles.commentSendText}>
+                      {posting ? '...' : 'Send'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </KeyboardAvoidingView>
+            ) : (
+              <Text style={styles.signInToComment}>Sign in to comment</Text>
+            )}
           </View>
         </ScrollView>
       </Animated.View>
@@ -487,5 +578,115 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  commentsSection: {
+    marginTop: 14,
+    marginBottom: 40,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.04)',
+  },
+  commentsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  commentsTitle: {
+    color: '#888',
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    flex: 1,
+  },
+  noComments: {
+    color: '#555',
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 8,
+  },
+  commentRow: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.04)',
+  },
+  commentAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(67, 99, 216, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+    marginTop: 2,
+  },
+  commentAvatarText: {
+    color: '#4363d8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  commentBody: {
+    flex: 1,
+  },
+  commentMeta: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  commentUsername: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  commentDate: {
+    color: '#555',
+    fontSize: 10,
+  },
+  commentText: {
+    color: '#ccc',
+    fontSize: 13,
+    marginTop: 2,
+    lineHeight: 18,
+  },
+  commentInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    gap: 8,
+  },
+  commentInput: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    color: '#fff',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  commentSendBtn: {
+    backgroundColor: 'rgba(67, 99, 216, 0.2)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  commentSendBtnDisabled: {
+    opacity: 0.4,
+  },
+  commentSendText: {
+    color: '#4363d8',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  signInToComment: {
+    color: '#555',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 10,
   },
 })
