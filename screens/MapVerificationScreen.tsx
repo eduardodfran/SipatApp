@@ -38,7 +38,7 @@ type PotholeData = {
 }
 
 const COLORS = [
-  '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+  '#e6194b', '#3cb44b', '#ffe119', '#2563eb', '#f58231',
   '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
   '#469990', '#dcbeff', '#9a6324', '#800000',
   '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9',
@@ -62,10 +62,10 @@ function parseCsv(csv: string): RouteCoord[] {
 
 function severityColor(severity: string): string {
   switch (severity?.toLowerCase()) {
-    case 'severe':   return '#ff4444'
-    case 'moderate': return '#ffbb00'
-    case 'minor':    return '#43a047'
-    default:         return '#888'
+    case 'severe':   return '#dc2626'
+    case 'moderate': return '#f59e0b'
+    case 'minor':    return '#22c55e'
+    default:         return '#6b7280'
   }
 }
 
@@ -296,7 +296,7 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
       />
 
       <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-        <Ionicons name="arrow-back" size={20} color="#fff" />
+        <Ionicons name="arrow-back" size={20} color="#f0f0f0" />
       </TouchableOpacity>
 
       <View style={styles.toggleRow}>
@@ -336,7 +336,7 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
 
       {!loading && routes.length === 0 && potholes.length === 0 && (
         <View style={styles.emptyOverlay}>
-          <Ionicons name="map-outline" size={36} color="#444" />
+          <Ionicons name="map-outline" size={36} color="#2a2a3a" />
           <Text style={styles.emptyText}>No map data available</Text>
         </View>
       )}
@@ -344,7 +344,7 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
       {loading && (
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingCard}>
-            <ActivityIndicator size="large" color="#4363d8" />
+            <ActivityIndicator size="large" color="#e6a817" />
             <Text style={styles.loadingText}>Loading data</Text>
           </View>
         </View>
@@ -364,7 +364,7 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a1a',
+    backgroundColor: '#0c0c14',
   },
   map: {
     ...StyleSheet.absoluteFillObject,
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   toggleBtnActive: {
-    backgroundColor: '#4363d8',
+    backgroundColor: '#e6a817',
   },
   toggleText: {
     color: '#aaa',
@@ -404,14 +404,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   toggleTextActive: {
-    color: '#fff',
+    color: '#0c0c14',
   },
   summaryPanel: {
     position: 'absolute',
     bottom: 24,
     left: 16,
     right: 16,
-    backgroundColor: '#13133a',
+    backgroundColor: '#141420',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
@@ -427,12 +427,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryValue: {
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 20,
     fontWeight: '700',
   },
   summaryLabel: {
-    color: '#666',
+    color: '#6b7280',
     fontSize: 11,
     marginTop: 2,
     textTransform: 'uppercase',
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   emptyText: {
-    color: '#444',
+    color: '#4b5563',
     fontSize: 14,
     marginTop: 8,
   },
@@ -467,16 +467,16 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   loadingCard: {
-    backgroundColor: '#13133a',
+    backgroundColor: '#141420',
     borderRadius: 20,
     paddingVertical: 32,
     paddingHorizontal: 40,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(230, 168, 23, 0.1)',
   },
   loadingText: {
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 16,
     fontWeight: '600',
     marginTop: 16,

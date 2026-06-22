@@ -50,7 +50,7 @@ function severityConfig(severity: string): { label: string; color: string; bg: s
     case 'moderate':
       return {
         label: 'MODERATE',
-        color: '#1a1a1a',
+        color: '#0c0c14',
         bg: '#f59e0b',
         friendlyName: 'Pothole Hazard — Moderate',
       }
@@ -58,7 +58,7 @@ function severityConfig(severity: string): { label: string; color: string; bg: s
       return {
         label: 'MINOR',
         color: '#fff',
-        bg: '#16a34a',
+        bg: '#22c55e',
         friendlyName: 'Pothole Hazard — Minor',
       }
     default:
@@ -145,7 +145,7 @@ export default function PotholeDetailSheet({ visible, pothole, detectors, detect
             </View>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-            <Ionicons name="close" size={20} color="#888" />
+            <Ionicons name="close" size={20} color="#6b7280" />
           </TouchableOpacity>
         </View>
 
@@ -156,7 +156,7 @@ export default function PotholeDetailSheet({ visible, pothole, detectors, detect
             <ImageFrame uri={pothole.image_url} />
           ) : (
             <View style={styles.placeholderImage}>
-              <Ionicons name="image-outline" size={40} color="#333" />
+              <Ionicons name="image-outline" size={40} color="#2a2a3a" />
               <Text style={styles.placeholderText}>No image available</Text>
             </View>
           )}
@@ -171,7 +171,7 @@ export default function PotholeDetailSheet({ visible, pothole, detectors, detect
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Ionicons name="location" size={18} color="#4363d8" />
+              <Ionicons name="location" size={18} color="#e6a817" />
               <Text style={styles.statValue}>
                 {pothole.consolidated_latitude.toFixed(4)}
               </Text>
@@ -179,7 +179,7 @@ export default function PotholeDetailSheet({ visible, pothole, detectors, detect
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Ionicons name="location" size={18} color="#4363d8" />
+              <Ionicons name="location" size={18} color="#e6a817" />
               <Text style={styles.statValue}>
                 {pothole.consolidated_longitude.toFixed(4)}
               </Text>
@@ -189,12 +189,12 @@ export default function PotholeDetailSheet({ visible, pothole, detectors, detect
 
           <View style={styles.detectorsSection}>
             <View style={styles.detectorsHeader}>
-              <Ionicons name="people" size={16} color="#888" />
+              <Ionicons name="people" size={16} color="#6b7280" />
               <Text style={styles.detectorsTitle}>
                 Detected by ({detectors.length})
               </Text>
               {detectorsLoading && (
-                <ActivityIndicator size="small" color="#888" />
+                <ActivityIndicator size="small" color="#6b7280" />
               )}
             </View>
 
@@ -234,12 +234,12 @@ export default function PotholeDetailSheet({ visible, pothole, detectors, detect
           {/* Detection comments */}
           <View style={styles.commentsSection}>
             <View style={styles.commentsHeader}>
-              <Ionicons name="chatbubble" size={16} color="#888" />
+              <Ionicons name="chatbubble" size={16} color="#6b7280" />
               <Text style={styles.commentsTitle}>
                 Detection comments ({comments.length})
               </Text>
               {commentsLoading && (
-                <ActivityIndicator size="small" color="#888" />
+                <ActivityIndicator size="small" color="#6b7280" />
               )}
             </View>
 
@@ -281,7 +281,7 @@ export default function PotholeDetailSheet({ visible, pothole, detectors, detect
                     value={commentDraft}
                     onChangeText={setCommentDraft}
                     placeholder="Write a comment..."
-                    placeholderTextColor="#555"
+                    placeholderTextColor="#374151"
                     multiline={false}
                   />
                   <TouchableOpacity
@@ -328,13 +328,13 @@ function ImageFrame({ uri }: { uri: string }) {
       />
       {loading && (
         <View style={styles.imageLoader}>
-          <ActivityIndicator size="small" color="#4363d8" />
+          <ActivityIndicator size="small" color="#e6a817" />
           <Text style={styles.imageLoaderText}>Loading evidence...</Text>
         </View>
       )}
       {error && !loading && (
         <View style={styles.imageError}>
-          <Ionicons name="alert-circle-outline" size={32} color="#ff4444" />
+          <Ionicons name="alert-circle-outline" size={32} color="#dc2626" />
           <Text style={styles.imageErrorText}>Failed to load image</Text>
         </View>
       )}
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: SHEET_HEIGHT,
-    backgroundColor: '#0f0f2a',
+    backgroundColor: '#111118',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: 34,
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#333',
+    backgroundColor: '#2a2a3a',
     alignSelf: 'center',
     marginTop: 10,
     marginBottom: 6,
@@ -400,12 +400,12 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   friendlyName: {
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 18,
     fontWeight: '700',
     paddingHorizontal: 20,
@@ -420,9 +420,9 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#1a1a3a',
+    backgroundColor: '#141420',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.04)',
   },
   evidenceImage: {
     width: '100%',
@@ -432,10 +432,10 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1a1a3a',
+    backgroundColor: '#141420',
   },
   imageLoaderText: {
-    color: '#666',
+    color: '#6b7280',
     fontSize: 12,
     marginTop: 8,
   },
@@ -443,10 +443,10 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1a1a3a',
+    backgroundColor: '#141420',
   },
   imageErrorText: {
-    color: '#666',
+    color: '#6b7280',
     fontSize: 12,
     marginTop: 6,
   },
@@ -455,14 +455,14 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#1a1a3a',
+    backgroundColor: '#141420',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.04)',
   },
   placeholderText: {
-    color: '#444',
+    color: '#374151',
     fontSize: 13,
     marginTop: 8,
   },
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginHorizontal: 20,
     marginTop: 18,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: 'rgba(255,255,255,0.02)',
     borderRadius: 14,
     paddingVertical: 14,
     borderWidth: 1,
@@ -483,12 +483,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statValue: {
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 15,
     fontWeight: '700',
   },
   statLabel: {
-    color: '#666',
+    color: '#6b7280',
     fontSize: 10,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 30,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   scrollBody: {
     flex: 1,
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
   detectorsSection: {
     marginTop: 14,
     marginBottom: 20,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: 'rgba(255,255,255,0.02)',
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   detectorsTitle: {
-    color: '#888',
+    color: '#6b7280',
     fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   noDetectors: {
-    color: '#555',
+    color: '#374151',
     fontSize: 13,
     textAlign: 'center',
     paddingVertical: 8,
@@ -543,13 +543,13 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(67, 99, 216, 0.2)',
+    backgroundColor: 'rgba(230, 168, 23, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
   },
   avatarText: {
-    color: '#4363d8',
+    color: '#e6a817',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -557,23 +557,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detectorName: {
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 14,
     fontWeight: '600',
   },
   detectorDate: {
-    color: '#666',
+    color: '#6b7280',
     fontSize: 11,
     marginTop: 1,
   },
   latestBadge: {
-    backgroundColor: 'rgba(67, 99, 216, 0.15)',
+    backgroundColor: 'rgba(230, 168, 23, 0.12)',
     paddingVertical: 2,
     paddingHorizontal: 8,
     borderRadius: 8,
   },
   latestBadgeText: {
-    color: '#4363d8',
+    color: '#e6a817',
     fontSize: 9,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
   commentsSection: {
     marginTop: 14,
     marginBottom: 40,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: 'rgba(255,255,255,0.02)',
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   commentsTitle: {
-    color: '#888',
+    color: '#6b7280',
     fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   noComments: {
-    color: '#555',
+    color: '#374151',
     fontSize: 13,
     textAlign: 'center',
     paddingVertical: 8,
@@ -618,14 +618,14 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: 'rgba(67, 99, 216, 0.2)',
+    backgroundColor: 'rgba(230, 168, 23, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
     marginTop: 2,
   },
   commentAvatarText: {
-    color: '#4363d8',
+    color: '#e6a817',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -638,16 +638,16 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   commentUsername: {
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 12,
     fontWeight: '600',
   },
   commentDate: {
-    color: '#555',
+    color: '#374151',
     fontSize: 10,
   },
   commentText: {
-    color: '#ccc',
+    color: '#d1d5db',
     fontSize: 13,
     marginTop: 2,
     lineHeight: 18,
@@ -660,17 +660,17 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.04)',
   },
   commentSendBtn: {
-    backgroundColor: 'rgba(67, 99, 216, 0.2)',
+    backgroundColor: 'rgba(230, 168, 23, 0.15)',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
@@ -679,12 +679,12 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   commentSendText: {
-    color: '#4363d8',
+    color: '#e6a817',
     fontSize: 13,
     fontWeight: '700',
   },
   signInToComment: {
-    color: '#555',
+    color: '#374151',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 10,

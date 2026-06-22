@@ -47,18 +47,18 @@ export default function LoginScreen() {
       <View style={styles.card}>
         <View style={styles.logoRow}>
           <View style={styles.logoCircle}>
-            <Ionicons name="shield-checkmark" size={28} color="#4363d8" />
+            <Ionicons name="shield-checkmark" size={28} color="#e6a817" />
           </View>
           <Text style={styles.title}>Sipat</Text>
         </View>
         <Text style={styles.subtitle}>
-          {mode === 'login' ? 'Sign in to continue' : 'Create an account'}
+          {mode === 'login' ? 'Road safety starts here' : 'Join the community'}
         </Text>
 
         <TextInput
           style={styles.input}
           placeholder="Email"
-          placeholderTextColor="#555"
+          placeholderTextColor="#4b5563"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -67,7 +67,7 @@ export default function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="Password"
-          placeholderTextColor="#555"
+          placeholderTextColor="#4b5563"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -79,7 +79,7 @@ export default function LoginScreen() {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color="#0c0c14" />
           ) : (
             <Text style={styles.primaryBtnText}>
               {mode === 'login' ? 'Sign In' : 'Sign Up'}
@@ -105,16 +105,16 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a1a',
+    backgroundColor: '#0c0c14',
     justifyContent: 'center',
     padding: 24,
   },
   card: {
-    backgroundColor: '#13133a',
+    backgroundColor: '#141420',
     borderRadius: 24,
     padding: 32,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(230, 168, 23, 0.08)',
   },
   logoRow: {
     flexDirection: 'row',
@@ -127,36 +127,36 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(67, 99, 216, 0.15)',
+    backgroundColor: 'rgba(230, 168, 23, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#fff',
+    color: '#f0f0f0',
     letterSpacing: 0.5,
   },
   subtitle: {
-    color: '#666',
+    color: '#6b7280',
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 28,
     marginTop: 4,
   },
   input: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 15,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   primaryBtn: {
-    backgroundColor: '#4363d8',
+    backgroundColor: '#e6a817',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   primaryBtnText: {
-    color: '#fff',
+    color: '#0c0c14',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   switchText: {
-    color: '#4363d8',
+    color: '#e6a817',
     fontSize: 13,
     fontWeight: '500',
   },

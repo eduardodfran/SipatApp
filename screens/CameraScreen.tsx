@@ -19,11 +19,11 @@ type Props = {
 }
 
 function gpsStatus(accuracy: number | null): { label: string; color: string } {
-  if (accuracy === null) return { label: 'No GPS', color: '#ff4444' }
-  if (accuracy <= 10) return { label: 'GPS', color: '#4caf50' }
-  if (accuracy <= 30) return { label: 'GPS', color: '#8bc34a' }
-  if (accuracy <= 100) return { label: 'GPS', color: '#ffc107' }
-  return { label: 'GPS', color: '#ff9800' }
+  if (accuracy === null) return { label: 'No GPS', color: '#dc2626' }
+  if (accuracy <= 10) return { label: 'GPS', color: '#22c55e' }
+  if (accuracy <= 30) return { label: 'GPS', color: '#4ade80' }
+  if (accuracy <= 100) return { label: 'GPS', color: '#f59e0b' }
+  return { label: 'GPS', color: '#f97316' }
 }
 
 function formatTime(seconds: number): string {
@@ -142,7 +142,6 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
           timestamp_seconds: (loc.timestamp - startTime) / 1000,
         }))
 
-      // If no points fell within the recording, include the most recent pre-record point as fallback
       if (gpsPoints.length === 0 && lastPreRecordPointRef.current) {
         const loc = lastPreRecordPointRef.current
         gpsPoints = [{
@@ -188,17 +187,17 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
       <View style={styles.container}>
         <View style={styles.previewOverlay}>
           <View style={styles.previewIcon}>
-            <Ionicons name="checkmark-circle" size={72} color="#4caf50" />
+            <Ionicons name="checkmark-circle" size={72} color="#22c55e" />
           </View>
           <Text style={styles.previewTitle}>Recording Complete</Text>
           <View style={styles.previewStats}>
             <View style={styles.previewStatItem}>
-              <Ionicons name="time-outline" size={16} color="#888" />
+              <Ionicons name="time-outline" size={16} color="#6b7280" />
               <Text style={styles.previewStatText}>{formatTime(elapsed)}</Text>
             </View>
             <View style={styles.previewStatDot} />
             <View style={styles.previewStatItem}>
-              <Ionicons name="locate" size={16} color="#888" />
+              <Ionicons name="locate" size={16} color="#6b7280" />
               <Text style={styles.previewStatText}>{recordingGpsCount} pts</Text>
             </View>
           </View>
@@ -207,14 +206,14 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
               style={[styles.previewBtn, styles.discardBtn]}
               onPress={discardRecording}
             >
-              <Ionicons name="trash-outline" size={18} color="#ff4444" />
+              <Ionicons name="trash-outline" size={18} color="#dc2626" />
               <Text style={styles.discardBtnText}>Discard</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.previewBtn, styles.saveBtn]}
               onPress={saveRecording}
             >
-              <Ionicons name="checkmark-outline" size={18} color="#fff" />
+              <Ionicons name="checkmark-outline" size={18} color="#0c0c14" />
               <Text style={styles.saveBtnText}>Save Ride</Text>
             </TouchableOpacity>
           </View>
@@ -236,7 +235,7 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
       <View style={styles.cameraOverlay}>
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.topBtn} onPress={onCancel}>
-            <Ionicons name="close" size={26} color="#fff" />
+            <Ionicons name="close" size={26} color="#f0f0f0" />
           </TouchableOpacity>
 
           <View style={[styles.gpsBadge, { borderColor: gps.color }]}>
@@ -274,7 +273,7 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
 
           {recording && (
             <View style={styles.gpsCountBadge}>
-              <Ionicons name="locate" size={14} color="#8bc34a" />
+              <Ionicons name="locate" size={14} color="#22c55e" />
               <Text style={styles.gpsCountText}>{recordingGpsCount} GPS</Text>
             </View>
           )}
@@ -337,7 +336,7 @@ const styles = StyleSheet.create({
   },
   gpsCount: {
     fontSize: 11,
-    color: '#fff',
+    color: '#f0f0f0',
     fontWeight: '600',
     marginLeft: 2,
   },
@@ -354,10 +353,10 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#ff4444',
+    backgroundColor: '#dc2626',
   },
   elapsedText: {
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 16,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
@@ -380,13 +379,13 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: '#ff4444',
+    backgroundColor: '#dc2626',
   },
   recordInnerActive: {
     width: 30,
     height: 30,
     borderRadius: 5,
-    backgroundColor: '#ff4444',
+    backgroundColor: '#dc2626',
   },
   gpsCountBadge: {
     flexDirection: 'row',
@@ -398,25 +397,25 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   gpsCountText: {
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 13,
     fontWeight: '600',
   },
   permissionText: {
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 16,
     textAlign: 'center',
     marginTop: 40,
   },
   permissionBtn: {
-    backgroundColor: '#4363d8',
+    backgroundColor: '#e6a817',
     padding: 16,
     borderRadius: 12,
     margin: 40,
     alignItems: 'center',
   },
   permissionBtnText: {
-    color: '#fff',
+    color: '#0c0c14',
     fontWeight: '700',
     fontSize: 16,
   },
@@ -425,12 +424,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 40,
+    backgroundColor: '#0c0c14',
   },
   previewIcon: {
     marginBottom: 8,
   },
   previewTitle: {
-    color: '#fff',
+    color: '#f0f0f0',
     fontSize: 24,
     fontWeight: '700',
   },
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   previewStatText: {
-    color: '#aaa',
+    color: '#6b7280',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#555',
+    backgroundColor: '#374151',
   },
   previewActions: {
     flexDirection: 'row',
@@ -470,18 +470,18 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   discardBtn: {
-    backgroundColor: 'rgba(255,68,68,0.1)',
+    backgroundColor: 'rgba(222, 38, 38, 0.1)',
   },
   discardBtnText: {
-    color: '#ff4444',
+    color: '#dc2626',
     fontSize: 15,
     fontWeight: '700',
   },
   saveBtn: {
-    backgroundColor: '#4363d8',
+    backgroundColor: '#e6a817',
   },
   saveBtnText: {
-    color: '#fff',
+    color: '#0c0c14',
     fontSize: 15,
     fontWeight: '700',
   },
