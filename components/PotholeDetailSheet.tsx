@@ -414,10 +414,12 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     paddingHorizontal: 20,
+    alignItems: 'center',
   },
   imageFrame: {
-    width: '100%',
-    height: 200,
+    width: '55%',
+    aspectRatio: 9 / 16,
+    alignSelf: 'center',
     borderRadius: 14,
     overflow: 'hidden',
     backgroundColor: '#141420',
@@ -451,8 +453,9 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   placeholderImage: {
-    width: '100%',
-    height: 200,
+    width: '55%',
+    aspectRatio: 9 / 16,
+    alignSelf: 'center',
     borderRadius: 14,
     overflow: 'hidden',
     backgroundColor: '#141420',
