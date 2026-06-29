@@ -230,7 +230,8 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
         ref={cameraRef}
         style={styles.camera}
         mode="video"
-        videoQuality="720p"
+        videoQuality="1080p"
+        videoStabilizationMode="auto"
       />
       <View style={styles.cameraOverlay}>
         <View style={styles.topRow}>
