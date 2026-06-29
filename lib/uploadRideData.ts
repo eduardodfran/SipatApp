@@ -1,5 +1,9 @@
 import { File, Paths } from 'expo-file-system'
-import { fetch } from 'expo/fetch'
+import {
+  uploadAsync,
+  FileSystemUploadType,
+  type FileSystemAcceptedUploadHttpMethod,
+} from 'expo-file-system/legacy'
 import { supabase } from './supabase'
 import { fetchFastApi } from './fastapi'
 
@@ -11,12 +15,14 @@ async function fetchWithTimeout(
   options: RequestInit & { timeout?: number } = {},
 ): Promise<Response> {
   const { timeout = API_TIMEOUT, ...rest } = options
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`Request timed out after ${timeout / 1000}s — could not reach ${url}`)), timeout)
-    fetch(url, rest as any)
-      .then(resolve, reject)
-      .finally(() => clearTimeout(timer))
-  })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeout)
+  try {
+    const response = await globalThis.fetch(url, { ...rest, signal: controller.signal })
+    return response
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 export type GpsTrackingPoint = {
@@ -180,19 +186,17 @@ export async function triggerProcessing(rideId: string): Promise<void> {
   }
 }
 
-async function uploadBlob(sasUrl: string, file: File) {
-  const response = await fetchWithTimeout(sasUrl, {
-    method: 'PUT',
+async function uploadBlob(sasUrl: string, fileUri: string) {
+  const result = await uploadAsync(sasUrl, fileUri, {
+    httpMethod: 'PUT' as FileSystemAcceptedUploadHttpMethod,
+    uploadType: FileSystemUploadType.BINARY_CONTENT,
     headers: {
       'x-ms-blob-type': 'BlockBlob',
     },
-    body: file,
-    timeout: UPLOAD_TIMEOUT,
   })
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => '')
-    throw new Error(`Upload failed (${response.status}): ${text}`)
+  if (result.status >= 400) {
+    throw new Error(`Upload failed (${result.status}): ${result.body}`)
   }
 }
 
@@ -280,14 +284,14 @@ export async function uploadRideData(
     const gpsFile = new File(Paths.cache, `sipat_gps_${rideId}.json`)
     gpsFile.create()
     gpsFile.write(JSON.stringify(gpsTrackingArray))
-    await uploadBlob(gps_sas_url, gpsFile)
+    await uploadBlob(gps_sas_url, gpsFile.uri)
     gpsFile.delete()
 
     const videoFile = new File(videoUri)
     if (!videoFile.exists || videoFile.size === 0) {
       throw new Error(`Video file is empty or missing: ${videoUri}`)
     }
-    await uploadBlob(video_sas_url, videoFile)
+    await uploadBlob(video_sas_url, videoFile.uri)
 
     await completeUpload(rideId, videoPath, gpsPath)
 
