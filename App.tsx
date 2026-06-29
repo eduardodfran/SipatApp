@@ -9,11 +9,12 @@ import LoginScreen from './screens/LoginScreen'
 import DashboardScreen from './screens/DashboardScreen'
 import CameraScreen from './screens/CameraScreen'
 import MapVerificationScreen from './screens/MapVerificationScreen'
+import DistressListScreen from './screens/DistressListScreen'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
 import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRideData'
 
-type Screen = 'login' | 'dashboard' | 'camera' | 'map'
+type Screen = 'login' | 'dashboard' | 'camera' | 'map' | 'distress'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -224,6 +225,7 @@ export default function App() {
           refreshing={refreshing}
           onRecord={() => setScreen('camera')}
           onMap={() => setScreen('map')}
+          onDistress={() => setScreen('distress')}
           onUpload={handleUploadRecording}
           onProcess={handleProcessRecording}
           onDelete={handleDeleteRecording}
@@ -251,6 +253,9 @@ export default function App() {
             <Text style={{ color: '#0c0c14', fontWeight: '700' }}>Go Back</Text>
           </TouchableOpacity>
         </View>
+      )}
+      {screen === 'distress' && (
+        <DistressListScreen onBack={() => setScreen('dashboard')} />
       )}
     </>
   )

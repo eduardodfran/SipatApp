@@ -19,6 +19,7 @@ type Props = {
   processingId: string | null
   onRecord: () => void
   onMap: () => void
+  onDistress: () => void
   onUpload: (recording: Recording) => void | Promise<void>
   onProcess: (recording: Recording) => void | Promise<void>
   onDelete: (recording: Recording) => void
@@ -39,6 +40,7 @@ export default function DashboardScreen({
   processingId,
   onRecord,
   onMap,
+  onDistress,
   onUpload,
   onProcess,
   onDelete,
@@ -181,6 +183,17 @@ export default function DashboardScreen({
               </View>
               <Text style={styles.actionLabel}>Sync Data</Text>
               <Text style={styles.actionSub}>Refresh status</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={onDistress}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: 'rgba(230, 168, 23, 0.12)' }]}>
+                <Ionicons name="warning" size={24} color="#e6a817" />
+              </View>
+              <Text style={styles.actionLabel}>Distress</Text>
+              <Text style={styles.actionSub}>All detections</Text>
             </TouchableOpacity>
           </View>
         </View>
