@@ -5,6 +5,7 @@ import {
   Dimensions,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -74,6 +75,7 @@ function severityConfig(severity: string): { label: string; color: string; bg: s
 export default function PotholeDetailSheet({ visible, pothole, detectors, detectorsLoading, onClose }: Props) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null)
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const backdropOpacity = useRef(new Animated.Value(0)).current
   const { comments, loading: commentsLoading, posting, postComment } = useDetectionComments(
@@ -153,7 +155,12 @@ export default function PotholeDetailSheet({ visible, pothole, detectors, detect
 
         <View style={styles.imageContainer}>
           {pothole.image_url ? (
-            <ImageFrame uri={pothole.image_url} />
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setFullScreenImage(pothole.image_url)}
+            >
+              <ImageFrame uri={pothole.image_url} />
+            </TouchableOpacity>
           ) : (
             <View style={styles.placeholderImage}>
               <Ionicons name="image-outline" size={40} color="#2a2a3a" />
@@ -307,6 +314,31 @@ export default function PotholeDetailSheet({ visible, pothole, detectors, detect
           </View>
         </ScrollView>
       </Animated.View>
+
+      <Modal
+        visible={!!fullScreenImage}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFullScreenImage(null)}
+        statusBarTranslucent
+      >
+        <View style={styles.fullScreenOverlay}>
+          <TouchableOpacity
+            style={styles.fullScreenClose}
+            onPress={() => setFullScreenImage(null)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+          {fullScreenImage && (
+            <Image
+              source={{ uri: fullScreenImage }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -691,5 +723,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     marginTop: 10,
+  },
+  fullScreenOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenClose: {
+    position: 'absolute',
+    top: 54,
+    right: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
   },
 })
