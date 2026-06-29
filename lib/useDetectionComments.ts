@@ -34,8 +34,7 @@ export function useDetectionComments(potholeId: string | null) {
           return
         }
         setComments((data ?? []) as DetectionComment[])
-      })
-      .catch((err) => {
+      }, (err) => {
         if (cancelled) return
         setLoading(false)
         console.log('[Comments] RPC exception:', JSON.stringify(err))

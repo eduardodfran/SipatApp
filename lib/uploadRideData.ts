@@ -186,12 +186,13 @@ export async function triggerProcessing(rideId: string): Promise<void> {
   }
 }
 
-async function uploadBlob(sasUrl: string, fileUri: string) {
+async function uploadBlob(sasUrl: string, fileUri: string, mimeType: string) {
   const result = await uploadAsync(sasUrl, fileUri, {
     httpMethod: 'PUT' as FileSystemAcceptedUploadHttpMethod,
     uploadType: FileSystemUploadType.BINARY_CONTENT,
     headers: {
       'x-ms-blob-type': 'BlockBlob',
+      'Content-Type': mimeType,
     },
   })
 
@@ -284,14 +285,14 @@ export async function uploadRideData(
     const gpsFile = new File(Paths.cache, `sipat_gps_${rideId}.json`)
     gpsFile.create()
     gpsFile.write(JSON.stringify(gpsTrackingArray))
-    await uploadBlob(gps_sas_url, gpsFile.uri)
+    await uploadBlob(gps_sas_url, gpsFile.uri, 'application/json')
     gpsFile.delete()
 
     const videoFile = new File(videoUri)
     if (!videoFile.exists || videoFile.size === 0) {
       throw new Error(`Video file is empty or missing: ${videoUri}`)
     }
-    await uploadBlob(video_sas_url, videoFile.uri)
+    await uploadBlob(video_sas_url, videoFile.uri, 'video/mp4')
 
     await completeUpload(rideId, videoPath, gpsPath)
 

@@ -81,8 +81,7 @@ export function useDistressSummary() {
 
         console.log(`[DistressSummary] Found ${result.length} distress types from ${rows.length} rows`)
         setDistresstypes(result)
-      })
-      .catch((err) => {
+      }, (err) => {
         if (cancelled) return
         setLoading(false)
         console.log('[DistressSummary] query exception:', JSON.stringify(err))

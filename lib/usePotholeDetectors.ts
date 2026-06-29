@@ -33,8 +33,7 @@ export function usePotholeDetectors(lat: number | null, lng: number | null) {
         const result = (data ?? []) as Detector[]
         console.log(`[Detectors] Found ${result.length} detectors at (${lat}, ${lng})`)
         setDetectors(result)
-      })
-      .catch((err) => {
+      }, (err) => {
         if (cancelled) return
         setLoading(false)
         console.log('[Detectors] RPC exception:', JSON.stringify(err))
