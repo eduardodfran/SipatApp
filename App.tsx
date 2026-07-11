@@ -3,6 +3,8 @@ import 'react-native-get-random-values'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, Platform, Text, TouchableOpacity, View } from 'react-native'
 import { User } from '@supabase/supabase-js'
+import * as SplashScreen from 'expo-splash-screen'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from './lib/supabase'
 import { fetchFastApi, resetFastApiPreference } from './lib/fastapi'
 import LoginScreen from './screens/LoginScreen'
@@ -10,11 +12,14 @@ import DashboardScreen from './screens/DashboardScreen'
 import CameraScreen from './screens/CameraScreen'
 import MapVerificationScreen from './screens/MapVerificationScreen'
 import DistressListScreen from './screens/DistressListScreen'
+import OnboardingScreen from './screens/OnboardingScreen'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
 import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRideData'
 
-type Screen = 'login' | 'dashboard' | 'camera' | 'map' | 'distress'
+SplashScreen.preventAutoHideAsync()
+
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'camera' | 'map' | 'distress'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -25,16 +30,34 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const u = data.session?.user ?? null
-      setUser(u)
-      setScreen(u ? 'dashboard' : 'login')
-    })
+    ;(async () => {
+      try {
+        const onboardingSeen = await AsyncStorage.getItem('@sipat_onboarding_seen')
+
+        const { data } = await supabase.auth.getSession()
+        const u = data.session?.user ?? null
+        setUser(u)
+
+        if (!onboardingSeen) {
+          setScreen('onboarding')
+        } else {
+          setScreen(u ? 'dashboard' : 'login')
+        }
+      } catch {
+        setScreen('login')
+      } finally {
+        await SplashScreen.hideAsync()
+      }
+    })()
+
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         const u = session?.user ?? null
         setUser(u)
-        setScreen(u ? 'dashboard' : 'login')
+        setScreen((prev) => {
+          if (prev === 'onboarding') return prev
+          return u ? 'dashboard' : 'login'
+        })
       },
     )
     return () => listener?.subscription.unsubscribe()
@@ -211,10 +234,15 @@ export default function App() {
     [],
   )
 
-  if (!screen) return null
-
   return (
     <>
+      {screen === 'onboarding' && (
+        <OnboardingScreen
+          onDone={() => {
+            setScreen('login')
+          }}
+        />
+      )}
       {screen === 'login' && <LoginScreen />}
       {screen === 'dashboard' && (
         <DashboardScreen
