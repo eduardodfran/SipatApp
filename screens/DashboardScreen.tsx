@@ -11,6 +11,8 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { useCommunityHazards } from '../lib/useCommunityHazards'
+import CommunityHazardsSection from '../components/CommunityHazardsSection'
 import type { Recording } from '../lib/types'
 
 type Props = {
@@ -57,6 +59,7 @@ export default function DashboardScreen({
   const failed = recordings.filter((r) => r.status === 'failed').length
   const pending = recordings.filter((r) => r.status === 'queued').length
   const recentRecordings = recordings.slice(0, 3)
+  const { hazards, loading: hazardsLoading } = useCommunityHazards()
 
   const formatDate = (ts: number) => {
     const d = new Date(ts)
@@ -301,6 +304,11 @@ export default function DashboardScreen({
               )
             })
           )}
+        </View>
+
+        {/* Address Analytics */}
+        <View style={styles.section}>
+          <CommunityHazardsSection hazards={hazards} loading={hazardsLoading} />
         </View>
 
         <View style={{ height: 100 }} />
