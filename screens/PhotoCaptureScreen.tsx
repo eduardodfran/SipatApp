@@ -110,6 +110,18 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
           <Text style={styles.previewTitle}>Preview</Text>
           <View style={{ width: 38 }} />
         </View>
+        <View style={styles.previewCaptionArea}>
+          <TextInput
+            style={styles.captionInput}
+            placeholder="Add a caption..."
+            placeholderTextColor="#52525b"
+            value={caption}
+            onChangeText={setCaption}
+            multiline
+            maxLength={280}
+            autoFocus
+          />
+        </View>
         <View style={styles.previewImageWrap}>
           <Image source={{ uri: photo }} style={styles.preview} />
           {!location && (
@@ -119,39 +131,28 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
             </View>
           )}
         </View>
-        <View style={styles.previewBottom}>
-          <TextInput
-            style={styles.captionInput}
-            placeholder="Add a caption..."
-            placeholderTextColor="#52525b"
-            value={caption}
-            onChangeText={setCaption}
-            multiline
-            maxLength={280}
-          />
-          <View style={styles.previewActions}>
-            <TouchableOpacity
-              style={styles.retakeBtn}
-              onPress={() => { setPhoto(null); setCaption(''); setLocation(null) }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="refresh" size={18} color="#fff" />
-              <Text style={styles.retakeBtnText}>Retake</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.saveBtn, saving && { opacity: 0.6 }]}
-              onPress={handleSavePending}
-              activeOpacity={0.7}
-              disabled={saving}
-            >
-              {saving ? (
-                <ActivityIndicator size="small" color="#0c0c14" />
-              ) : (
-                <Ionicons name="checkmark" size={18} color="#0c0c14" />
-              )}
-              <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save as Pending'}</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.previewActions}>
+          <TouchableOpacity
+            style={styles.retakeBtn}
+            onPress={() => { setPhoto(null); setCaption(''); setLocation(null) }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="refresh" size={18} color="#fff" />
+            <Text style={styles.retakeBtnText}>Retake</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.saveBtn, saving && { opacity: 0.6 }]}
+            onPress={handleSavePending}
+            activeOpacity={0.7}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#0c0c14" />
+            ) : (
+              <Ionicons name="checkmark" size={18} color="#0c0c14" />
+            )}
+            <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save as Pending'}</Text>
+          </TouchableOpacity>
         </View>
       </View>
     )
@@ -217,6 +218,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center',
   },
   previewTitle: { color: '#f0f0f0', fontSize: 16, fontWeight: '600' },
+  previewCaptionArea: { paddingHorizontal: 16, paddingBottom: 12 },
+  captionInput: {
+    padding: 14, backgroundColor: '#141420', borderRadius: 12, color: '#f0f0f0',
+    fontSize: 14, maxHeight: 100, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  },
   previewImageWrap: { flex: 1, backgroundColor: '#000' },
   preview: { width: '100%', height: '100%', resizeMode: 'contain' },
   locationBadge: {
@@ -226,15 +232,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   locationText: { color: '#f59e0b', fontSize: 11, fontWeight: '500' },
-  previewBottom: {
-    backgroundColor: '#0c0c14', paddingBottom: 40, paddingHorizontal: 16, paddingTop: 12,
+  previewActions: {
+    flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingBottom: 40, paddingTop: 12,
+    backgroundColor: '#0c0c14',
   },
-  captionInput: {
-    padding: 14, backgroundColor: '#141420', borderRadius: 12, color: '#f0f0f0',
-    fontSize: 14, maxHeight: 80, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-    marginBottom: 12,
-  },
-  previewActions: { flexDirection: 'row', gap: 12 },
   retakeBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#27272a', borderRadius: 14, paddingVertical: 14,
