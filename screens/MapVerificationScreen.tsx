@@ -37,6 +37,16 @@ type PotholeData = {
   updated_at: string
 }
 
+type CommunityPhoto = {
+  id: string
+  latitude: number
+  longitude: number
+  detection_status: string
+  worst_severity: string
+  image_url: string
+  formatted_address: string
+}
+
 const COLORS = [
   '#e6194b', '#3cb44b', '#ffe119', '#2563eb', '#f58231',
   '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
@@ -80,11 +90,13 @@ function severityLabel(severity: string): string {
 function buildMapHtml(
   routes: RouteData[],
   potholes: PotholeData[],
+  communityPhotos: CommunityPhoto[],
   viewMode: ViewMode,
   tileKey: string | undefined,
 ): string {
   const showRoutes = viewMode === 'routes' || viewMode === 'both'
   const showPotholes = viewMode === 'potholes' || viewMode === 'both'
+  const showCommunity = viewMode === 'routes' || viewMode === 'both'
   const tileUrl = tileKey
     ? `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${tileKey}`
     : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
@@ -106,6 +118,24 @@ function buildMapHtml(
         image_url: p.image_url,
         color: severityColor(p.worst_severity),
         severityLabel: severityLabel(p.worst_severity),
+      }))
+    : []
+
+  const communityPhotoFeatures = showCommunity
+    ? communityPhotos.map((cp) => ({
+        id: cp.id,
+        lat: cp.latitude,
+        lng: cp.longitude,
+        status: cp.detection_status,
+        severity: cp.worst_severity,
+        image_url: cp.image_url,
+        address: cp.formatted_address,
+        color:
+          cp.detection_status === 'pending'
+            ? '#6b7280'
+            : cp.detection_status === 'processed'
+              ? '#06b6d4'
+              : '#3f3f46',
       }))
     : []
 
@@ -135,6 +165,7 @@ function buildMapHtml(
   var bounds = [];
   var routeData = ${JSON.stringify(routeFeatures)};
   var potholeData = ${JSON.stringify(potholeFeatures)};
+  var communityPhotoData = ${JSON.stringify(communityPhotoFeatures)};
 
   routeData.forEach(function(route) {
     var latlngs = route.coords.map(function(c) { return [c[0], c[1]]; });
@@ -173,6 +204,33 @@ function buildMapHtml(
     bounds.push([p.lat, p.lng]);
   });
 
+  communityPhotoData.forEach(function(cp) {
+    var icon = L.divIcon({
+      className: '',
+      html: '<div style="width:32px;height:32px;border-radius:8px;background:' + cp.color + ';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    });
+
+    var marker = L.marker([cp.lat, cp.lng], { icon: icon }).addTo(map);
+
+    var popupHtml = '<div class="hazard-popup"><strong>Community Photo</strong>';
+    if (cp.image_url) {
+      popupHtml += '<img src="' + cp.image_url + '" style="width:100%;max-width:200px;border-radius:6px;margin:6px 0;" />';
+    }
+    if (cp.address) {
+      popupHtml += '<div style="color:#6b7280;font-size:12px;">' + cp.address + '</div>';
+    }
+    popupHtml += '<div style="margin-top:4px;font-size:11px;color:' + cp.color + ';">Status: ' + cp.status + '</div>';
+    if (cp.severity) {
+      popupHtml += '<div style="font-size:11px;color:#f59e0b;">Severity: ' + cp.severity + '</div>';
+    }
+    popupHtml += '</div>';
+    marker.bindPopup(popupHtml);
+
+    bounds.push([cp.lat, cp.lng]);
+  });
+
   if (bounds.length > 0) {
     map.fitBounds(bounds, { padding: [40, 40] });
   }
@@ -184,6 +242,7 @@ function buildMapHtml(
 export default function MapVerificationScreen({ recordings, onBack }: Props) {
   const [routes, setRoutes] = useState<RouteData[]>([])
   const [potholes, setPotholes] = useState<PotholeData[]>([])
+  const [communityPhotos, setCommunityPhotos] = useState<CommunityPhoto[]>([])
   const [loading, setLoading] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('both')
   const [selectedPothole, setSelectedPothole] = useState<PotholeData | null>(null)
@@ -249,13 +308,32 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
         console.log('[MapScreen] pothole fetch failed:', e)
       }
 
+      try {
+        const { data: photoData, error: photoError } = await supabase
+          .from('community_photos')
+          .select('id, latitude, longitude, detection_status, worst_severity, image_url, formatted_address')
+          .order('created_at', { ascending: false })
+          .limit(100)
+
+        if (photoError) {
+          console.log('[MapScreen] community photo query error:', photoError.message)
+        }
+
+        if (!photoError && photoData) {
+          console.log('[MapScreen] community photo rows:', photoData.length)
+          setCommunityPhotos(photoData)
+        }
+      } catch (e) {
+        console.log('[MapScreen] community photo fetch failed:', e)
+      }
+
       setLoading(false)
     })()
   }, [recordings])
 
   const html = useMemo(
-    () => buildMapHtml(routes, potholes, viewMode, MAPTILER_KEY),
-    [routes, potholes, viewMode],
+    () => buildMapHtml(routes, potholes, communityPhotos, viewMode, MAPTILER_KEY),
+    [routes, potholes, communityPhotos, viewMode],
   )
 
   const totalPoints = routes.reduce((s, r) => s + r.coords.length, 0)
@@ -313,12 +391,17 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
         ))}
       </View>
 
-      {!loading && (routes.length > 0 || potholes.length > 0) && (
+      {!loading && (routes.length > 0 || potholes.length > 0 || communityPhotos.length > 0) && (
         <View style={styles.summaryPanel}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryValue}>{potholes.length}</Text>
               <Text style={styles.summaryLabel}>Potholes</Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryValue}>{communityPhotos.length}</Text>
+              <Text style={styles.summaryLabel}>Photos</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
@@ -334,7 +417,7 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
         </View>
       )}
 
-      {!loading && routes.length === 0 && potholes.length === 0 && (
+      {!loading && routes.length === 0 && potholes.length === 0 && communityPhotos.length === 0 && (
         <View style={styles.emptyOverlay}>
           <Ionicons name="map-outline" size={36} color="#2a2a3a" />
           <Text style={styles.emptyText}>No map data available</Text>
