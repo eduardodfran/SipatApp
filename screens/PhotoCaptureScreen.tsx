@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
+  ActivityIndicator,
   Alert,
   Image,
   StyleSheet,
@@ -23,35 +24,62 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
   const [photo, setPhoto] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [capturing, setCapturing] = useState(false)
   const cameraRef = useRef<any>(null)
+  const locationGranted = useRef(false)
+
+  useEffect(() => {
+    ;(async () => {
+      const { status } = await Location.getForegroundPermissionsAsync()
+      if (status === 'granted') {
+        locationGranted.current = true
+        return
+      }
+      const res = await Location.requestForegroundPermissionsAsync()
+      locationGranted.current = res.status === 'granted'
+    })()
+  }, [])
 
   const takePicture = async () => {
-    if (!cameraRef.current) return
+    if (!cameraRef.current || capturing) return
+    setCapturing(true)
 
-    const { status } = await Location.requestForegroundPermissionsAsync()
-    if (status !== 'granted') {
-      Alert.alert('Location Required', 'We need your location to map the distress.')
-      return
+    try {
+      const photoPromise = cameraRef.current.takePictureAsync({ quality: 0.7 })
+
+      let locPromise: Promise<{ lat: number; lng: number } | null> = Promise.resolve(null)
+      if (locationGranted.current) {
+        locPromise = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+          .then((pos) => ({ lat: pos.coords.latitude, lng: pos.coords.longitude }))
+          .catch(() => null)
+      }
+
+      const [result, loc] = await Promise.all([photoPromise, locPromise])
+
+      setPhoto(result.uri)
+      if (loc) setLocation(loc)
+    } catch {
+      Alert.alert('Error', 'Failed to capture photo.')
+    } finally {
+      setCapturing(false)
     }
-    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
-    setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-
-    const result = await cameraRef.current.takePictureAsync({ quality: 0.8 })
-    setPhoto(result.uri)
   }
 
   const handleSavePending = async () => {
-    if (!photo || !location) return
+    if (!photo || saving) return
+    setSaving(true)
     const post = {
       id: `photo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       imageUri: photo,
       caption,
-      latitude: location.lat,
-      longitude: location.lng,
+      latitude: location?.lat ?? 0,
+      longitude: location?.lng ?? 0,
       createdAt: Date.now(),
       status: 'pending' as const,
     }
     await savePendingPhoto(post)
+    setSaving(false)
     onDone(post.id)
   }
 
@@ -75,8 +103,23 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
   if (photo) {
     return (
       <View style={styles.container}>
-        <View style={styles.previewTop}>
+        <View style={styles.previewHeader}>
+          <TouchableOpacity style={styles.previewCloseBtn} onPress={() => { setPhoto(null); setCaption('') }}>
+            <Ionicons name="close" size={22} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.previewTitle}>Preview</Text>
+          <View style={{ width: 38 }} />
+        </View>
+        <View style={styles.previewImageWrap}>
           <Image source={{ uri: photo }} style={styles.preview} />
+          {!location && (
+            <View style={styles.locationBadge}>
+              <Ionicons name="location-outline" size={12} color="#f59e0b" />
+              <Text style={styles.locationText}>No location</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.previewBottom}>
           <TextInput
             style={styles.captionInput}
             placeholder="Add a caption..."
@@ -86,16 +129,29 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
             multiline
             maxLength={280}
           />
-        </View>
-        <View style={styles.previewActions}>
-          <TouchableOpacity style={styles.retakeBtn} onPress={() => { setPhoto(null); setCaption('') }}>
-            <Ionicons name="refresh" size={20} color="#fff" />
-            <Text style={styles.retakeBtnText}>Retake</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSavePending}>
-            <Ionicons name="save" size={20} color="#0c0c14" />
-            <Text style={styles.saveBtnText}>Save as Pending</Text>
-          </TouchableOpacity>
+          <View style={styles.previewActions}>
+            <TouchableOpacity
+              style={styles.retakeBtn}
+              onPress={() => { setPhoto(null); setCaption(''); setLocation(null) }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="refresh" size={18} color="#fff" />
+              <Text style={styles.retakeBtnText}>Retake</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.saveBtn, saving && { opacity: 0.6 }]}
+              onPress={handleSavePending}
+              activeOpacity={0.7}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator size="small" color="#0c0c14" />
+              ) : (
+                <Ionicons name="checkmark" size={18} color="#0c0c14" />
+              )}
+              <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save as Pending'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     )
@@ -110,10 +166,18 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
           </TouchableOpacity>
           <View style={styles.cameraBottom}>
             <View style={styles.viewfinder} />
-            <TouchableOpacity style={styles.captureBtn} onPress={takePicture}>
-              <View style={styles.captureBtnInner} />
-            </TouchableOpacity>
-            <Text style={styles.cameraHint}>Point at road distress and tap to capture</Text>
+            {capturing ? (
+              <View style={styles.captureBtn}>
+                <ActivityIndicator size="large" color="#e6a817" />
+              </View>
+            ) : (
+              <TouchableOpacity style={styles.captureBtn} onPress={takePicture} activeOpacity={0.8}>
+                <View style={styles.captureBtnInner} />
+              </TouchableOpacity>
+            )}
+            <Text style={styles.cameraHint}>
+              {capturing ? 'Capturing...' : 'Point at road distress and tap to capture'}
+            </Text>
           </View>
         </View>
       </CameraView>
@@ -141,26 +205,48 @@ const styles = StyleSheet.create({
   },
   captureBtnInner: { width: 58, height: 58, borderRadius: 29, backgroundColor: '#e6a817' },
   cameraHint: { color: '#a1a1aa', fontSize: 13, marginTop: 12 },
-  previewTop: { flex: 1 },
-  preview: { flex: 1, resizeMode: 'contain' },
+
+  // Preview
+  previewHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 56, paddingBottom: 12, paddingHorizontal: 16,
+    backgroundColor: '#0c0c14',
+  },
+  previewCloseBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center',
+  },
+  previewTitle: { color: '#f0f0f0', fontSize: 16, fontWeight: '600' },
+  previewImageWrap: { flex: 1, backgroundColor: '#000' },
+  preview: { width: '100%', height: '100%', resizeMode: 'contain' },
+  locationBadge: {
+    position: 'absolute', bottom: 12, left: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)', paddingVertical: 4, paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  locationText: { color: '#f59e0b', fontSize: 11, fontWeight: '500' },
+  previewBottom: {
+    backgroundColor: '#0c0c14', paddingBottom: 40, paddingHorizontal: 16, paddingTop: 12,
+  },
   captionInput: {
-    marginHorizontal: 16, marginTop: 12, padding: 12,
-    backgroundColor: '#141420', borderRadius: 12, color: '#f0f0f0',
+    padding: 14, backgroundColor: '#141420', borderRadius: 12, color: '#f0f0f0',
     fontSize: 14, maxHeight: 80, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    marginBottom: 12,
   },
-  previewActions: {
-    flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 16,
-  },
+  previewActions: { flexDirection: 'row', gap: 12 },
   retakeBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#27272a', borderRadius: 14, paddingVertical: 14,
   },
-  retakeBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  retakeBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   saveBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#06b6d4', borderRadius: 14, paddingVertical: 14,
   },
-  saveBtnText: { color: '#0c0c14', fontSize: 15, fontWeight: '700' },
+  saveBtnText: { color: '#0c0c14', fontSize: 14, fontWeight: '700' },
+
+  // Permission
   permissionWrap: {
     flex: 1, backgroundColor: '#0c0c14', justifyContent: 'center', alignItems: 'center', padding: 40,
   },
