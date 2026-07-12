@@ -30,3 +30,18 @@ export type CommunityPhoto = {
   created_at: string
   reporter_username: string | null
 }
+
+export type LocalPhotoPost = {
+  id: string
+  imageUri: string
+  caption: string
+  latitude: number
+  longitude: number
+  createdAt: number
+  status: 'pending' | 'uploading' | 'uploaded'
+  remoteId?: number
+  imageUrl?: string
+  detection_status?: 'pending' | 'processed' | 'no_detection'
+  confidence?: number
+  class_name?: string
+}

@@ -1,30 +1,27 @@
-// SipatApp/screens/PhotoCaptureScreen.tsx
-
 import { useRef, useState } from 'react'
 import {
-  ActivityIndicator,
   Alert,
   Image,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Location from 'expo-location'
 import { Ionicons } from '@expo/vector-icons'
-import { uploadCommunityPhoto } from '../lib/uploadCommunityPhoto'
+import { savePendingPhoto } from '../lib/pendingPhotos'
 
 type Props = {
-  userId: string
-  onDone: () => void
+  onDone: (postId?: string) => void
   onCancel: () => void
 }
 
-export default function PhotoCaptureScreen({ userId, onDone, onCancel }: Props) {
+export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
   const [permission, requestPermission] = useCameraPermissions()
   const [photo, setPhoto] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
+  const [caption, setCaption] = useState('')
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
   const cameraRef = useRef<any>(null)
 
@@ -43,19 +40,19 @@ export default function PhotoCaptureScreen({ userId, onDone, onCancel }: Props) 
     setPhoto(result.uri)
   }
 
-  const handleUpload = async () => {
+  const handleSavePending = async () => {
     if (!photo || !location) return
-    setUploading(true)
-    try {
-      await uploadCommunityPhoto(userId, photo, location.lat, location.lng)
-      Alert.alert('Uploaded', 'Your photo has been submitted for review.', [
-        { text: 'OK', onPress: onDone },
-      ])
-    } catch (e: any) {
-      Alert.alert('Upload Failed', e.message)
-    } finally {
-      setUploading(false)
+    const post = {
+      id: `photo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      imageUri: photo,
+      caption,
+      latitude: location.lat,
+      longitude: location.lng,
+      createdAt: Date.now(),
+      status: 'pending' as const,
     }
+    await savePendingPhoto(post)
+    onDone(post.id)
   }
 
   if (!permission) return <View />
@@ -78,24 +75,28 @@ export default function PhotoCaptureScreen({ userId, onDone, onCancel }: Props) 
   if (photo) {
     return (
       <View style={styles.container}>
-        <Image source={{ uri: photo }} style={styles.preview} />
-        {uploading ? (
-          <View style={styles.uploadingWrap}>
-            <ActivityIndicator size="large" color="#e6a817" />
-            <Text style={styles.uploadingText}>Uploading...</Text>
-          </View>
-        ) : (
-          <View style={styles.previewActions}>
-            <TouchableOpacity style={styles.retakeBtn} onPress={() => setPhoto(null)}>
-              <Ionicons name="refresh" size={20} color="#fff" />
-              <Text style={styles.retakeBtnText}>Retake</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.uploadBtn} onPress={handleUpload}>
-              <Ionicons name="cloud-upload" size={20} color="#0c0c14" />
-              <Text style={styles.uploadBtnText}>Submit Photo</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        <View style={styles.previewTop}>
+          <Image source={{ uri: photo }} style={styles.preview} />
+          <TextInput
+            style={styles.captionInput}
+            placeholder="Add a caption..."
+            placeholderTextColor="#52525b"
+            value={caption}
+            onChangeText={setCaption}
+            multiline
+            maxLength={280}
+          />
+        </View>
+        <View style={styles.previewActions}>
+          <TouchableOpacity style={styles.retakeBtn} onPress={() => { setPhoto(null); setCaption('') }}>
+            <Ionicons name="refresh" size={20} color="#fff" />
+            <Text style={styles.retakeBtnText}>Retake</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSavePending}>
+            <Ionicons name="save" size={20} color="#0c0c14" />
+            <Text style={styles.saveBtnText}>Save as Pending</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     )
   }
@@ -140,22 +141,26 @@ const styles = StyleSheet.create({
   },
   captureBtnInner: { width: 58, height: 58, borderRadius: 29, backgroundColor: '#e6a817' },
   cameraHint: { color: '#a1a1aa', fontSize: 13, marginTop: 12 },
+  previewTop: { flex: 1 },
   preview: { flex: 1, resizeMode: 'contain' },
+  captionInput: {
+    marginHorizontal: 16, marginTop: 12, padding: 12,
+    backgroundColor: '#141420', borderRadius: 12, color: '#f0f0f0',
+    fontSize: 14, maxHeight: 80, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  },
   previewActions: {
-    flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingBottom: 40,
+    flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 16,
   },
   retakeBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#27272a', borderRadius: 14, paddingVertical: 14,
   },
   retakeBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  uploadBtn: {
+  saveBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#e6a817', borderRadius: 14, paddingVertical: 14,
+    backgroundColor: '#06b6d4', borderRadius: 14, paddingVertical: 14,
   },
-  uploadBtnText: { color: '#0c0c14', fontSize: 15, fontWeight: '700' },
-  uploadingWrap: { alignItems: 'center', paddingBottom: 40 },
-  uploadingText: { color: '#a1a1aa', fontSize: 14, marginTop: 12 },
+  saveBtnText: { color: '#0c0c14', fontSize: 15, fontWeight: '700' },
   permissionWrap: {
     flex: 1, backgroundColor: '#0c0c14', justifyContent: 'center', alignItems: 'center', padding: 40,
   },

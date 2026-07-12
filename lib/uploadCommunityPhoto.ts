@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { FASTAPI_URL } from './env'
 
-type UploadResult = {
+export type UploadResult = {
   photoId: number
   imageUrl: string
 }
@@ -11,6 +11,7 @@ export async function uploadCommunityPhoto(
   imageUri: string,
   latitude: number,
   longitude: number,
+  caption?: string,
 ): Promise<UploadResult> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Not authenticated')
@@ -23,6 +24,7 @@ export async function uploadCommunityPhoto(
   } as any)
   formData.append('latitude', String(latitude))
   formData.append('longitude', String(longitude))
+  if (caption) formData.append('caption', caption)
 
   const resp = await fetch(`${FASTAPI_URL}/community-photo/upload`, {
     method: 'POST',

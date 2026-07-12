@@ -323,17 +323,23 @@ export default function DashboardScreen({
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Record FAB */}
-      <TouchableOpacity
-        style={styles.recordFab}
-        onPress={onRecord}
-        activeOpacity={0.8}
-      >
-        <View style={styles.fabGlow} />
-        <View style={styles.fabOuter}>
-          <Ionicons name="radio-button-on" size={28} color="#0c0c14" />
-        </View>
-      </TouchableOpacity>
+      {/* Bottom Action Bar */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity style={styles.fabBtn} onPress={onRecord} activeOpacity={0.8}>
+          <View style={[styles.fabGlow, { backgroundColor: 'rgba(222, 38, 38, 0.15)' }]} />
+          <View style={[styles.fabOuter, { backgroundColor: '#dc2626' }]}>
+            <Ionicons name="radio-button-on" size={26} color="#0c0c14" />
+          </View>
+          <Text style={styles.fabLabel}>Record</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.fabBtn} onPress={onPhoto} activeOpacity={0.8}>
+          <View style={[styles.fabGlow, { backgroundColor: 'rgba(6, 182, 212, 0.15)' }]} />
+          <View style={[styles.fabOuter, { backgroundColor: '#06b6d4' }]}>
+            <Ionicons name="camera" size={26} color="#0c0c14" />
+          </View>
+          <Text style={styles.fabLabel}>Photo</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   )
 }
@@ -525,10 +531,11 @@ const styles = StyleSheet.create({
   },
   actionsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
   actionCard: {
-    flex: 1,
+    width: '31%',
     backgroundColor: '#141420',
     borderRadius: 16,
     padding: 14,
@@ -692,31 +699,43 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Record FAB
-  recordFab: {
+  // Bottom Action Bar
+  bottomBar: {
     position: 'absolute',
     bottom: 36,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 24,
     alignSelf: 'center',
-    width: 68,
-    height: 68,
+  },
+  fabBtn: {
+    alignItems: 'center',
+    width: 76,
   },
   fabGlow: {
     position: 'absolute',
-    inset: -6,
+    top: -4,
+    left: 4,
+    right: 4,
+    height: 76,
     borderRadius: 40,
-    backgroundColor: 'rgba(222, 38, 38, 0.15)',
   },
   fabOuter: {
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: '#dc2626',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#dc2626',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 14,
-    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabLabel: {
+    color: '#a1a1aa',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 6,
   },
 })
