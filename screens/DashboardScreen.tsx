@@ -20,6 +20,7 @@ type Props = {
   uploadingId: string | null
   processingId: string | null
   onRecord: () => void
+  onPhoto: () => void
   onMap: () => void
   onDistress: () => void
   onUpload: (recording: Recording) => void | Promise<void>
@@ -41,6 +42,7 @@ export default function DashboardScreen({
   uploadingId,
   processingId,
   onRecord,
+  onPhoto,
   onMap,
   onDistress,
   onUpload,
@@ -197,6 +199,13 @@ export default function DashboardScreen({
               </View>
               <Text style={styles.actionLabel}>Distress</Text>
               <Text style={styles.actionSub}>All detections</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionCard} onPress={onPhoto} activeOpacity={0.7}>
+              <View style={[styles.actionIcon, { backgroundColor: 'rgba(6, 182, 212, 0.12)' }]}>
+                <Ionicons name="camera" size={24} color="#06b6d4" />
+              </View>
+              <Text style={styles.actionLabel}>Report Distress</Text>
+              <Text style={styles.actionSub}>Snap a photo</Text>
             </TouchableOpacity>
           </View>
         </View>

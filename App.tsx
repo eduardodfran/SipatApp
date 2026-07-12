@@ -12,6 +12,7 @@ import DashboardScreen from './screens/DashboardScreen'
 import CameraScreen from './screens/CameraScreen'
 import MapVerificationScreen from './screens/MapVerificationScreen'
 import DistressListScreen from './screens/DistressListScreen'
+import PhotoCaptureScreen from './screens/PhotoCaptureScreen'
 import OnboardingScreen from './screens/OnboardingScreen'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
@@ -19,7 +20,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'camera' | 'map' | 'distress'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'camera' | 'photo' | 'map' | 'distress'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -254,6 +255,7 @@ export default function App() {
           onRefresh={handleRefresh}
           refreshing={refreshing}
           onRecord={() => setScreen('camera')}
+          onPhoto={() => setScreen('photo')}
           onMap={() => setScreen('map')}
           onDistress={() => setScreen('distress')}
           onUpload={handleUploadRecording}
@@ -267,6 +269,13 @@ export default function App() {
             addRecording(rec)
             setScreen('dashboard')
           }}
+          onCancel={() => setScreen('dashboard')}
+        />
+      )}
+      {screen === 'photo' && (
+        <PhotoCaptureScreen
+          userId={user?.id ?? ''}
+          onDone={() => setScreen('dashboard')}
           onCancel={() => setScreen('dashboard')}
         />
       )}
