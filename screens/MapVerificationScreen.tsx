@@ -3,9 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { WebView, WebViewMessageEvent } from 'react-native-webview'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
-import { usePotholeDetectors } from '../lib/usePotholeDetectors'
 import type { Recording } from '../lib/types'
-import PotholeDetailSheet from '../components/PotholeDetailSheet'
 
 type ViewMode = 'routes' | 'potholes' | 'both'
 
@@ -35,6 +33,16 @@ type PotholeData = {
   image_url: string | null
   status: string
   updated_at: string
+  street: string | null
+  barangay: string | null
+  city: string | null
+  province: string | null
+  region: string | null
+  country: string | null
+  formatted_address: string | null
+  citizen_first_reported_at: string | null
+  latest_activity_at: string | null
+  detectors_count: number
 }
 
 type CommunityPhoto = {
@@ -103,6 +111,8 @@ function buildMapHtml(
   communityPhotos: CommunityPhoto[],
   viewMode: ViewMode,
   tileKey: string | undefined,
+  supabaseUrl: string,
+  supabaseAnonKey: string,
 ): string {
   const showRoutes = viewMode === 'routes' || viewMode === 'both'
   const showPotholes = viewMode === 'potholes' || viewMode === 'both'
@@ -127,7 +137,17 @@ function buildMapHtml(
         hits: p.total_detection_hits,
         image_url: p.image_url,
         color: severityColor(p.worst_severity),
-        severityLabel: severityLabel(p.worst_severity),
+        status: p.status,
+        street: p.street,
+        barangay: p.barangay,
+        city: p.city,
+        province: p.province,
+        region: p.region,
+        country: p.country,
+        formatted_address: p.formatted_address,
+        citizen_first_reported_at: p.citizen_first_reported_at,
+        latest_activity_at: p.latest_activity_at,
+        detectors_count: p.detectors_count ?? 0,
       }))
     : []
 
@@ -178,6 +198,8 @@ function buildMapHtml(
 <body>
 <div id="map"></div>
 <script>
+  var SUPABASE_URL = '${supabaseUrl}';
+  var SUPABASE_KEY = '${supabaseAnonKey}';
   var map = L.map('map').setView([14.5547, 121.0509], 13);
   L.tileLayer('${tileUrl}', {
     maxZoom: 19,
@@ -188,6 +210,109 @@ function buildMapHtml(
   var routeData = ${JSON.stringify(routeFeatures)};
   var potholeData = ${JSON.stringify(potholeFeatures)};
   var communityPhotoData = ${JSON.stringify(communityPhotoFeatures)};
+
+  function potholePopupHtml(p, detectors, comments) {
+    var severityColors = { Severe: '#ef4444', Moderate: '#eab308', Minor: '#22c55e', Unknown: '#6b7280' };
+    var statusColors = { reported: '#3b82f6', confirmed: '#f59e0b', fixed: '#22c55e' };
+    var statusLabels = { reported: 'Reported', confirmed: 'Confirmed', fixed: 'Fixed' };
+    var sevColor = severityColors[p.severity] || '#6b7280';
+    var stColor = statusColors[p.status] || '#3b82f6';
+    var stLabel = statusLabels[p.status] || 'Reported';
+
+    var addrLines = [];
+    if (p.street) addrLines.push(p.street);
+    if (p.barangay) addrLines.push(p.barangay);
+    if (p.city) addrLines.push(p.city);
+    if (p.province) addrLines.push(p.province);
+    if (p.region && p.region !== p.province) addrLines.push(p.region);
+    if (p.country) addrLines.push(p.country);
+
+    var hits = p.hits || 0;
+    var conf;
+    if (hits >= 10) conf = { label: 'High', color: '#22c55e', percent: 100 };
+    else if (hits >= 5) conf = { label: 'Medium', color: '#f59e0b', percent: 65 };
+    else if (hits >= 2) conf = { label: 'Low', color: '#f59e0b', percent: 35 };
+    else conf = { label: 'Unverified', color: '#71717a', percent: 15 };
+
+    var html = '<div style="min-width:220px;font-family:system-ui,sans-serif;">';
+
+    if (p.image_url) {
+      html += '<img src="' + p.image_url + '" style="width:100%;height:160px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
+    }
+
+    html += '<div style="display:flex;gap:6px;margin-bottom:10px;">';
+    html += '<span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;color:' + sevColor + ';background:' + sevColor + '15;">' + p.severity + '</span>';
+    html += '<span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;color:' + stColor + ';background:' + stColor + '15;">' + stLabel + '</span>';
+    html += '</div>';
+
+    html += '<div style="font-size:12px;color:#a1a1aa;margin-bottom:8px;">';
+    html += 'Confirmed by <span style="color:#e4e4e7;font-weight:600;">' + (p.detectors_count || 0) + '</span> detector' + ((p.detectors_count || 0) !== 1 ? 's' : '');
+    html += '</div>';
+
+    html += '<div style="margin-bottom:10px;">';
+    html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">';
+    html += '<span style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.1em;font-weight:600;">Confidence</span>';
+    html += '<span style="font-size:11px;font-weight:600;color:' + conf.color + ';">' + conf.label + '</span>';
+    html += '</div>';
+    html += '<div style="height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">';
+    html += '<div style="height:100%;border-radius:2px;background:' + conf.color + ';width:' + conf.percent + '%;"></div>';
+    html += '</div></div>';
+
+    if (addrLines.length > 0) {
+      html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+      for (var a = 0; a < addrLines.length; a++) {
+        html += '<div style="font-size:12px;color:#e4e4e7;line-height:1.5;">' + addrLines[a] + '</div>';
+      }
+      html += '</div>';
+    } else {
+      html += '<div style="font-size:11px;color:#6b7280;margin-bottom:8px;">' + p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) + '</div>';
+    }
+
+    html += '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">';
+    html += '<div><span style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">First reported</span><br/><span style="font-size:12px;color:#e4e4e7;">' + (p.citizen_first_reported_at ? new Date(p.citizen_first_reported_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—') + '</span></div>';
+    html += '<div style="text-align:right;"><span style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Last activity</span><br/><span style="font-size:12px;color:#e4e4e7;">' + (p.latest_activity_at ? new Date(p.latest_activity_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—') + '</span></div>';
+    html += '</div>';
+
+    if (detectors && detectors.length > 0) {
+      html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+      html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Detected by (' + detectors.length + ')</div>';
+      var maxDetectors = detectors.slice(0, 5);
+      for (var d = 0; d < maxDetectors.length; d++) {
+        var det = maxDetectors[d];
+        var initial = (det.username || det.full_name || '?').charAt(0).toUpperCase();
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">';
+        html += '<div style="width:24px;height:24px;border-radius:12px;background:rgba(230,168,23,0.15);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#e6a817;flex-shrink:0;">' + initial + '</div>';
+        html += '<span style="font-size:12px;color:#e4e4e7;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (det.username || det.full_name || 'Unknown') + '</span>';
+        html += '<span style="font-size:10px;color:#71717a;flex-shrink:0;">' + new Date(det.detected_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</span>';
+        html += '</div>';
+      }
+      if (detectors.length > 5) {
+        html += '<div style="font-size:11px;color:#71717a;text-align:center;padding-top:4px;">and ' + (detectors.length - 5) + ' more</div>';
+      }
+      html += '</div>';
+    }
+
+    if (comments && comments.length > 0) {
+      html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+      html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Detection comments (' + comments.length + ')</div>';
+      var maxComments = comments.slice(0, 3);
+      for (var c = 0; c < maxComments.length; c++) {
+        var com = maxComments[c];
+        html += '<div style="display:flex;gap:6px;padding:4px 0;">';
+        html += '<div style="width:22px;height:22px;border-radius:11px;background:rgba(230,168,23,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#e6a817;flex-shrink:0;margin-top:1px;">' + (com.username || '?').charAt(0).toUpperCase() + '</div>';
+        html += '<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#e4e4e7;">' + (com.username || 'Unknown') + '</div><div style="font-size:11px;color:#a1a1aa;margin-top:1px;">' + com.body + '</div></div>';
+        html += '</div>';
+      }
+      if (comments.length > 3) {
+        html += '<div style="font-size:11px;color:#71717a;text-align:center;padding-top:4px;">View all ' + comments.length + ' comments</div>';
+      }
+      html += '</div>';
+    }
+
+    html += '<div style="font-size:10px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:6px;text-align:center;">Hazard #' + p.id + '</div>';
+    html += '</div>';
+    return html;
+  }
 
   routeData.forEach(function(route) {
     var latlngs = route.coords.map(function(c) { return [c[0], c[1]]; });
@@ -211,16 +336,40 @@ function buildMapHtml(
     var label = p.severity === 'Severe' ? '!' : p.hits.toString();
     marker.bindTooltip(label, { permanent: true, direction: 'center', className: 'hazard-label' });
 
-    marker.on('click', function() {
-      window.ReactNativeWebView.postMessage(JSON.stringify({
-        type: 'pothole_tap',
-        id: p.id,
-        worst_severity: p.severity,
-        total_detection_hits: p.hits,
-        image_url: p.image_url,
-        consolidated_latitude: p.lat,
-        consolidated_longitude: p.lng,
-      }));
+    marker.bindPopup(potholePopupHtml(p, null, null), { maxWidth: 300, className: 'hazard-popup' });
+
+    marker.on('popupopen', function() {
+      var popup = marker.getPopup();
+      if (!popup) return;
+
+      var loadingHtml = '<div style="min-width:220px;font-family:system-ui,sans-serif;padding:20px;text-align:center;color:#6b7280;">Loading pothole data...</div>';
+      popup.setContent(loadingHtml);
+
+      fetch(SUPABASE_URL + '/rest/v1/rpc/get_pothole_detectors', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_lat: p.lat, p_lng: p.lng })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(detData) {
+        var detectors = Array.isArray(detData) ? detData : [];
+        fetch(SUPABASE_URL + '/rest/v1/rpc/get_detection_comments', {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_pothole_id: parseInt(p.id) })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(comData) {
+          var comments = Array.isArray(comData) ? comData : [];
+          popup.setContent(potholePopupHtml(p, detectors, comments));
+        })
+        .catch(function() {
+          popup.setContent(potholePopupHtml(p, detectors, []));
+        });
+      })
+      .catch(function() {
+        popup.setContent(potholePopupHtml(p, [], []));
+      });
     });
 
     bounds.push([p.lat, p.lng]);
@@ -290,19 +439,16 @@ function buildMapHtml(
 </html>`
 }
 
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
+
 export default function MapVerificationScreen({ recordings, onBack }: Props) {
   const [routes, setRoutes] = useState<RouteData[]>([])
   const [potholes, setPotholes] = useState<PotholeData[]>([])
   const [communityPhotos, setCommunityPhotos] = useState<CommunityPhoto[]>([])
   const [loading, setLoading] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('both')
-  const [selectedPothole, setSelectedPothole] = useState<PotholeData | null>(null)
   const webViewRef = useRef<WebView>(null)
-
-  const { detectors, loading: detectorsLoading } = usePotholeDetectors(
-    selectedPothole?.consolidated_latitude ?? null,
-    selectedPothole?.consolidated_longitude ?? null,
-  )
 
   useEffect(() => {
     ;(async () => {
@@ -352,6 +498,16 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
               image_url: p.image_url ?? null,
               status: String(p.status ?? 'queued'),
               updated_at: String(p.updated_at ?? ''),
+              street: p.street ?? null,
+              barangay: p.barangay ?? null,
+              city: p.city ?? null,
+              province: p.province ?? null,
+              region: p.region ?? null,
+              country: p.country ?? null,
+              formatted_address: p.formatted_address ?? null,
+              citizen_first_reported_at: p.citizen_first_reported_at ?? null,
+              latest_activity_at: p.latest_activity_at ?? null,
+              detectors_count: Number(p.detectors_count ?? 0),
             })),
           )
         }
@@ -383,34 +539,14 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
   }, [recordings])
 
   const html = useMemo(
-    () => buildMapHtml(routes, potholes, communityPhotos, viewMode, MAPTILER_KEY),
+    () => buildMapHtml(routes, potholes, communityPhotos, viewMode, MAPTILER_KEY, SUPABASE_URL, SUPABASE_ANON_KEY),
     [routes, potholes, communityPhotos, viewMode],
   )
 
   const totalPoints = routes.reduce((s, r) => s + r.coords.length, 0)
 
-  const handleWebViewMessage = useCallback((event: WebViewMessageEvent) => {
-    try {
-      const data = JSON.parse(event.nativeEvent.data)
-      if (data.type === 'pothole_tap') {
-        setSelectedPothole({
-          pothole_id: data.id,
-          worst_severity: data.worst_severity,
-          total_detection_hits: data.total_detection_hits,
-          image_url: data.image_url,
-          consolidated_latitude: data.consolidated_latitude,
-          consolidated_longitude: data.consolidated_longitude,
-          status: '',
-          updated_at: '',
-        })
-      }
-    } catch {
-      // ignore non-JSON messages
-    }
-  }, [])
-
-  const handleCloseSheet = useCallback(() => {
-    setSelectedPothole(null)
+  const handleWebViewMessage = useCallback((_event: WebViewMessageEvent) => {
+    // no-op — pothole popups rendered inside WebView now
   }, [])
 
   return (
@@ -483,14 +619,6 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
           </View>
         </View>
       )}
-
-      <PotholeDetailSheet
-        visible={selectedPothole !== null}
-        pothole={selectedPothole}
-        detectors={detectors}
-        detectorsLoading={detectorsLoading}
-        onClose={handleCloseSheet}
-      />
     </View>
   )
 }
