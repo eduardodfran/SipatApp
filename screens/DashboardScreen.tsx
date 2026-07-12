@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import type { Recording } from '../lib/types'
-import PhotoFeedSection from '../components/PhotoFeedSection'
+import AppTabBar from '../components/AppTabBar'
 
 type Props = {
   recordings: Recording[]
@@ -29,6 +29,7 @@ type Props = {
   refreshing: boolean
   feedRefreshKey: number
   userId: string
+  onTabChange: (tab: 'dashboard' | 'feed') => void
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -53,6 +54,7 @@ export default function DashboardScreen({
   refreshing,
   feedRefreshKey,
   userId,
+  onTabChange,
 }: Props) {
   const handleLogout = () => {
     supabase.auth.signOut()
@@ -85,6 +87,8 @@ export default function DashboardScreen({
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
+
+      <AppTabBar active="dashboard" onTabChange={onTabChange} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -315,11 +319,6 @@ export default function DashboardScreen({
               )
             })
           )}
-        </View>
-
-        {/* Community Feed */}
-        <View style={styles.section}>
-          <PhotoFeedSection refreshKey={feedRefreshKey} userId={userId} />
         </View>
 
         <View style={{ height: 100 }} />

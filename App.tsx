@@ -13,6 +13,7 @@ import CameraScreen from './screens/CameraScreen'
 import MapVerificationScreen from './screens/MapVerificationScreen'
 import DistressListScreen from './screens/DistressListScreen'
 import PhotoCaptureScreen from './screens/PhotoCaptureScreen'
+import FeedScreen from './screens/FeedScreen'
 import OnboardingScreen from './screens/OnboardingScreen'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
@@ -20,7 +21,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'camera' | 'photo' | 'map' | 'distress'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'camera' | 'photo' | 'map' | 'distress'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -262,6 +263,15 @@ export default function App() {
           onDelete={handleDeleteRecording}
           feedRefreshKey={feedRefreshKey}
           userId={user?.id ?? ''}
+          onTabChange={(tab) => setScreen(tab)}
+        />
+      )}
+      {screen === 'feed' && (
+        <FeedScreen
+          feedRefreshKey={feedRefreshKey}
+          userId={user?.id ?? ''}
+          onTabChange={(tab) => setScreen(tab)}
+          onPhoto={() => setScreen('photo')}
         />
       )}
       {screen === 'camera' && (
