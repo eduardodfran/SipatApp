@@ -11,9 +11,8 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
-import { useCommunityHazards } from '../lib/useCommunityHazards'
-import CommunityHazardsSection from '../components/CommunityHazardsSection'
 import type { Recording } from '../lib/types'
+import PhotoFeedSection from '../components/PhotoFeedSection'
 
 type Props = {
   recordings: Recording[]
@@ -28,6 +27,8 @@ type Props = {
   onDelete: (recording: Recording) => void
   onRefresh: () => void
   refreshing: boolean
+  feedRefreshKey: number
+  userId: string
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -50,6 +51,8 @@ export default function DashboardScreen({
   onDelete,
   onRefresh,
   refreshing,
+  feedRefreshKey,
+  userId,
 }: Props) {
   const handleLogout = () => {
     supabase.auth.signOut()
@@ -61,7 +64,6 @@ export default function DashboardScreen({
   const failed = recordings.filter((r) => r.status === 'failed').length
   const pending = recordings.filter((r) => r.status === 'queued').length
   const recentRecordings = recordings.slice(0, 3)
-  const { hazards, loading: hazardsLoading } = useCommunityHazards()
 
   const formatDate = (ts: number) => {
     const d = new Date(ts)
@@ -315,9 +317,9 @@ export default function DashboardScreen({
           )}
         </View>
 
-        {/* Address Analytics */}
+        {/* Community Feed */}
         <View style={styles.section}>
-          <CommunityHazardsSection hazards={hazards} loading={hazardsLoading} />
+          <PhotoFeedSection refreshKey={feedRefreshKey} userId={userId} />
         </View>
 
         <View style={{ height: 100 }} />

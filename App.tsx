@@ -29,6 +29,7 @@ export default function App() {
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [feedRefreshKey, setFeedRefreshKey] = useState(0)
 
   useEffect(() => {
     ;(async () => {
@@ -259,6 +260,8 @@ export default function App() {
           onUpload={handleUploadRecording}
           onProcess={handleProcessRecording}
           onDelete={handleDeleteRecording}
+          feedRefreshKey={feedRefreshKey}
+          userId={user?.id ?? ''}
         />
       )}
       {screen === 'camera' && (
@@ -272,8 +275,10 @@ export default function App() {
       )}
       {screen === 'photo' && (
         <PhotoCaptureScreen
-          userId={user?.id ?? ''}
-          onDone={() => setScreen('dashboard')}
+          onDone={() => {
+            setFeedRefreshKey((k) => k + 1)
+            setScreen('dashboard')
+          }}
           onCancel={() => setScreen('dashboard')}
         />
       )}
