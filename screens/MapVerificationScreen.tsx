@@ -309,9 +309,122 @@ function buildMapHtml(
       html += '</div>';
     }
 
+    // Verification buttons
+    var verifyCount = 0;
+    if (comments) {
+      for (var ci = 0; ci < comments.length; ci++) {
+        if (comments[ci].body && comments[ci].body.indexOf('✅') !== -1) verifyCount++;
+      }
+    }
+    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Is this hazard still here?</div>';
+    html += '<div style="display:flex;gap:6px;margin-bottom:4px;">';
+    html += '<button id="verify-stillhere-' + p.id + '" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;border-radius:6px;border:1px solid rgba(34,197,94,0.2);background:rgba(34,197,94,0.05);color:#22c55e;font-size:11px;font-weight:600;cursor:pointer;outline:none;">Still here</button>';
+    html += '<button id="verify-fixed-' + p.id + '" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;border-radius:6px;border:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.05);color:#ef4444;font-size:11px;font-weight:600;cursor:pointer;outline:none;">Fixed</button>';
+    html += '</div>';
+    html += '<div style="font-size:10px;color:#71717a;text-align:center;">' + verifyCount + ' community verification' + (verifyCount !== 1 ? 's' : '') + '</div>';
+    html += '</div>';
+
+    // Comment form
+    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="display:flex;gap:6px;">';
+    html += '<input id="comment-input-' + p.id + '" type="text" placeholder="Write a comment..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:#0c0c14;color:#e4e4e7;font-size:12px;outline:none;min-width:0;" />';
+    html += '<button id="comment-send-' + p.id + '" style="padding:6px 12px;border-radius:6px;background:rgba(230,168,23,0.15);color:#e6a817;font-size:11px;font-weight:700;border:none;cursor:pointer;outline:none;">Send</button>';
+    html += '</div>';
+    html += '</div>';
+
     html += '<div style="font-size:10px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:6px;text-align:center;">Hazard #' + p.id + '</div>';
     html += '</div>';
     return html;
+  }
+
+  function loadAndRenderPothole(marker, p) {
+    var popup = marker.getPopup();
+    if (!popup) return;
+
+    var loadingHtml = '<div style="min-width:220px;font-family:system-ui,sans-serif;padding:20px;text-align:center;color:#6b7280;">Loading pothole data...</div>';
+    popup.setContent(loadingHtml);
+
+    function loadAndRender() {
+      fetch(SUPABASE_URL + '/rest/v1/rpc/get_pothole_detectors', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_lat: p.lat, p_lng: p.lng })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(detData) {
+        var detectors = Array.isArray(detData) ? detData : [];
+        fetch(SUPABASE_URL + '/rest/v1/rpc/get_detection_comments', {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_pothole_id: parseInt(p.id) })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(comData) {
+          var comments = Array.isArray(comData) ? comData : [];
+          var html = potholePopupHtml(p, detectors, comments);
+          popup.setContent(html);
+          setTimeout(function() {
+            attachPotholeHandlers(marker, p);
+          }, 0);
+        })
+        .catch(function() {
+          var html = potholePopupHtml(p, detectors, []);
+          popup.setContent(html);
+          setTimeout(function() { attachPotholeHandlers(marker, p); }, 0);
+        });
+      })
+      .catch(function() {
+        var html = potholePopupHtml(p, [], []);
+        popup.setContent(html);
+        setTimeout(function() { attachPotholeHandlers(marker, p); }, 0);
+      });
+    }
+
+    function attachPotholeHandlers(marker, p) {
+      var stillHereBtn = document.getElementById('verify-stillhere-' + p.id);
+      var fixedBtn = document.getElementById('verify-fixed-' + p.id);
+      var commentInput = document.getElementById('comment-input-' + p.id);
+      var commentSend = document.getElementById('comment-send-' + p.id);
+
+      function doVerify(body) {
+        fetch(SUPABASE_URL + '/rest/v1/rpc/create_detection_comment', {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_pothole_id: parseInt(p.id), p_body: body })
+        }).then(function() { loadAndRender(); });
+      }
+
+      if (stillHereBtn) stillHereBtn.onclick = function() { doVerify('✅ Still here'); };
+      if (fixedBtn) fixedBtn.onclick = function() { doVerify('✅ Fixed'); };
+      if (commentSend && commentInput) {
+        var sendComment = function() {
+          var text = commentInput.value.trim();
+          if (!text) return;
+          commentSend.textContent = '...';
+          commentInput.disabled = true;
+          fetch(SUPABASE_URL + '/rest/v1/rpc/create_detection_comment', {
+            method: 'POST',
+            headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p_pothole_id: parseInt(p.id), p_body: text })
+          }).then(function() {
+            commentInput.value = '';
+            commentInput.disabled = false;
+            commentSend.textContent = 'Send';
+            loadAndRender();
+          }).catch(function() {
+            commentInput.disabled = false;
+            commentSend.textContent = 'Send';
+          });
+        };
+        commentSend.onclick = sendComment;
+        commentInput.onkeydown = function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendComment(); }
+        };
+      }
+    }
+
+    loadAndRender();
   }
 
   routeData.forEach(function(route) {
@@ -339,37 +452,7 @@ function buildMapHtml(
     marker.bindPopup(potholePopupHtml(p, null, null), { maxWidth: 300, className: 'hazard-popup' });
 
     marker.on('popupopen', function() {
-      var popup = marker.getPopup();
-      if (!popup) return;
-
-      var loadingHtml = '<div style="min-width:220px;font-family:system-ui,sans-serif;padding:20px;text-align:center;color:#6b7280;">Loading pothole data...</div>';
-      popup.setContent(loadingHtml);
-
-      fetch(SUPABASE_URL + '/rest/v1/rpc/get_pothole_detectors', {
-        method: 'POST',
-        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_lat: p.lat, p_lng: p.lng })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(detData) {
-        var detectors = Array.isArray(detData) ? detData : [];
-        fetch(SUPABASE_URL + '/rest/v1/rpc/get_detection_comments', {
-          method: 'POST',
-          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_pothole_id: parseInt(p.id) })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(comData) {
-          var comments = Array.isArray(comData) ? comData : [];
-          popup.setContent(potholePopupHtml(p, detectors, comments));
-        })
-        .catch(function() {
-          popup.setContent(potholePopupHtml(p, detectors, []));
-        });
-      })
-      .catch(function() {
-        popup.setContent(potholePopupHtml(p, [], []));
-      });
+      loadAndRenderPothole(marker, p);
     });
 
     bounds.push([p.lat, p.lng]);
