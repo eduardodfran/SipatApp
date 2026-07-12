@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import {
-  Animated,
   Dimensions,
   NativeSyntheticEvent,
   ScrollView,
@@ -10,25 +9,28 @@ import {
   View,
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import RecordRideSvg from '../assets/onboarding/record-ride.svg'
+import CommunitySvg from '../assets/onboarding/community.svg'
+import RealtimeMapSvg from '../assets/onboarding/realtime-map.svg'
 
 const { width } = Dimensions.get('window')
 const STORAGE_KEY = '@sipat_onboarding_seen'
 
 const slides = [
   {
-    icon: '🎥',
+    Illustration: RecordRideSvg,
     title: 'Record Your Ride',
     subtitle:
       'AI-powered pothole detection analyzes your ride footage automatically',
   },
   {
-    icon: '👥',
+    Illustration: CommunitySvg,
     title: 'Community-Powered',
     subtitle:
       'Citizens verify, comment on, and report hazards together',
   },
   {
-    icon: '🗺️',
+    Illustration: RealtimeMapSvg,
     title: 'See Real-Time Hazards',
     subtitle:
       'View live road hazard maps and help make roads safer',
@@ -76,7 +78,9 @@ export default function OnboardingScreen({ onDone }: Props) {
       >
         {slides.map((slide, i) => (
           <View key={i} style={styles.slide}>
-            <Text style={styles.icon}>{slide.icon}</Text>
+            <View style={styles.illustrationWrap}>
+              <slide.Illustration width={240} height={240} />
+            </View>
             <Text style={styles.title}>{slide.title}</Text>
             <Text style={styles.subtitle}>{slide.subtitle}</Text>
           </View>
@@ -132,9 +136,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  icon: {
-    fontSize: 80,
-    marginBottom: 24,
+  illustrationWrap: {
+    marginBottom: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 26,

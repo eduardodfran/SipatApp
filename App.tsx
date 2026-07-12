@@ -32,6 +32,8 @@ export default function App() {
   useEffect(() => {
     ;(async () => {
       try {
+        // TODO: remove after confirming onboarding works
+        await AsyncStorage.removeItem('@sipat_onboarding_seen')
         const onboardingSeen = await AsyncStorage.getItem('@sipat_onboarding_seen')
 
         const { data } = await supabase.auth.getSession()
