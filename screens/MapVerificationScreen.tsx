@@ -45,6 +45,16 @@ type CommunityPhoto = {
   worst_severity: string
   image_url: string
   formatted_address: string
+  street: string
+  barangay: string
+  city: string
+  province: string
+  region: string
+  country: string
+  confidence: number
+  class_name: string
+  reporter_username: string
+  created_at: string
 }
 
 const COLORS = [
@@ -129,7 +139,17 @@ function buildMapHtml(
         status: cp.detection_status,
         severity: cp.worst_severity,
         image_url: cp.image_url,
-        address: cp.formatted_address,
+        formatted_address: cp.formatted_address,
+        street: cp.street,
+        barangay: cp.barangay,
+        city: cp.city,
+        province: cp.province,
+        region: cp.region,
+        country: cp.country,
+        confidence: cp.confidence,
+        class_name: cp.class_name,
+        reporter_username: cp.reporter_username,
+        created_at: cp.created_at,
         color:
           cp.detection_status === 'pending'
             ? '#6b7280'
@@ -146,11 +166,13 @@ function buildMapHtml(
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  body { margin: 0; padding: 0; }
+  body { margin: 0; padding: 0; background: #000; }
   #map { width: 100vw; height: 100vh; }
   .hazard-label { background: none; border: none; box-shadow: none; color: #fff; font-weight: bold; font-size: 11px; }
-  .hazard-popup { font-family: sans-serif; font-size: 13px; }
-  .hazard-popup strong { display: block; margin-bottom: 4px; }
+  .hazard-popup { font-family: system-ui, sans-serif; font-size: 13px; min-width: 200px; }
+  .leaflet-popup-content-wrapper { background: #0c0c14; color: #e4e4e7; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
+  .leaflet-popup-tip { background: #0c0c14; }
+  .leaflet-popup-content { margin: 14px; }
 </style>
 </head>
 <body>
@@ -214,18 +236,47 @@ function buildMapHtml(
 
     var marker = L.marker([cp.lat, cp.lng], { icon: icon }).addTo(map);
 
-    var popupHtml = '<div class="hazard-popup"><strong>Community Photo</strong>';
+    var popupHtml = '<div class="hazard-popup">';
     if (cp.image_url) {
-      popupHtml += '<img src="' + cp.image_url + '" style="width:100%;max-width:200px;border-radius:6px;margin:6px 0;" />';
+      popupHtml += '<img src="' + cp.image_url + '" style="width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
     }
-    if (cp.address) {
-      popupHtml += '<div style="color:#6b7280;font-size:12px;">' + cp.address + '</div>';
-    }
-    popupHtml += '<div style="margin-top:4px;font-size:11px;color:' + cp.color + ';">Status: ' + cp.status + '</div>';
     if (cp.severity) {
-      popupHtml += '<div style="font-size:11px;color:#f59e0b;">Severity: ' + cp.severity + '</div>';
+      var sevColors = { Severe: '#dc2626', Moderate: '#f59e0b', Minor: '#22c55e' };
+      var sevColor = sevColors[cp.severity] || '#6b7280';
+      popupHtml += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;color:' + sevColor + ';background:' + sevColor + '15;margin-right:4px;">' + cp.severity + '</span>';
     }
-    popupHtml += '</div>';
+    var statusColors = { pending: '#6b7280', processed: '#06b6d4', no_detection: '#3f3f46' };
+    var sColor = statusColors[cp.status] || '#6b7280';
+    popupHtml += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:' + sColor + ';background:' + sColor + '15;margin-bottom:8px;">' + (cp.status === 'pending' ? 'Analyzing...' : cp.status === 'processed' ? 'Detected' : 'No Distress') + '</span>';
+
+    if (cp.status === 'processed' && cp.class_name) {
+      popupHtml += '<div style="font-size:12px;color:#a1a1aa;margin-bottom:6px;"><span style="color:#e4e4e7;font-weight:600;">' + cp.class_name + '</span>' + (cp.confidence != null ? ' &middot; ' + (cp.confidence * 100).toFixed(0) + '% confidence' : '') + '</div>';
+    }
+    if (cp.status === 'pending') {
+      popupHtml += '<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">Awaiting analysis...</div>';
+    }
+
+    var addrLines = [];
+    if (cp.street) addrLines.push(cp.street);
+    if (cp.barangay) addrLines.push(cp.barangay);
+    if (cp.city) addrLines.push(cp.city);
+    if (cp.province) addrLines.push(cp.province);
+    if (cp.region && cp.region !== cp.province) addrLines.push(cp.region);
+    if (cp.country) addrLines.push(cp.country);
+
+    if (addrLines.length > 0) {
+      popupHtml += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:6px;">';
+      for (var k = 0; k < addrLines.length; k++) {
+        popupHtml += '<div style="font-size:12px;color:#e4e4e7;line-height:1.5;">' + addrLines[k] + '</div>';
+      }
+      popupHtml += '</div>';
+    } else if (cp.formatted_address) {
+      popupHtml += '<div style="font-size:11px;color:#6b7280;margin-bottom:6px;">' + cp.formatted_address + '</div>';
+    }
+
+    popupHtml += '<div style="font-size:11px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:4px;">';
+    popupHtml += 'by <span style="color:#a1a1aa;">' + (cp.reporter_username || 'Anonymous') + '</span> &middot; ' + (cp.created_at ? new Date(cp.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+    popupHtml += '</div></div>';
     marker.bindPopup(popupHtml);
 
     bounds.push([cp.lat, cp.lng]);
@@ -310,8 +361,8 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
 
       try {
         const { data: photoData, error: photoError } = await supabase
-          .from('community_photos')
-          .select('id, latitude, longitude, detection_status, worst_severity, image_url, formatted_address')
+          .from('v_community_photos')
+          .select('id, latitude, longitude, detection_status, worst_severity, image_url, formatted_address, street, barangay, city, province, region, country, confidence, class_name, reporter_username, created_at')
           .order('created_at', { ascending: false })
           .limit(100)
 
