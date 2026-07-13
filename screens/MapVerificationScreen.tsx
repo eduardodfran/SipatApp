@@ -3,28 +3,15 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { WebView, WebViewMessageEvent } from 'react-native-webview'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
-import type { Recording } from '../lib/types'
 
-type ViewMode = 'routes' | 'potholes' | 'both'
+type ViewMode = 'photos' | 'video' | 'all'
 
 type Props = {
-  recordings: Recording[]
   onBack: () => void
+  focusItem?: { type: 'photo' | 'pothole'; id: number | string } | null
 }
 
-type RouteCoord = {
-  latitude: number
-  longitude: number
-}
-
-type RouteData = {
-  id: string
-  timestamp: number
-  coords: RouteCoord[]
-  color: string
-}
-
-type PotholeData = {
+type VideoDistress = {
   pothole_id: string
   consolidated_latitude: number
   consolidated_longitude: number
@@ -65,28 +52,7 @@ type CommunityPhoto = {
   created_at: string
 }
 
-const COLORS = [
-  '#e6194b', '#3cb44b', '#ffe119', '#2563eb', '#f58231',
-  '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
-  '#469990', '#dcbeff', '#9a6324', '#800000',
-  '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9',
-]
-
 const MAPTILER_KEY = process.env.EXPO_PUBLIC_MAPTILER_API_KEY
-
-function parseCsv(csv: string): RouteCoord[] {
-  const lines = csv.trim().split('\n')
-  return lines.slice(1).reduce<RouteCoord[]>((acc, line) => {
-    const parts = line.split(',')
-    if (parts.length < 3) return acc
-    const lat = parseFloat(parts[1])
-    const lng = parseFloat(parts[2])
-    if (!isNaN(lat) && !isNaN(lng) && !(lat === 0 && lng === 0)) {
-      acc.push({ latitude: lat, longitude: lng })
-    }
-    return acc
-  }, [])
-}
 
 function severityColor(severity: string): string {
   switch (severity?.toLowerCase()) {
@@ -97,39 +63,22 @@ function severityColor(severity: string): string {
   }
 }
 
-function severityLabel(severity: string): string {
-  const s = severity?.toLowerCase()
-  if (s === 'severe')   return '🔴 Severe'
-  if (s === 'moderate') return '🟡 Moderate'
-  if (s === 'minor')    return '🟢 Minor'
-  return severity || 'Unknown'
-}
-
 function buildMapHtml(
-  routes: RouteData[],
-  potholes: PotholeData[],
+  videoDistress: VideoDistress[],
   communityPhotos: CommunityPhoto[],
   viewMode: ViewMode,
   tileKey: string | undefined,
   supabaseUrl: string,
   supabaseAnonKey: string,
 ): string {
-  const showRoutes = viewMode === 'routes' || viewMode === 'both'
-  const showPotholes = viewMode === 'potholes' || viewMode === 'both'
-  const showCommunity = viewMode === 'routes' || viewMode === 'both'
+  const showVideo = viewMode === 'video' || viewMode === 'all'
+  const showPhotos = viewMode === 'photos' || viewMode === 'all'
   const tileUrl = tileKey
     ? `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${tileKey}`
     : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 
-  const routeFeatures = showRoutes
-    ? routes.map((r, i) => ({
-        coords: r.coords.map((c) => [c.latitude, c.longitude]),
-        color: r.color,
-      }))
-    : []
-
-  const potholeFeatures = showPotholes
-    ? potholes.map((p) => ({
+  const videoFeatures = showVideo
+    ? videoDistress.map((p) => ({
         id: p.pothole_id,
         lat: p.consolidated_latitude,
         lng: p.consolidated_longitude,
@@ -151,7 +100,7 @@ function buildMapHtml(
       }))
     : []
 
-  const communityPhotoFeatures = showCommunity
+  const communityPhotoFeatures = showPhotos
     ? communityPhotos.map((cp) => ({
         id: cp.id,
         lat: cp.latitude,
@@ -207,11 +156,42 @@ function buildMapHtml(
   }).addTo(map);
 
   var bounds = [];
-  var routeData = ${JSON.stringify(routeFeatures)};
-  var potholeData = ${JSON.stringify(potholeFeatures)};
+  var videoData = ${JSON.stringify(videoFeatures)};
   var communityPhotoData = ${JSON.stringify(communityPhotoFeatures)};
+  var videoMarkers = {};
+  var photoMarkers = {};
 
-  function potholePopupHtml(p, detectors, comments) {
+  function focusVideo(id) {
+    var tries = 0;
+    function retry() {
+      var marker = videoMarkers[id];
+      if (marker) {
+        map.setView(marker.getLatLng(), 18);
+        setTimeout(function() { marker.openPopup(); }, 400);
+      } else if (tries < 10) {
+        tries++;
+        setTimeout(retry, 500);
+      }
+    }
+    retry();
+  }
+
+  function focusPhoto(id) {
+    var tries = 0;
+    function retry() {
+      var marker = photoMarkers[id];
+      if (marker) {
+        map.setView(marker.getLatLng(), 18);
+        setTimeout(function() { marker.openPopup(); }, 400);
+      } else if (tries < 10) {
+        tries++;
+        setTimeout(retry, 500);
+      }
+    }
+    retry();
+  }
+
+  function videoPopupHtml(p, detectors, comments) {
     var severityColors = { Severe: '#ef4444', Moderate: '#eab308', Minor: '#22c55e', Unknown: '#6b7280' };
     var statusColors = { reported: '#3b82f6', confirmed: '#f59e0b', fixed: '#22c55e' };
     var statusLabels = { reported: 'Reported', confirmed: 'Confirmed', fixed: 'Fixed' };
@@ -333,16 +313,16 @@ function buildMapHtml(
     html += '</div>';
     html += '</div>';
 
-    html += '<div style="font-size:10px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:6px;text-align:center;">Hazard #' + p.id + '</div>';
+    html += '<div style="font-size:10px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:6px;text-align:center;">Video Distress #' + p.id + '</div>';
     html += '</div>';
     return html;
   }
 
-  function loadAndRenderPothole(marker, p) {
+  function loadAndRenderVideo(marker, p) {
     var popup = marker.getPopup();
     if (!popup) return;
 
-    var loadingHtml = '<div style="min-width:220px;font-family:system-ui,sans-serif;padding:20px;text-align:center;color:#6b7280;">Loading pothole data...</div>';
+    var loadingHtml = '<div style="min-width:220px;font-family:system-ui,sans-serif;padding:20px;text-align:center;color:#6b7280;">Loading video distress data...</div>';
     popup.setContent(loadingHtml);
 
     function loadAndRender() {
@@ -362,26 +342,26 @@ function buildMapHtml(
         .then(function(r) { return r.json(); })
         .then(function(comData) {
           var comments = Array.isArray(comData) ? comData : [];
-          var html = potholePopupHtml(p, detectors, comments);
+          var html = videoPopupHtml(p, detectors, comments);
           popup.setContent(html);
           setTimeout(function() {
-            attachPotholeHandlers(marker, p);
+            attachVideoHandlers(marker, p);
           }, 0);
         })
         .catch(function() {
-          var html = potholePopupHtml(p, detectors, []);
+          var html = videoPopupHtml(p, detectors, []);
           popup.setContent(html);
-          setTimeout(function() { attachPotholeHandlers(marker, p); }, 0);
+          setTimeout(function() { attachVideoHandlers(marker, p); }, 0);
         });
       })
       .catch(function() {
-        var html = potholePopupHtml(p, [], []);
+        var html = videoPopupHtml(p, [], []);
         popup.setContent(html);
-        setTimeout(function() { attachPotholeHandlers(marker, p); }, 0);
+        setTimeout(function() { attachVideoHandlers(marker, p); }, 0);
       });
     }
 
-    function attachPotholeHandlers(marker, p) {
+    function attachVideoHandlers(marker, p) {
       var stillHereBtn = document.getElementById('verify-stillhere-' + p.id);
       var fixedBtn = document.getElementById('verify-fixed-' + p.id);
       var commentInput = document.getElementById('comment-input-' + p.id);
@@ -427,17 +407,7 @@ function buildMapHtml(
     loadAndRender();
   }
 
-  routeData.forEach(function(route) {
-    var latlngs = route.coords.map(function(c) { return [c[0], c[1]]; });
-    L.polyline(latlngs, { color: route.color, weight: 3 }).addTo(map);
-    latlngs.forEach(function(ll) { bounds.push(ll); });
-    if (latlngs.length > 0) {
-      L.circleMarker(latlngs[0], { radius: 7, color: route.color, fillColor: route.color, fillOpacity: 1 }).addTo(map);
-      L.circleMarker(latlngs[latlngs.length-1], { radius: 5, color: '#000', fillColor: '#000', fillOpacity: 1 }).addTo(map);
-    }
-  });
-
-  potholeData.forEach(function(p) {
+  videoData.forEach(function(p) {
     var marker = L.circleMarker([p.lat, p.lng], {
       radius: 10,
       color: p.color,
@@ -449,12 +419,13 @@ function buildMapHtml(
     var label = p.severity === 'Severe' ? '!' : p.hits.toString();
     marker.bindTooltip(label, { permanent: true, direction: 'center', className: 'hazard-label' });
 
-    marker.bindPopup(potholePopupHtml(p, null, null), { maxWidth: 300, className: 'hazard-popup' });
+    marker.bindPopup(videoPopupHtml(p, null, null), { maxWidth: 300, className: 'hazard-popup' });
 
     marker.on('popupopen', function() {
-      loadAndRenderPothole(marker, p);
+      loadAndRenderVideo(marker, p);
     });
 
+    videoMarkers[p.id] = marker;
     bounds.push([p.lat, p.lng]);
   });
 
@@ -545,7 +516,7 @@ function buildMapHtml(
     html += '</div>';
 
     html += '<div style="font-size:11px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:6px;">';
-    html += 'by <span style="color:#a1a1aa;">' + (cp.reporter_username || 'Anonymous') + '</span> &middot; ' + (cp.created_at ? new Date(cp.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+    html += 'Photo by <span style="color:#a1a1aa;">' + (cp.reporter_username || 'Anonymous') + '</span> &middot; ' + (cp.created_at ? new Date(cp.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
     html += '</div></div>';
     return html;
   }
@@ -560,6 +531,8 @@ function buildMapHtml(
 
     var marker = L.marker([cp.lat, cp.lng], { icon: icon }).addTo(map);
     marker.bindPopup(communityPhotoPopupHtml(cp, null), { maxWidth: 300, className: 'hazard-popup' });
+
+    photoMarkers[cp.id] = marker;
 
     marker.on('popupopen', function() {
       var popup = marker.getPopup();
@@ -641,39 +614,28 @@ function buildMapHtml(
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
-export default function MapVerificationScreen({ recordings, onBack }: Props) {
-  const [routes, setRoutes] = useState<RouteData[]>([])
-  const [potholes, setPotholes] = useState<PotholeData[]>([])
+export default function MapVerificationScreen({ onBack, focusItem }: Props) {
+  const [videoDistress, setVideoDistress] = useState<VideoDistress[]>([])
   const [communityPhotos, setCommunityPhotos] = useState<CommunityPhoto[]>([])
   const [loading, setLoading] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>('both')
+  const [viewMode, setViewMode] = useState<ViewMode>('all')
   const webViewRef = useRef<WebView>(null)
+
+  useEffect(() => {
+    if (!focusItem || !webViewRef.current) return
+    const timeout = setTimeout(() => {
+      if (focusItem.type === 'pothole') {
+        webViewRef.current?.injectJavaScript(`focusVideo('${focusItem.id}');true;`)
+      } else {
+        webViewRef.current?.injectJavaScript(`focusPhoto('${focusItem.id}');true;`)
+      }
+    }, 1500)
+    return () => clearTimeout(timeout)
+  }, [focusItem])
 
   useEffect(() => {
     ;(async () => {
       setLoading(true)
-      const routeResults: RouteData[] = []
-
-      const fetchTasks = recordings.map(async (rec, i) => {
-        try {
-          const res = await fetch(rec.csvUri)
-          const text = await res.text()
-          const coords = parseCsv(text)
-          if (coords.length > 0) {
-            routeResults.push({
-              id: rec.id,
-              timestamp: rec.timestamp,
-              coords,
-              color: COLORS[i % COLORS.length],
-            })
-          }
-        } catch {
-          // skip
-        }
-      })
-
-      await Promise.all(fetchTasks)
-      setRoutes(routeResults)
 
       try {
         const { data, error } = await supabase
@@ -682,12 +644,12 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
           .order('total_detection_hits', { ascending: false })
 
         if (error) {
-          console.log('[MapScreen] pothole query error:', error.message, error.details, error.hint)
+          console.log('[MapScreen] video distress query error:', error.message, error.details, error.hint)
         }
 
         if (!error && data) {
-          console.log('[MapScreen] pothole rows:', data.length)
-          setPotholes(
+          console.log('[MapScreen] video distress rows:', data.length)
+          setVideoDistress(
             data.map((p: any) => ({
               pothole_id: String(p.pothole_id ?? p.id ?? ''),
               consolidated_latitude: Number(p.consolidated_latitude ?? p.lat ?? 0),
@@ -711,7 +673,7 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
           )
         }
       } catch (e) {
-        console.log('[MapScreen] pothole fetch failed:', e)
+        console.log('[MapScreen] video distress fetch failed:', e)
       }
 
       try {
@@ -735,14 +697,12 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
 
       setLoading(false)
     })()
-  }, [recordings])
+  }, [])
 
   const html = useMemo(
-    () => buildMapHtml(routes, potholes, communityPhotos, viewMode, MAPTILER_KEY, SUPABASE_URL, SUPABASE_ANON_KEY),
-    [routes, potholes, communityPhotos, viewMode],
+    () => buildMapHtml(videoDistress, communityPhotos, viewMode, MAPTILER_KEY, SUPABASE_URL, SUPABASE_ANON_KEY),
+    [videoDistress, communityPhotos, viewMode],
   )
-
-  const totalPoints = routes.reduce((s, r) => s + r.coords.length, 0)
 
   const handleWebViewMessage = useCallback((_event: WebViewMessageEvent) => {
     // no-op — pothole popups rendered inside WebView now
@@ -764,46 +724,36 @@ export default function MapVerificationScreen({ recordings, onBack }: Props) {
       </TouchableOpacity>
 
       <View style={styles.toggleRow}>
-        {(['routes', 'potholes', 'both'] as ViewMode[]).map((mode) => (
+        {(['photos', 'video', 'all'] as ViewMode[]).map((mode) => (
           <TouchableOpacity
             key={mode}
             style={[styles.toggleBtn, viewMode === mode && styles.toggleBtnActive]}
             onPress={() => setViewMode(mode)}
           >
             <Text style={[styles.toggleText, viewMode === mode && styles.toggleTextActive]}>
-              {mode === 'both' ? 'All' : mode.charAt(0).toUpperCase() + mode.slice(1)}
+              {mode === 'photos' ? 'Photo' : mode === 'video' ? 'Video' : 'All'}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {!loading && (routes.length > 0 || potholes.length > 0 || communityPhotos.length > 0) && (
+      {!loading && (videoDistress.length > 0 || communityPhotos.length > 0) && (
         <View style={styles.summaryPanel}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{potholes.length}</Text>
-              <Text style={styles.summaryLabel}>Potholes</Text>
+              <Text style={styles.summaryValue}>{videoDistress.length}</Text>
+              <Text style={styles.summaryLabel}>Video Distress</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
               <Text style={styles.summaryValue}>{communityPhotos.length}</Text>
               <Text style={styles.summaryLabel}>Photos</Text>
             </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{routes.length}</Text>
-              <Text style={styles.summaryLabel}>Routes</Text>
-            </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{totalPoints.toLocaleString()}</Text>
-              <Text style={styles.summaryLabel}>GPS points</Text>
-            </View>
           </View>
         </View>
       )}
 
-      {!loading && routes.length === 0 && potholes.length === 0 && communityPhotos.length === 0 && (
+      {!loading && videoDistress.length === 0 && communityPhotos.length === 0 && (
         <View style={styles.emptyOverlay}>
           <Ionicons name="map-outline" size={36} color="#2a2a3a" />
           <Text style={styles.emptyText}>No map data available</Text>

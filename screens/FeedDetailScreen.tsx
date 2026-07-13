@@ -28,6 +28,7 @@ type Comment = {
 type Props = {
   item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }
   onBack: () => void
+  onViewOnMap: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
 }
 
 const SEVERITY_COLORS: Record<string, { color: string; bg: string }> = {
@@ -49,7 +50,7 @@ const formatAddress = (p: any) => {
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
 
-export default function FeedDetailScreen({ item, onBack }: Props) {
+export default function FeedDetailScreen({ item, onBack, onViewOnMap }: Props) {
   const [comments, setComments] = useState<Comment[] | null>(null)
   const [draft, setDraft] = useState('')
   const [posting, setPosting] = useState(false)
@@ -108,7 +109,9 @@ export default function FeedDetailScreen({ item, onBack }: Props) {
             <Ionicons name="arrow-back" size={22} color="#e0e0e0" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Photo Report</Text>
-          <View style={{ width: 38 }} />
+          <TouchableOpacity onPress={() => onViewOnMap(item)} style={styles.mapBtn} activeOpacity={0.7}>
+            <Ionicons name="map-outline" size={18} color="#6b7280" />
+          </TouchableOpacity>
         </View>
         <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity activeOpacity={0.9} onPress={() => setFullScreenImageUri(post.image_url)}>
@@ -155,7 +158,9 @@ export default function FeedDetailScreen({ item, onBack }: Props) {
           <Ionicons name="arrow-back" size={22} color="#e0e0e0" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Detection</Text>
-        <View style={{ width: 38 }} />
+        <TouchableOpacity onPress={() => onViewOnMap(item)} style={styles.mapBtn} activeOpacity={0.7}>
+          <Ionicons name="map-outline" size={18} color="#6b7280" />
+        </TouchableOpacity>
       </View>
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         {p.image_url ? (
@@ -378,6 +383,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
   },
   headerTitle: { color: '#f0f0f0', fontSize: 16, fontWeight: '700' },
+  mapBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
   scroll: { flex: 1 },
   heroImage: { width: '100%', height: 260, resizeMode: 'cover' },
   placeholder: { width: '100%', height: 200, justifyContent: 'center', alignItems: 'center' },

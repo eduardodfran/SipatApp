@@ -216,6 +216,13 @@ export default function App() {
 
   const [sidebarVisible, setSidebarVisible] = useState(false)
   const [detailItem, setDetailItem] = useState<{ type: 'photo'; data: any } | { type: 'pothole'; data: any } | null>(null)
+  const [focusItem, setFocusItem] = useState<{ type: 'photo' | 'pothole'; id: number | string } | null>(null)
+
+  const handleViewOnMap = useCallback((item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => {
+    const id = item.type === 'photo' ? item.data.id : item.data.pothole_id
+    setFocusItem({ type: item.type, id })
+    setScreen('map')
+  }, [])
 
   const handleLogout = useCallback(async () => {
     await supabase.auth.signOut()
@@ -287,12 +294,14 @@ export default function App() {
             setDetailItem(item)
             setScreen('feeddetail')
           }}
+          onViewOnMap={handleViewOnMap}
         />
       )}
       {screen === 'feeddetail' && detailItem && (
         <FeedDetailScreen
           item={detailItem}
           onBack={() => setScreen('feed')}
+          onViewOnMap={handleViewOnMap}
         />
       )}
       {screen === 'camera' && (
@@ -315,8 +324,8 @@ export default function App() {
       )}
       {screen === 'map' && Platform.OS !== 'web' && (
         <MapVerificationScreen
-          recordings={recordings}
-          onBack={() => setScreen('dashboard')}
+          onBack={() => { setFocusItem(null); setScreen('dashboard') }}
+          focusItem={focusItem}
         />
       )}
       {screen === 'map' && Platform.OS === 'web' && (
