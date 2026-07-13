@@ -15,6 +15,7 @@ import DistressListScreen from './screens/DistressListScreen'
 import PhotoCaptureScreen from './screens/PhotoCaptureScreen'
 import FeedScreen from './screens/FeedScreen'
 import OnboardingScreen from './screens/OnboardingScreen'
+import AppSidebar from './components/AppSidebar'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
 import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRideData'
@@ -212,6 +213,12 @@ export default function App() {
     [user],
   )
 
+  const [sidebarVisible, setSidebarVisible] = useState(false)
+
+  const handleLogout = useCallback(async () => {
+    await supabase.auth.signOut()
+  }, [])
+
   const handleProcessRecording = useCallback(
     async (recording: Recording) => {
       if (!recording.rideId) {
@@ -264,6 +271,7 @@ export default function App() {
           feedRefreshKey={feedRefreshKey}
           userId={user?.id ?? ''}
           onTabChange={(tab) => setScreen(tab)}
+          onMenuPress={() => setSidebarVisible(true)}
         />
       )}
       {screen === 'feed' && (
@@ -272,6 +280,7 @@ export default function App() {
           userId={user?.id ?? ''}
           onTabChange={(tab) => setScreen(tab)}
           onPhoto={() => setScreen('photo')}
+          onMenuPress={() => setSidebarVisible(true)}
         />
       )}
       {screen === 'camera' && (
@@ -309,6 +318,15 @@ export default function App() {
       {screen === 'distress' && (
         <DistressListScreen onBack={() => setScreen('dashboard')} />
       )}
+
+      <AppSidebar
+        visible={sidebarVisible}
+        activeTab={screen === 'feed' ? 'feed' : 'dashboard'}
+        user={user}
+        onClose={() => setSidebarVisible(false)}
+        onTabChange={(tab) => setScreen(tab)}
+        onLogout={handleLogout}
+      />
     </>
   )
 }

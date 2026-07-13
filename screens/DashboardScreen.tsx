@@ -10,9 +10,7 @@ import {
   View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { supabase } from '../lib/supabase'
 import type { Recording } from '../lib/types'
-import AppTabBar from '../components/AppTabBar'
 
 type Props = {
   recordings: Recording[]
@@ -30,6 +28,7 @@ type Props = {
   feedRefreshKey: number
   userId: string
   onTabChange: (tab: 'dashboard' | 'feed') => void
+  onMenuPress: () => void
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -55,10 +54,8 @@ export default function DashboardScreen({
   feedRefreshKey,
   userId,
   onTabChange,
+  onMenuPress,
 }: Props) {
-  const handleLogout = () => {
-    supabase.auth.signOut()
-  }
 
   const totalRecordings = recordings.length
   const completed = recordings.filter((r) => r.status === 'completed').length
@@ -88,14 +85,12 @@ export default function DashboardScreen({
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      <AppTabBar active="dashboard" onTabChange={onTabChange} />
-
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <View style={styles.avatarCircle}>
-            <Ionicons name="shield-checkmark" size={18} color="#e6a817" />
-          </View>
+          <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn} activeOpacity={0.7}>
+            <Ionicons name="menu" size={22} color="#e0e0e0" />
+          </TouchableOpacity>
           <View>
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.title}>Sipat</Text>
@@ -108,9 +103,6 @@ export default function DashboardScreen({
             ) : (
               <Ionicons name="refresh" size={20} color="#e0e0e0" />
             )}
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout} style={styles.iconBtn}>
-            <Ionicons name="log-out" size={20} color="#dc2626" />
           </TouchableOpacity>
         </View>
       </View>
@@ -370,6 +362,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  menuBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    marginRight: 4,
   },
   avatarCircle: {
     width: 40,

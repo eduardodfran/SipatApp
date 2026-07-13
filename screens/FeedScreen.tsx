@@ -2,9 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native'
@@ -13,13 +16,21 @@ import { supabase } from '../lib/supabase'
 import { loadPendingPhotos, updatePhotoPost, deletePhotoPost } from '../lib/pendingPhotos'
 import { uploadCommunityPhoto } from '../lib/uploadCommunityPhoto'
 import type { LocalPhotoPost } from '../lib/types'
-import AppTabBar from '../components/AppTabBar'
+
+
+type Comment = {
+  id: string
+  body: string
+  created_at: string
+  username: string | null
+}
 
 type Props = {
   feedRefreshKey: number
   userId: string
   onTabChange: (tab: 'dashboard' | 'feed') => void
   onPhoto: () => void
+  onMenuPress: () => void
 }
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
@@ -28,11 +39,15 @@ const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }>
   no_detection: { label: 'No Distress', color: '#6b7280', bg: 'rgba(107, 114, 128, 0.1)' },
 }
 
-export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto }: Props) {
+export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto, onMenuPress }: Props) {
   const [pendingPosts, setPendingPosts] = useState<LocalPhotoPost[]>([])
   const [uploadedPosts, setUploadedPosts] = useState<any[]>([])
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null)
+  const [commentsByPost, setCommentsByPost] = useState<Record<string, Comment[]>>({})
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({})
+  const [postingComment, setPostingComment] = useState<Record<string, boolean>>({})
 
   const loadPosts = useCallback(async () => {
     setLoading(true)
@@ -69,6 +84,38 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     loadPosts()
   }
 
+  const toggleComments = useCallback(async (postId: number) => {
+    const key = String(postId)
+    if (expandedPostId === key) {
+      setExpandedPostId(null)
+      return
+    }
+    setExpandedPostId(key)
+    if (!commentsByPost[key]) {
+      const { data } = await supabase.rpc('get_community_photo_comments', { p_photo_id: postId })
+      setCommentsByPost((prev) => ({ ...prev, [key]: (data ?? []) as Comment[] }))
+    }
+  }, [expandedPostId, commentsByPost])
+
+  const handleSendComment = useCallback(async (postId: number) => {
+    const key = String(postId)
+    const text = commentDrafts[key]?.trim()
+    if (!text || postingComment[key]) return
+    setPostingComment((prev) => ({ ...prev, [key]: true }))
+    await supabase.rpc('create_community_photo_comment', { p_photo_id: postId, p_body: text })
+    const { data } = await supabase.rpc('get_community_photo_comments', { p_photo_id: postId })
+    setCommentsByPost((prev) => ({ ...prev, [key]: (data ?? []) as Comment[] }))
+    setCommentDrafts((prev) => ({ ...prev, [key]: '' }))
+    setPostingComment((prev) => ({ ...prev, [key]: false }))
+  }, [commentDrafts, postingComment])
+
+  const handleVerify = useCallback(async (postId: number, body: string) => {
+    await supabase.rpc('create_community_photo_comment', { p_photo_id: postId, p_body: body })
+    const { data } = await supabase.rpc('get_community_photo_comments', { p_photo_id: postId })
+    const key = String(postId)
+    setCommentsByPost((prev) => ({ ...prev, [key]: (data ?? []) as Comment[] }))
+  }, [])
+
   const allUploadedIds = new Set(uploadedPosts.map((p) => p.id))
   const filteredPending = pendingPosts.filter((p) => {
     if (p.status === 'uploaded' && p.remoteId && allUploadedIds.has(p.remoteId)) return false
@@ -79,13 +126,21 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
 
   return (
     <View style={styles.container}>
-      <AppTabBar active="feed" onTabChange={onTabChange} />
+      <View style={styles.feedHeader}>
+        <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn} activeOpacity={0.7}>
+          <Ionicons name="menu" size={22} color="#e0e0e0" />
+        </TouchableOpacity>
+        <View style={styles.feedHeaderCenter}>
+          <Text style={styles.feedHeaderLabel}>Sipat</Text>
+          <View style={styles.feedHeaderDot} />
+        </View>
+      </View>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* My pending posts */}
         {filteredPending.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -137,7 +192,6 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
           </View>
         )}
 
-        {/* Community feed */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="people-outline" size={14} color="#a1a1aa" />
@@ -168,6 +222,12 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
           ) : (
             allPosts.map((post) => {
               const badge = STATUS_BADGE[post.detection_status] ?? STATUS_BADGE.pending
+              const postKey = String(post.id)
+              const comments = commentsByPost[postKey]
+              const verifyCount = comments ? comments.filter((c: Comment) => c.body.includes('✅')).length : 0
+              const commentCount = comments ? comments.length : 0
+              const isExpanded = expandedPostId === postKey
+
               return (
                 <View key={post.id} style={styles.postCard}>
                   <Image source={{ uri: post.image_url }} style={styles.postImage} />
@@ -187,6 +247,91 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                       <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
                     </View>
                   </View>
+
+                  {/* Verify buttons */}
+                  <View style={styles.verifyRow}>
+                    <TouchableOpacity
+                      style={styles.verifyBtnStill}
+                      onPress={() => handleVerify(post.id, '✅ Still here')}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="checkmark-circle-outline" size={14} color="#22c55e" />
+                      <Text style={styles.verifyBtnStillText}>Still here</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.verifyBtnFixed}
+                      onPress={() => handleVerify(post.id, '✅ Fixed')}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
+                      <Text style={styles.verifyBtnFixedText}>Fixed</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.verifyCount}>{verifyCount}</Text>
+                  </View>
+
+                  {/* Comments toggle */}
+                  <TouchableOpacity
+                    style={styles.commentsToggle}
+                    onPress={() => toggleComments(post.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name={isExpanded ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#6b7280" />
+                    <Text style={styles.commentsToggleText}>
+                      {commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Comment'}
+                    </Text>
+                    <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={12} color="#52525b" />
+                  </TouchableOpacity>
+
+                  {/* Expanded comments */}
+                  {isExpanded && (
+                    <KeyboardAvoidingView
+                      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    >
+                      <View style={styles.commentsSection}>
+                        {!comments ? (
+                          <ActivityIndicator size="small" color="#6b7280" />
+                        ) : comments.length === 0 ? (
+                          <Text style={styles.noComments}>No comments yet</Text>
+                        ) : (
+                          comments.map((c: Comment) => (
+                            <View key={c.id} style={styles.commentRow}>
+                              <View style={styles.commentAvatar}>
+                                <Text style={styles.commentAvatarText}>
+                                  {(c.username ?? '?').charAt(0).toUpperCase()}
+                                </Text>
+                              </View>
+                              <View style={styles.commentBody}>
+                                <Text style={styles.commentUsername}>{c.username ?? 'Unknown'}</Text>
+                                <Text style={styles.commentText}>{c.body}</Text>
+                              </View>
+                            </View>
+                          ))
+                        )}
+                        <View style={styles.commentInputRow}>
+                          <TextInput
+                            style={styles.commentInput}
+                            value={commentDrafts[postKey] ?? ''}
+                            onChangeText={(text) => setCommentDrafts((prev) => ({ ...prev, [postKey]: text }))}
+                            placeholder="Write a comment..."
+                            placeholderTextColor="#374151"
+                            multiline={false}
+                          />
+                          <TouchableOpacity
+                            style={[
+                              styles.commentSendBtn,
+                              (!commentDrafts[postKey]?.trim() || postingComment[postKey]) && styles.commentSendBtnDisabled,
+                            ]}
+                            disabled={!commentDrafts[postKey]?.trim() || postingComment[postKey]}
+                            onPress={() => handleSendComment(post.id)}
+                          >
+                            <Text style={styles.commentSendText}>
+                              {postingComment[postKey] ? '...' : 'Send'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </KeyboardAvoidingView>
+                  )}
                 </View>
               )
             })
@@ -200,10 +345,25 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0c0c14' },
+  feedHeader: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingTop: 56, paddingBottom: 12, paddingHorizontal: 20,
+  },
+  menuBtn: {
+    width: 38, height: 38, borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  },
+  feedHeaderCenter: {
+    flex: 1, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 8, marginRight: 38,
+  },
+  feedHeaderLabel: { color: '#f0f0f0', fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
+  feedHeaderDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#e6a817' },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
 
-  // Sections
   section: { marginTop: 16, paddingHorizontal: 16 },
   sectionHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12,
@@ -219,7 +379,6 @@ const styles = StyleSheet.create({
     borderRadius: 8, overflow: 'hidden',
   },
 
-  // Post cards
   postCard: {
     backgroundColor: '#141420', borderRadius: 16, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)', marginBottom: 12,
@@ -233,7 +392,6 @@ const styles = StyleSheet.create({
   noCaption: { color: '#3f3f46', fontSize: 13, fontStyle: 'italic' },
   time: { color: '#52525b', fontSize: 11, marginTop: 4 },
 
-  // Post actions
   postActions: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 14, paddingBottom: 14,
@@ -260,7 +418,6 @@ const styles = StyleSheet.create({
   },
   analyzingText: { color: '#f59e0b', fontSize: 12, fontWeight: '600' },
 
-  // Status badge (community posts)
   statusBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
     paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, marginTop: 4,
@@ -268,7 +425,66 @@ const styles = StyleSheet.create({
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 12, fontWeight: '600' },
 
-  // Empty state
+  // Verify buttons
+  verifyRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 14, paddingBottom: 10,
+  },
+  verifyBtnStill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(34,197,94,0.08)', paddingVertical: 6, paddingHorizontal: 12,
+    borderRadius: 8, borderWidth: 1, borderColor: 'rgba(34,197,94,0.15)',
+  },
+  verifyBtnStillText: { color: '#22c55e', fontSize: 12, fontWeight: '600' },
+  verifyBtnFixed: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(239,68,68,0.08)', paddingVertical: 6, paddingHorizontal: 12,
+    borderRadius: 8, borderWidth: 1, borderColor: 'rgba(239,68,68,0.15)',
+  },
+  verifyBtnFixedText: { color: '#ef4444', fontSize: 12, fontWeight: '600' },
+  verifyCount: {
+    color: '#71717a', fontSize: 11, fontWeight: '600',
+    marginLeft: 'auto',
+  },
+
+  // Comments
+  commentsToggle: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 14, paddingBottom: 10,
+  },
+  commentsToggleText: { color: '#6b7280', fontSize: 12, fontWeight: '500', flex: 1 },
+  commentsSection: {
+    paddingHorizontal: 14, paddingBottom: 14,
+  },
+  noComments: { color: '#374151', fontSize: 12, textAlign: 'center', paddingVertical: 8 },
+  commentRow: {
+    flexDirection: 'row', gap: 8, paddingVertical: 6,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)',
+  },
+  commentAvatar: {
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: 'rgba(230, 168, 23, 0.12)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  commentAvatarText: { color: '#e6a817', fontSize: 10, fontWeight: '700' },
+  commentBody: { flex: 1 },
+  commentUsername: { color: '#e4e4e7', fontSize: 11, fontWeight: '600' },
+  commentText: { color: '#a1a1aa', fontSize: 12, marginTop: 1, lineHeight: 16 },
+  commentInputRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8,
+  },
+  commentInput: {
+    flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 8,
+    paddingVertical: 8, paddingHorizontal: 12, color: '#f0f0f0', fontSize: 13,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)',
+  },
+  commentSendBtn: {
+    backgroundColor: 'rgba(230, 168, 23, 0.15)',
+    paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8,
+  },
+  commentSendBtnDisabled: { opacity: 0.4 },
+  commentSendText: { color: '#e6a817', fontSize: 12, fontWeight: '700' },
+
   loadingWrap: { paddingVertical: 40, alignItems: 'center' },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyIconWrap: {

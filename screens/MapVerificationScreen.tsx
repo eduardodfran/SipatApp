@@ -458,35 +458,12 @@ function buildMapHtml(
     bounds.push([p.lat, p.lng]);
   });
 
-  communityPhotoData.forEach(function(cp) {
-    var icon = L.divIcon({
-      className: '',
-      html: '<div style="width:32px;height:32px;border-radius:8px;background:' + cp.color + ';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>',
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-    });
-
-    var marker = L.marker([cp.lat, cp.lng], { icon: icon }).addTo(map);
-
-    var popupHtml = '<div class="hazard-popup">';
-    if (cp.image_url) {
-      popupHtml += '<img src="' + cp.image_url + '" style="width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
-    }
-    if (cp.severity) {
-      var sevColors = { Severe: '#dc2626', Moderate: '#f59e0b', Minor: '#22c55e' };
-      var sevColor = sevColors[cp.severity] || '#6b7280';
-      popupHtml += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;color:' + sevColor + ';background:' + sevColor + '15;margin-right:4px;">' + cp.severity + '</span>';
-    }
+  function communityPhotoPopupHtml(cp, comments) {
+    var sevColors = { Severe: '#dc2626', Moderate: '#f59e0b', Minor: '#22c55e' };
     var statusColors = { pending: '#6b7280', processed: '#06b6d4', no_detection: '#3f3f46' };
+    var sevColor = sevColors[cp.severity] || '#6b7280';
     var sColor = statusColors[cp.status] || '#6b7280';
-    popupHtml += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:' + sColor + ';background:' + sColor + '15;margin-bottom:8px;">' + (cp.status === 'pending' ? 'Analyzing...' : cp.status === 'processed' ? 'Detected' : 'No Distress') + '</span>';
-
-    if (cp.status === 'processed' && cp.class_name) {
-      popupHtml += '<div style="font-size:12px;color:#a1a1aa;margin-bottom:6px;"><span style="color:#e4e4e7;font-weight:600;">' + cp.class_name + '</span>' + (cp.confidence != null ? ' &middot; ' + (cp.confidence * 100).toFixed(0) + '% confidence' : '') + '</div>';
-    }
-    if (cp.status === 'pending') {
-      popupHtml += '<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">Awaiting analysis...</div>';
-    }
+    var statusLabel = cp.status === 'pending' ? 'Analyzing...' : cp.status === 'processed' ? 'Detected' : 'No Distress';
 
     var addrLines = [];
     if (cp.street) addrLines.push(cp.street);
@@ -496,20 +473,159 @@ function buildMapHtml(
     if (cp.region && cp.region !== cp.province) addrLines.push(cp.region);
     if (cp.country) addrLines.push(cp.country);
 
-    if (addrLines.length > 0) {
-      popupHtml += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:6px;">';
-      for (var k = 0; k < addrLines.length; k++) {
-        popupHtml += '<div style="font-size:12px;color:#e4e4e7;line-height:1.5;">' + addrLines[k] + '</div>';
-      }
-      popupHtml += '</div>';
-    } else if (cp.formatted_address) {
-      popupHtml += '<div style="font-size:11px;color:#6b7280;margin-bottom:6px;">' + cp.formatted_address + '</div>';
+    var html = '<div id="cp-popup-' + cp.id + '" style="min-width:220px;font-family:system-ui,sans-serif;">';
+
+    if (cp.image_url) {
+      html += '<img src="' + cp.image_url + '" style="width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
+    }
+    html += '<div style="display:flex;gap:6px;margin-bottom:10px;">';
+    if (cp.severity) {
+      html += '<span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;color:' + sevColor + ';background:' + sevColor + '15;margin-right:4px;">' + cp.severity + '</span>';
+    }
+    html += '<span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;color:' + sColor + ';background:' + sColor + '15;">' + statusLabel + '</span>';
+    html += '</div>';
+
+    if (cp.status === 'processed' && cp.class_name) {
+      html += '<div style="font-size:12px;color:#a1a1aa;margin-bottom:8px;"><span style="color:#e4e4e7;font-weight:600;">' + cp.class_name + '</span>' + (cp.confidence != null ? ' &middot; ' + (cp.confidence * 100).toFixed(0) + '% confidence' : '') + '</div>';
+    }
+    if (cp.status === 'pending') {
+      html += '<div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Awaiting analysis...</div>';
     }
 
-    popupHtml += '<div style="font-size:11px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:4px;">';
-    popupHtml += 'by <span style="color:#a1a1aa;">' + (cp.reporter_username || 'Anonymous') + '</span> &middot; ' + (cp.created_at ? new Date(cp.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
-    popupHtml += '</div></div>';
-    marker.bindPopup(popupHtml);
+    if (addrLines.length > 0) {
+      html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+      for (var a = 0; a < addrLines.length; a++) {
+        html += '<div style="font-size:12px;color:#e4e4e7;line-height:1.5;">' + addrLines[a] + '</div>';
+      }
+      html += '</div>';
+    } else if (cp.formatted_address) {
+      html += '<div style="font-size:11px;color:#6b7280;margin-bottom:8px;">' + cp.formatted_address + '</div>';
+    }
+
+    if (comments && comments.length > 0) {
+      html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+      html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Comments (' + comments.length + ')</div>';
+      var maxComments = comments.slice(0, 3);
+      for (var c = 0; c < maxComments.length; c++) {
+        var com = maxComments[c];
+        html += '<div style="display:flex;gap:6px;padding:4px 0;">';
+        html += '<div style="width:22px;height:22px;border-radius:11px;background:rgba(230,168,23,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#e6a817;flex-shrink:0;margin-top:1px;">' + (com.username || '?').charAt(0).toUpperCase() + '</div>';
+        html += '<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#e4e4e7;">' + (com.username || 'Unknown') + '</div><div style="font-size:11px;color:#a1a1aa;margin-top:1px;">' + com.body + '</div></div>';
+        html += '</div>';
+      }
+      if (comments.length > 3) {
+        html += '<div style="font-size:11px;color:#71717a;text-align:center;padding-top:4px;">View all ' + comments.length + ' comments</div>';
+      }
+      html += '</div>';
+    } else {
+      html += '<div style="font-size:11px;color:#6b7280;margin-bottom:8px;padding:4px 0;">No comments yet</div>';
+    }
+
+    // Verification + comment form
+    var verifyCount = 0;
+    if (comments) {
+      for (var ci = 0; ci < comments.length; ci++) {
+        if (comments[ci].body && comments[ci].body.indexOf('✅') !== -1) verifyCount++;
+      }
+    }
+    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Is this hazard still here?</div>';
+    html += '<div style="display:flex;gap:6px;margin-bottom:4px;">';
+    html += '<button id="cp-verify-stillhere-' + cp.id + '" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;border-radius:6px;border:1px solid rgba(34,197,94,0.2);background:rgba(34,197,94,0.05);color:#22c55e;font-size:11px;font-weight:600;cursor:pointer;outline:none;">Still here</button>';
+    html += '<button id="cp-verify-fixed-' + cp.id + '" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;border-radius:6px;border:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.05);color:#ef4444;font-size:11px;font-weight:600;cursor:pointer;outline:none;">Fixed</button>';
+    html += '</div>';
+    html += '<div style="font-size:10px;color:#71717a;text-align:center;">' + verifyCount + ' community verification' + (verifyCount !== 1 ? 's' : '') + '</div>';
+    html += '</div>';
+
+    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="display:flex;gap:6px;">';
+    html += '<input id="cp-comment-input-' + cp.id + '" type="text" placeholder="Write a comment..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:#0c0c14;color:#e4e4e7;font-size:12px;outline:none;min-width:0;" />';
+    html += '<button id="cp-comment-send-' + cp.id + '" style="padding:6px 12px;border-radius:6px;background:rgba(230,168,23,0.15);color:#e6a817;font-size:11px;font-weight:700;border:none;cursor:pointer;outline:none;">Send</button>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div style="font-size:11px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:6px;">';
+    html += 'by <span style="color:#a1a1aa;">' + (cp.reporter_username || 'Anonymous') + '</span> &middot; ' + (cp.created_at ? new Date(cp.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+    html += '</div></div>';
+    return html;
+  }
+
+  communityPhotoData.forEach(function(cp) {
+    var icon = L.divIcon({
+      className: '',
+      html: '<div style="width:32px;height:32px;border-radius:8px;background:' + cp.color + ';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    });
+
+    var marker = L.marker([cp.lat, cp.lng], { icon: icon }).addTo(map);
+    marker.bindPopup(communityPhotoPopupHtml(cp, null), { maxWidth: 300, className: 'hazard-popup' });
+
+    marker.on('popupopen', function() {
+      var popup = marker.getPopup();
+      if (!popup) return;
+
+      function loadAndRender() {
+        fetch(SUPABASE_URL + '/rest/v1/rpc/get_community_photo_comments', {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_photo_id: cp.id })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(comData) {
+          var comments = Array.isArray(comData) ? comData : [];
+          popup.setContent(communityPhotoPopupHtml(cp, comments));
+          setTimeout(function() {
+            var stillHereBtn = document.getElementById('cp-verify-stillhere-' + cp.id);
+            var fixedBtn = document.getElementById('cp-verify-fixed-' + cp.id);
+            var commentInput = document.getElementById('cp-comment-input-' + cp.id);
+            var commentSend = document.getElementById('cp-comment-send-' + cp.id);
+
+            function doVerify(body) {
+              fetch(SUPABASE_URL + '/rest/v1/rpc/create_community_photo_comment', {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_photo_id: cp.id, p_body: body })
+              }).then(function() { loadAndRender(); });
+            }
+
+            if (stillHereBtn) stillHereBtn.onclick = function() { doVerify('✅ Still here'); };
+            if (fixedBtn) fixedBtn.onclick = function() { doVerify('✅ Fixed'); };
+
+            if (commentSend && commentInput) {
+              var sendComment = function() {
+                var text = commentInput.value.trim();
+                if (!text) return;
+                commentSend.textContent = '...';
+                commentInput.disabled = true;
+                fetch(SUPABASE_URL + '/rest/v1/rpc/create_community_photo_comment', {
+                  method: 'POST',
+                  headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ p_photo_id: cp.id, p_body: text })
+                }).then(function() {
+                  commentInput.value = '';
+                  commentInput.disabled = false;
+                  commentSend.textContent = 'Send';
+                  loadAndRender();
+                }).catch(function() {
+                  commentInput.disabled = false;
+                  commentSend.textContent = 'Send';
+                });
+              };
+              commentSend.onclick = sendComment;
+              commentInput.onkeydown = function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendComment(); }
+              };
+            }
+          }, 0);
+        })
+        .catch(function() {
+          popup.setContent(communityPhotoPopupHtml(cp, []));
+        });
+      }
+
+      loadAndRender();
+    });
 
     bounds.push([cp.lat, cp.lng]);
   });
