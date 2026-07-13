@@ -356,6 +356,9 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                                 <View style={styles.commentBody}>
                                   <Text style={styles.commentUsername}>{c.username ?? 'Unknown'}</Text>
                                   <Text style={styles.commentText}>{c.body}</Text>
+                                  <Text style={styles.commentTime}>
+                                    {new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                  </Text>
                                 </View>
                               </View>
                             ))
@@ -493,6 +496,9 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                               <View style={styles.commentBody}>
                                 <Text style={styles.commentUsername}>{c.username ?? 'Unknown'}</Text>
                                 <Text style={styles.commentText}>{c.body}</Text>
+                                <Text style={styles.commentTime}>
+                                  {new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </Text>
                               </View>
                             </View>
                           ))
@@ -683,6 +689,7 @@ const styles = StyleSheet.create({
   commentBody: { flex: 1 },
   commentUsername: { color: '#e4e4e7', fontSize: 11, fontWeight: '600' },
   commentText: { color: '#a1a1aa', fontSize: 12, marginTop: 1, lineHeight: 16 },
+  commentTime: { color: '#6b7280', fontSize: 10, marginTop: 2 },
   commentInputRow: {
     flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8,
   },
