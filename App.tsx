@@ -14,6 +14,7 @@ import MapVerificationScreen from './screens/MapVerificationScreen'
 import DistressListScreen from './screens/DistressListScreen'
 import PhotoCaptureScreen from './screens/PhotoCaptureScreen'
 import FeedScreen from './screens/FeedScreen'
+import FeedDetailScreen from './screens/FeedDetailScreen'
 import OnboardingScreen from './screens/OnboardingScreen'
 import AppSidebar from './components/AppSidebar'
 import type { Recording } from './lib/types'
@@ -22,7 +23,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'camera' | 'photo' | 'map' | 'distress'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'photo' | 'map' | 'distress'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -214,6 +215,7 @@ export default function App() {
   )
 
   const [sidebarVisible, setSidebarVisible] = useState(false)
+  const [detailItem, setDetailItem] = useState<{ type: 'photo'; data: any } | { type: 'pothole'; data: any } | null>(null)
 
   const handleLogout = useCallback(async () => {
     await supabase.auth.signOut()
@@ -281,6 +283,16 @@ export default function App() {
           onTabChange={(tab) => setScreen(tab)}
           onPhoto={() => setScreen('photo')}
           onMenuPress={() => setSidebarVisible(true)}
+          onViewDetail={(item) => {
+            setDetailItem(item)
+            setScreen('feeddetail')
+          }}
+        />
+      )}
+      {screen === 'feeddetail' && detailItem && (
+        <FeedDetailScreen
+          item={detailItem}
+          onBack={() => setScreen('feed')}
         />
       )}
       {screen === 'camera' && (

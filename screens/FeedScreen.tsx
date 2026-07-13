@@ -31,6 +31,7 @@ type Props = {
   onTabChange: (tab: 'dashboard' | 'feed') => void
   onPhoto: () => void
   onMenuPress: () => void
+  onViewDetail: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
 }
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
@@ -39,7 +40,7 @@ const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }>
   no_detection: { label: 'No Distress', color: '#6b7280', bg: 'rgba(107, 114, 128, 0.1)' },
 }
 
-export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto, onMenuPress }: Props) {
+export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto, onMenuPress, onViewDetail }: Props) {
   const [pendingPosts, setPendingPosts] = useState<LocalPhotoPost[]>([])
   const [uploadedPosts, setUploadedPosts] = useState<any[]>([])
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set())
@@ -291,23 +292,25 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
 
                 return (
                   <View key={`photo-${post.id}`} style={styles.postCard}>
-                    <Image source={{ uri: post.image_url }} style={styles.postImage} />
-                    <View style={styles.postBody}>
-                      <View style={styles.postTopRow}>
-                        <View style={styles.reporterRow}>
-                          <Ionicons name="person-circle-outline" size={16} color="#52525b" />
-                          <Text style={styles.reporter}>{post.reporter_username ?? 'Anonymous'}</Text>
+                    <TouchableOpacity activeOpacity={0.85} onPress={() => onViewDetail(item)}>
+                      <Image source={{ uri: post.image_url }} style={styles.postImage} />
+                      <View style={styles.postBody}>
+                        <View style={styles.postTopRow}>
+                          <View style={styles.reporterRow}>
+                            <Ionicons name="person-circle-outline" size={16} color="#52525b" />
+                            <Text style={styles.reporter}>{post.reporter_username ?? 'Anonymous'}</Text>
+                          </View>
+                          <Text style={styles.time}>
+                            {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          </Text>
                         </View>
-                        <Text style={styles.time}>
-                          {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                        </Text>
+                        {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
+                        <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+                          <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
+                          <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
+                        </View>
                       </View>
-                      {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
-                      <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
-                        <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
-                        <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
-                      </View>
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.verifyRow}>
                       <TouchableOpacity
                         style={styles.verifyBtnStill}
@@ -400,44 +403,46 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
 
               return (
                 <View key={`pothole-${potholeKey}`} style={styles.postCard}>
-                  {p.image_url ? (
-                    <Image source={{ uri: p.image_url }} style={styles.postImage} />
-                  ) : (
-                    <View style={[styles.potholePlaceholder, { backgroundColor: sev.bg }]}>
-                      <View style={styles.potholePlaceholderIcon}>
-                        <Ionicons name="warning" size={32} color={sev.color} />
+                  <TouchableOpacity activeOpacity={0.85} onPress={() => onViewDetail(item)}>
+                    {p.image_url ? (
+                      <Image source={{ uri: p.image_url }} style={styles.postImage} />
+                    ) : (
+                      <View style={[styles.potholePlaceholder, { backgroundColor: sev.bg }]}>
+                        <View style={styles.potholePlaceholderIcon}>
+                          <Ionicons name="warning" size={32} color={sev.color} />
+                        </View>
+                        <Text style={[styles.potholePlaceholderLabel, { color: sev.color }]}>Pothole</Text>
                       </View>
-                      <Text style={[styles.potholePlaceholderLabel, { color: sev.color }]}>Pothole</Text>
+                    )}
+                    <View style={styles.postBody}>
+                      <View style={styles.postTopRow}>
+                        <View style={styles.reporterRow}>
+                          <Ionicons name="person-circle-outline" size={16} color="#52525b" />
+                          <Text style={styles.reporter}>{p.reporter_username ?? 'Auto-detected'}</Text>
+                        </View>
+                        <Text style={styles.time}>
+                          {p.citizen_first_reported_at
+                            ? new Date(p.citizen_first_reported_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                            : null}
+                        </Text>
+                      </View>
+                      <Text style={styles.address}>{formatAddress(p)}</Text>
+                      <View style={styles.potholeMetaRow}>
+                        <View style={[styles.severityBadge, { backgroundColor: sev.bg }]}>
+                          <View style={[styles.severityDot, { backgroundColor: sev.color }]} />
+                          <Text style={[styles.severityLabel, { color: sev.color }]}>{p.worst_severity}</Text>
+                        </View>
+                        <View style={styles.hitsBadge}>
+                          <Ionicons name="flash" size={12} color="#6b7280" />
+                          <Text style={styles.hitsText}>{p.total_detection_hits} hit{p.total_detection_hits !== 1 ? 's' : ''}</Text>
+                        </View>
+                        <View style={styles.hitsBadge}>
+                          <Ionicons name="people" size={12} color="#6b7280" />
+                          <Text style={styles.hitsText}>{p.detectors_count} detector{p.detectors_count !== 1 ? 's' : ''}</Text>
+                        </View>
+                      </View>
                     </View>
-                  )}
-                  <View style={styles.postBody}>
-                    <View style={styles.postTopRow}>
-                      <View style={styles.reporterRow}>
-                        <Ionicons name="person-circle-outline" size={16} color="#52525b" />
-                        <Text style={styles.reporter}>{p.reporter_username ?? 'Auto-detected'}</Text>
-                      </View>
-                      <Text style={styles.time}>
-                        {p.citizen_first_reported_at
-                          ? new Date(p.citizen_first_reported_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-                          : null}
-                      </Text>
-                    </View>
-                    <Text style={styles.address}>{formatAddress(p)}</Text>
-                    <View style={styles.potholeMetaRow}>
-                      <View style={[styles.severityBadge, { backgroundColor: sev.bg }]}>
-                        <View style={[styles.severityDot, { backgroundColor: sev.color }]} />
-                        <Text style={[styles.severityLabel, { color: sev.color }]}>{p.worst_severity}</Text>
-                      </View>
-                      <View style={styles.hitsBadge}>
-                        <Ionicons name="flash" size={12} color="#6b7280" />
-                        <Text style={styles.hitsText}>{p.total_detection_hits} hit{p.total_detection_hits !== 1 ? 's' : ''}</Text>
-                      </View>
-                      <View style={styles.hitsBadge}>
-                        <Ionicons name="people" size={12} color="#6b7280" />
-                        <Text style={styles.hitsText}>{p.detectors_count} detector{p.detectors_count !== 1 ? 's' : ''}</Text>
-                      </View>
-                    </View>
-                  </View>
+                  </TouchableOpacity>
 
                   <View style={styles.verifyRow}>
                     <TouchableOpacity
