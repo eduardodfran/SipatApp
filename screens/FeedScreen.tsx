@@ -49,14 +49,32 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({})
   const [postingComment, setPostingComment] = useState<Record<string, boolean>>({})
 
+  const [potholes, setPotholes] = useState<any[]>([])
+  const [potholeExpandedId, setPotholeExpandedId] = useState<number | null>(null)
+  const [potholeComments, setPotholeComments] = useState<Record<number, any[]>>({})
+  const [potholeDrafts, setPotholeDrafts] = useState<Record<number, string>>({})
+  const [potholePosting, setPotholePosting] = useState<Record<number, boolean>>({})
+
   const loadPosts = useCallback(async () => {
     setLoading(true)
-    const [pending, { data }] = await Promise.all([
+    const [pending, { data: photoData }, { data: potholeData }] = await Promise.all([
       loadPendingPhotos(),
       supabase.from('community_photos').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase
+        .from('v_unified_potholes')
+        .select(
+          'pothole_id, consolidated_latitude, consolidated_longitude, worst_severity, '
+          + 'total_detection_hits, citizen_first_reported_at, latest_activity_at, '
+          + 'image_url, reporter_username, reporter_avatar, detectors_count, '
+          + 'street, barangay, city, province, formatted_address'
+        )
+        .not('worst_severity', 'is', null)
+        .order('citizen_first_reported_at', { ascending: false, nullsFirst: false })
+        .limit(50),
     ])
     setPendingPosts(pending)
-    setUploadedPosts(data ?? [])
+    setUploadedPosts(photoData ?? [])
+    setPotholes(potholeData ?? [])
     setLoading(false)
   }, [])
 
@@ -116,6 +134,26 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     setCommentsByPost((prev) => ({ ...prev, [key]: (data ?? []) as Comment[] }))
   }, [])
 
+  const loadPotholeComments = useCallback(async (potholeId: number) => {
+    const { data } = await supabase.rpc('get_detection_comments', { p_pothole_id: potholeId })
+    setPotholeComments((prev) => ({ ...prev, [potholeId]: data ?? [] }))
+  }, [])
+
+  const handlePotholeVerify = useCallback(async (potholeId: number, body: string) => {
+    await supabase.rpc('create_detection_comment', { p_pothole_id: potholeId, p_body: body })
+    loadPotholeComments(potholeId)
+  }, [loadPotholeComments])
+
+  const handlePotholeSendComment = useCallback(async (potholeId: number) => {
+    const text = potholeDrafts[potholeId]?.trim()
+    if (!text || potholePosting[potholeId]) return
+    setPotholePosting((prev) => ({ ...prev, [potholeId]: true }))
+    await supabase.rpc('create_detection_comment', { p_pothole_id: potholeId, p_body: text })
+    await loadPotholeComments(potholeId)
+    setPotholeDrafts((prev) => ({ ...prev, [potholeId]: '' }))
+    setPotholePosting((prev) => ({ ...prev, [potholeId]: false }))
+  }, [potholeDrafts, potholePosting, loadPotholeComments])
+
   const allUploadedIds = new Set(uploadedPosts.map((p) => p.id))
   const filteredPending = pendingPosts.filter((p) => {
     if (p.status === 'uploaded' && p.remoteId && allUploadedIds.has(p.remoteId)) return false
@@ -123,6 +161,27 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
   })
 
   const allPosts = [...uploadedPosts]
+
+  type FeedItem = { type: 'photo'; data: any } | { type: 'pothole'; data: any }
+  const feedItems: FeedItem[] = [
+    ...uploadedPosts.map((p) => ({ type: 'photo' as const, data: p })),
+    ...potholes.map((p) => ({ type: 'pothole' as const, data: p })),
+  ].sort((a: any, b: any) => {
+    const da = a.type === 'photo' ? a.data.created_at : a.data.citizen_first_reported_at
+    const db = b.type === 'photo' ? b.data.created_at : b.data.citizen_first_reported_at
+    return new Date(db || 0).getTime() - new Date(da || 0).getTime()
+  })
+
+  const SEVERITY_COLORS: Record<string, { color: string; bg: string }> = {
+    Minor: { color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+    Moderate: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+    Severe: { color: '#dc2626', bg: 'rgba(222,38,38,0.1)' },
+    Unknown: { color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
+  }
+
+  const formatAddress = (p: any) => {
+    return p.formatted_address || [p.street, p.barangay, p.city, p.province].filter(Boolean).join(', ') || 'Unknown location'
+  }
 
   return (
     <View style={styles.container}>
@@ -195,15 +254,15 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="people-outline" size={14} color="#a1a1aa" />
-            <Text style={styles.sectionTitle}>Community Feed</Text>
-            <Text style={styles.sectionCount}>{allPosts.length}</Text>
+            <Text style={styles.sectionTitle}>Feed</Text>
+            <Text style={styles.sectionCount}>{feedItems.length}</Text>
           </View>
 
           {loading ? (
             <View style={styles.loadingWrap}>
               <ActivityIndicator size="small" color="#e6a817" />
             </View>
-          ) : allPosts.length === 0 && filteredPending.length === 0 ? (
+          ) : feedItems.length === 0 && filteredPending.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconWrap}>
                 <Ionicons name="camera-outline" size={32} color="#52525b" />
@@ -215,44 +274,172 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                 <Text style={styles.emptyBtnText}>Take a Photo</Text>
               </TouchableOpacity>
             </View>
-          ) : allPosts.length === 0 ? (
+          ) : feedItems.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptySub}>No community reports yet</Text>
             </View>
           ) : (
-            allPosts.map((post) => {
-              const badge = STATUS_BADGE[post.detection_status] ?? STATUS_BADGE.pending
-              const postKey = String(post.id)
-              const comments = commentsByPost[postKey]
-              const verifyCount = comments ? comments.filter((c: Comment) => c.body.includes('✅')).length : 0
-              const commentCount = comments ? comments.length : 0
-              const isExpanded = expandedPostId === postKey
+            feedItems.map((item) => {
+              if (item.type === 'photo') {
+                const post = item.data
+                const badge = STATUS_BADGE[post.detection_status] ?? STATUS_BADGE.pending
+                const postKey = String(post.id)
+                const comments = commentsByPost[postKey]
+                const verifyCount = comments ? comments.filter((c: Comment) => c.body.includes('✅')).length : 0
+                const commentCount = comments ? comments.length : 0
+                const isExpanded = expandedPostId === postKey
+
+                return (
+                  <View key={`photo-${post.id}`} style={styles.postCard}>
+                    <Image source={{ uri: post.image_url }} style={styles.postImage} />
+                    <View style={styles.postBody}>
+                      <View style={styles.postTopRow}>
+                        <View style={styles.reporterRow}>
+                          <Ionicons name="person-circle-outline" size={16} color="#52525b" />
+                          <Text style={styles.reporter}>{post.reporter_username ?? 'Anonymous'}</Text>
+                        </View>
+                        <Text style={styles.time}>
+                          {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </Text>
+                      </View>
+                      {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
+                      <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+                        <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
+                        <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.verifyRow}>
+                      <TouchableOpacity
+                        style={styles.verifyBtnStill}
+                        onPress={() => handleVerify(post.id, '✅ Still here')}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="checkmark-circle-outline" size={14} color="#22c55e" />
+                        <Text style={styles.verifyBtnStillText}>Still here</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.verifyBtnFixed}
+                        onPress={() => handleVerify(post.id, '✅ Fixed')}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
+                        <Text style={styles.verifyBtnFixedText}>Fixed</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.verifyCount}>{verifyCount}</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.commentsToggle}
+                      onPress={() => toggleComments(post.id)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name={isExpanded ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#6b7280" />
+                      <Text style={styles.commentsToggleText}>
+                        {commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Comment'}
+                      </Text>
+                      <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={12} color="#52525b" />
+                    </TouchableOpacity>
+                    {isExpanded && (
+                      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                        <View style={styles.commentsSection}>
+                          {!comments ? (
+                            <ActivityIndicator size="small" color="#6b7280" />
+                          ) : comments.length === 0 ? (
+                            <Text style={styles.noComments}>No comments yet</Text>
+                          ) : (
+                            comments.map((c: Comment) => (
+                              <View key={c.id} style={styles.commentRow}>
+                                <View style={styles.commentAvatar}>
+                                  <Text style={styles.commentAvatarText}>
+                                    {(c.username ?? '?').charAt(0).toUpperCase()}
+                                  </Text>
+                                </View>
+                                <View style={styles.commentBody}>
+                                  <Text style={styles.commentUsername}>{c.username ?? 'Unknown'}</Text>
+                                  <Text style={styles.commentText}>{c.body}</Text>
+                                </View>
+                              </View>
+                            ))
+                          )}
+                          <View style={styles.commentInputRow}>
+                            <TextInput
+                              style={styles.commentInput}
+                              value={commentDrafts[postKey] ?? ''}
+                              onChangeText={(text) => setCommentDrafts((prev) => ({ ...prev, [postKey]: text }))}
+                              placeholder="Write a comment..."
+                              placeholderTextColor="#374151"
+                              multiline={false}
+                            />
+                            <TouchableOpacity
+                              style={[styles.commentSendBtn, (!commentDrafts[postKey]?.trim() || postingComment[postKey]) && styles.commentSendBtnDisabled]}
+                              disabled={!commentDrafts[postKey]?.trim() || postingComment[postKey]}
+                              onPress={() => handleSendComment(post.id)}
+                            >
+                              <Text style={styles.commentSendText}>
+                                {postingComment[postKey] ? '...' : 'Send'}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      </KeyboardAvoidingView>
+                    )}
+                  </View>
+                )
+              }
+
+              // Pothole card (ride detection)
+              const p = item.data
+              const sev = SEVERITY_COLORS[p.worst_severity] ?? SEVERITY_COLORS.Unknown
+              const potholeKey = p.pothole_id
+              const pComments = potholeComments[potholeKey]
+              const pVerifyCount = pComments ? pComments.filter((c: any) => c.body.includes('✅')).length : 0
+              const pCommentCount = pComments ? pComments.length : 0
+              const pIsExpanded = potholeExpandedId === potholeKey
 
               return (
-                <View key={post.id} style={styles.postCard}>
-                  <Image source={{ uri: post.image_url }} style={styles.postImage} />
+                <View key={`pothole-${potholeKey}`} style={styles.postCard}>
+                  {p.image_url ? (
+                    <Image source={{ uri: p.image_url }} style={styles.postImage} />
+                  ) : (
+                    <View style={[styles.potholePlaceholder, { backgroundColor: sev.bg }]}>
+                      <View style={styles.potholePlaceholderIcon}>
+                        <Ionicons name="warning" size={32} color={sev.color} />
+                      </View>
+                      <Text style={[styles.potholePlaceholderLabel, { color: sev.color }]}>Pothole</Text>
+                    </View>
+                  )}
                   <View style={styles.postBody}>
                     <View style={styles.postTopRow}>
                       <View style={styles.reporterRow}>
                         <Ionicons name="person-circle-outline" size={16} color="#52525b" />
-                        <Text style={styles.reporter}>{post.reporter_username ?? 'Anonymous'}</Text>
+                        <Text style={styles.reporter}>{p.reporter_username ?? 'Auto-detected'}</Text>
                       </View>
                       <Text style={styles.time}>
-                        {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        {p.citizen_first_reported_at
+                          ? new Date(p.citizen_first_reported_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                          : null}
                       </Text>
                     </View>
-                    {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
-                    <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
-                      <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
-                      <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
+                    <Text style={styles.address}>{formatAddress(p)}</Text>
+                    <View style={styles.potholeMetaRow}>
+                      <View style={[styles.severityBadge, { backgroundColor: sev.bg }]}>
+                        <View style={[styles.severityDot, { backgroundColor: sev.color }]} />
+                        <Text style={[styles.severityLabel, { color: sev.color }]}>{p.worst_severity}</Text>
+                      </View>
+                      <View style={styles.hitsBadge}>
+                        <Ionicons name="flash" size={12} color="#6b7280" />
+                        <Text style={styles.hitsText}>{p.total_detection_hits} hit{p.total_detection_hits !== 1 ? 's' : ''}</Text>
+                      </View>
+                      <View style={styles.hitsBadge}>
+                        <Ionicons name="people" size={12} color="#6b7280" />
+                        <Text style={styles.hitsText}>{p.detectors_count} detector{p.detectors_count !== 1 ? 's' : ''}</Text>
+                      </View>
                     </View>
                   </View>
 
-                  {/* Verify buttons */}
                   <View style={styles.verifyRow}>
                     <TouchableOpacity
                       style={styles.verifyBtnStill}
-                      onPress={() => handleVerify(post.id, '✅ Still here')}
+                      onPress={() => handlePotholeVerify(potholeKey, '✅ Still here')}
                       activeOpacity={0.7}
                     >
                       <Ionicons name="checkmark-circle-outline" size={14} color="#22c55e" />
@@ -260,40 +447,43 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.verifyBtnFixed}
-                      onPress={() => handleVerify(post.id, '✅ Fixed')}
+                      onPress={() => handlePotholeVerify(potholeKey, '✅ Fixed')}
                       activeOpacity={0.7}
                     >
                       <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
                       <Text style={styles.verifyBtnFixedText}>Fixed</Text>
                     </TouchableOpacity>
-                    <Text style={styles.verifyCount}>{verifyCount}</Text>
+                    <Text style={styles.verifyCount}>{pVerifyCount}</Text>
                   </View>
 
-                  {/* Comments toggle */}
                   <TouchableOpacity
                     style={styles.commentsToggle}
-                    onPress={() => toggleComments(post.id)}
+                    onPress={() => {
+                      if (potholeExpandedId === potholeKey) {
+                        setPotholeExpandedId(null)
+                      } else {
+                        setPotholeExpandedId(potholeKey)
+                        if (!potholeComments[potholeKey]) loadPotholeComments(potholeKey)
+                      }
+                    }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name={isExpanded ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#6b7280" />
+                    <Ionicons name={pIsExpanded ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#6b7280" />
                     <Text style={styles.commentsToggleText}>
-                      {commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Comment'}
+                      {pCommentCount > 0 ? `${pCommentCount} comment${pCommentCount !== 1 ? 's' : ''}` : 'Comment'}
                     </Text>
-                    <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={12} color="#52525b" />
+                    <Ionicons name={pIsExpanded ? 'chevron-up' : 'chevron-down'} size={12} color="#52525b" />
                   </TouchableOpacity>
 
-                  {/* Expanded comments */}
-                  {isExpanded && (
-                    <KeyboardAvoidingView
-                      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    >
+                  {pIsExpanded && (
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                       <View style={styles.commentsSection}>
-                        {!comments ? (
+                        {!pComments ? (
                           <ActivityIndicator size="small" color="#6b7280" />
-                        ) : comments.length === 0 ? (
+                        ) : pComments.length === 0 ? (
                           <Text style={styles.noComments}>No comments yet</Text>
                         ) : (
-                          comments.map((c: Comment) => (
+                          pComments.map((c: any) => (
                             <View key={c.id} style={styles.commentRow}>
                               <View style={styles.commentAvatar}>
                                 <Text style={styles.commentAvatarText}>
@@ -310,22 +500,19 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                         <View style={styles.commentInputRow}>
                           <TextInput
                             style={styles.commentInput}
-                            value={commentDrafts[postKey] ?? ''}
-                            onChangeText={(text) => setCommentDrafts((prev) => ({ ...prev, [postKey]: text }))}
+                            value={potholeDrafts[potholeKey] ?? ''}
+                            onChangeText={(text) => setPotholeDrafts((prev) => ({ ...prev, [potholeKey]: text }))}
                             placeholder="Write a comment..."
                             placeholderTextColor="#374151"
                             multiline={false}
                           />
                           <TouchableOpacity
-                            style={[
-                              styles.commentSendBtn,
-                              (!commentDrafts[postKey]?.trim() || postingComment[postKey]) && styles.commentSendBtnDisabled,
-                            ]}
-                            disabled={!commentDrafts[postKey]?.trim() || postingComment[postKey]}
-                            onPress={() => handleSendComment(post.id)}
+                            style={[styles.commentSendBtn, (!potholeDrafts[potholeKey]?.trim() || potholePosting[potholeKey]) && styles.commentSendBtnDisabled]}
+                            disabled={!potholeDrafts[potholeKey]?.trim() || potholePosting[potholeKey]}
+                            onPress={() => handlePotholeSendComment(potholeKey)}
                           >
                             <Text style={styles.commentSendText}>
-                              {postingComment[postKey] ? '...' : 'Send'}
+                              {potholePosting[potholeKey] ? '...' : 'Send'}
                             </Text>
                           </TouchableOpacity>
                         </View>
@@ -424,6 +611,32 @@ const styles = StyleSheet.create({
   },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 12, fontWeight: '600' },
+
+  potholePlaceholder: {
+    width: '100%', height: 140,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  potholePlaceholderIcon: {
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'center', alignItems: 'center',
+    marginBottom: 8,
+  },
+  potholePlaceholderLabel: { fontSize: 13, fontWeight: '700' },
+  address: { color: '#a1a1aa', fontSize: 12, lineHeight: 16, marginTop: 2 },
+  potholeMetaRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8,
+  },
+  severityBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8,
+  },
+  severityDot: { width: 6, height: 6, borderRadius: 3 },
+  severityLabel: { fontSize: 11, fontWeight: '700' },
+  hitsBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+  },
+  hitsText: { color: '#6b7280', fontSize: 11, fontWeight: '500' },
 
   // Verify buttons
   verifyRow: {
