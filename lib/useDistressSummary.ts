@@ -37,6 +37,7 @@ export function useDistressSummary() {
       .select('class_name, confidence, severity, image_url')
       .not('class_name', 'is', null)
       .not('class_name', 'in', '("D43","D44")')
+      .limit(500)
       .then(({ data, error }) => {
         if (cancelled) return
         setLoading(false)

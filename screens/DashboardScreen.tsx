@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { useRef } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import type { Recording } from '../lib/types'
 
@@ -56,6 +57,14 @@ export default function DashboardScreen({
   onTabChange,
   onMenuPress,
 }: Props) {
+
+  const lastPressRef = useRef<Record<string, number>>({})
+  const debounce = (key: string) => {
+    const now = Date.now()
+    if (now - (lastPressRef.current[key] ?? 0) < 500) return false
+    lastPressRef.current[key] = now
+    return true
+  }
 
   const totalRecordings = recordings.length
   const completed = recordings.filter((r) => r.status === 'completed').length
@@ -282,7 +291,7 @@ export default function DashboardScreen({
                   {!item.uploaded && (
                     <TouchableOpacity
                       style={styles.rideAction}
-                      onPress={() => onUpload(item)}
+                      onPress={() => debounce(`upload-${item.id}`) && onUpload(item)}
                       disabled={uploadingId === item.id}
                       activeOpacity={0.7}
                     >
@@ -296,7 +305,7 @@ export default function DashboardScreen({
                   {item.uploaded && item.status === 'queued' && (
                     <TouchableOpacity
                       style={styles.rideAction}
-                      onPress={() => onProcess(item)}
+                      onPress={() => debounce(`process-${item.id}`) && onProcess(item)}
                       disabled={processingId === item.id}
                       activeOpacity={0.7}
                     >

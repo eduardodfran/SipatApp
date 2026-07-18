@@ -642,6 +642,7 @@ export default function MapVerificationScreen({ onBack, focusItem }: Props) {
           .from('v_unified_potholes')
           .select('*')
           .order('total_detection_hits', { ascending: false })
+          .limit(500)
 
         if (error) {
           console.log('[MapScreen] video distress query error:', error.message, error.details, error.hint)
