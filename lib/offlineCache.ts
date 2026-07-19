@@ -6,16 +6,27 @@ export async function getCached<T>(key: string): Promise<{ data: T; timestamp: n
   try {
     const raw = await AsyncStorage.getItem(`${CACHE_PREFIX}${key}`)
     if (!raw) return null
-    return JSON.parse(raw)
+    const entry = JSON.parse(raw)
+    if (entry.ttlMs && Date.now() - entry.timestamp > entry.ttlMs) {
+      AsyncStorage.removeItem(`${CACHE_PREFIX}${key}`)
+      return null
+    }
+    return { data: entry.data, timestamp: entry.timestamp }
   } catch {
     return null
   }
 }
 
+let lastCleanup = 0
+
 export async function setCache(key: string, data: unknown, ttlMs = 300_000): Promise<void> {
   try {
     const entry = { data, timestamp: Date.now(), ttlMs }
     await AsyncStorage.setItem(`${CACHE_PREFIX}${key}`, JSON.stringify(entry))
+    if (Date.now() - lastCleanup > 300_000) {
+      lastCleanup = Date.now()
+      clearExpired()
+    }
   } catch {
     // silently fail — cache is a nice-to-have
   }

@@ -1,5 +1,5 @@
-import 'react-native-url-polyfill/auto'
 import 'react-native-get-random-values'
+import 'react-native-url-polyfill/auto'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, Platform, Text, TouchableOpacity, View } from 'react-native'
 import { User } from '@supabase/supabase-js'
