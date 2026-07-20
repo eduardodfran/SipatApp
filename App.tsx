@@ -82,6 +82,9 @@ export default function App() {
           uploaded: true,
           status: r.status,
           errorLog: r.error_log ?? undefined,
+          progressPct: r.progress_pct ?? 0,
+          progressStage: r.progress_stage ?? '',
+          progressMessage: r.progress_message ?? '',
           storagePaths: { video: r.video_bucket_path, gps: r.gps_bucket_path },
         }))
         setRecordings((prev) => {
@@ -106,14 +109,21 @@ export default function App() {
             prev.map((r) => {
               if (!r.uploaded) return r
               const updated = rides.find((s) => s.id === r.rideId)
-              if (!updated || updated.status === r.status) return r
-              return { ...r, status: updated.status, errorLog: updated.error_log ?? undefined }
+              if (!updated || (updated.status === r.status && r.status !== 'processing')) return r
+              return {
+                ...r,
+                status: updated.status,
+                errorLog: updated.error_log ?? undefined,
+                progressPct: updated.progress_pct ?? r.progressPct,
+                progressStage: updated.progress_stage ?? r.progressStage,
+                progressMessage: updated.progress_message ?? r.progressMessage,
+              }
             }),
           )
         } catch {
           // keep current state on error
         }
-      }, 4000)
+      }, 2000)
     }
     if (!hasProcessing && pollInterval.current) {
       clearInterval(pollInterval.current)
@@ -141,6 +151,9 @@ export default function App() {
         uploaded: true,
         status: r.status,
         errorLog: r.error_log ?? undefined,
+        progressPct: r.progress_pct ?? 0,
+        progressStage: r.progress_stage ?? '',
+        progressMessage: r.progress_message ?? '',
         storagePaths: { video: r.video_bucket_path, gps: r.gps_bucket_path },
       }))
       setRecordings((prev) => {

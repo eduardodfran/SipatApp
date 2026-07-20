@@ -256,8 +256,8 @@ export default function DashboardScreen({
             recentRecordings.map((item, index) => {
               const statusCfg = item.status ? STATUS_CONFIG[item.status] : null
               return (
+                <View key={item.id}>
                 <View
-                  key={item.id}
                   style={[
                     styles.rideCard,
                     index === recentRecordings.length - 1 && styles.rideCardLast,
@@ -316,6 +316,17 @@ export default function DashboardScreen({
                       )}
                     </TouchableOpacity>
                   )}
+                </View>
+                {item.status === 'processing' && item.progressPct != null && item.progressPct > 0 && (
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBarBg}>
+                      <View style={[styles.progressBarFill, { width: `${item.progressPct}%` }]} />
+                    </View>
+                    <Text style={styles.progressText}>
+                      {item.progressMessage || item.progressStage || 'Processing...'}
+                    </Text>
+                  </View>
+                )}
                 </View>
               )
             })
@@ -601,7 +612,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#141420',
     borderRadius: 14,
     padding: 14,
-    marginBottom: 8,
+    marginBottom: 4,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.04)',
     flexDirection: 'row',
@@ -656,6 +667,26 @@ const styles = StyleSheet.create({
   rideStatusText: {
     fontSize: 11,
     fontWeight: '700',
+  },
+  progressContainer: {
+    marginTop: 8,
+  },
+  progressBarBg: {
+    height: 4,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: 4,
+    backgroundColor: '#f59e0b',
+    borderRadius: 2,
+  },
+  progressText: {
+    color: '#f59e0b',
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 4,
   },
   rideAction: {
     width: 32,

@@ -150,6 +150,9 @@ export type MyRide = {
   status: 'queued' | 'processing' | 'completed' | 'failed'
   error_log: string | null
   created_at: string
+  progress_pct: number | null
+  progress_stage: string | null
+  progress_message: string | null
 }
 
 export async function fetchMyRides(): Promise<MyRide[]> {

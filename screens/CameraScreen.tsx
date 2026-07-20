@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { CameraView, useCameraPermissions } from 'expo-camera'
+import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera'
 import * as Location from 'expo-location'
 import { File, Paths } from 'expo-file-system'
 import { Ionicons } from '@expo/vector-icons'
@@ -34,6 +34,7 @@ function formatTime(seconds: number): string {
 
 export default function CameraScreen({ onFinish, onCancel }: Props) {
   const [permission, requestPermission] = useCameraPermissions()
+  const [micPerm, requestMicPermission] = useMicrophonePermissions()
   const [recording, setRecording] = useState(false)
   const [videoUri, setVideoUri] = useState<string | null>(null)
   const [gpsCount, setGpsCount] = useState(0)
@@ -81,7 +82,7 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
     return () => clearInterval(interval)
   }, [recording])
 
-  if (!permission) return null
+  if (!permission || !micPerm) return null
   if (!permission.granted) {
     return (
       <View style={styles.container}>
@@ -92,9 +93,20 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
       </View>
     )
   }
+  if (!micPerm.granted) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.permissionText}>Microphone permission required for video recording</Text>
+        <TouchableOpacity style={styles.permissionBtn} onPress={requestMicPermission}>
+          <Text style={styles.permissionBtnText}>Grant Permission</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
 
   const startRecording = async () => {
     if (!cameraRef.current) return
+
     recordingStartTimeRef.current = Date.now()
     setRecordingGpsCount(0)
     setRecording(true)

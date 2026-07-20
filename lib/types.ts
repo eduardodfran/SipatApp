@@ -7,6 +7,9 @@ export type Recording = {
   uploaded: boolean
   status?: 'queued' | 'processing' | 'completed' | 'failed'
   errorLog?: string
+  progressPct?: number
+  progressStage?: string
+  progressMessage?: string
   storagePaths?: {
     video: string
     gps: string
