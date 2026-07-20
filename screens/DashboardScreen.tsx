@@ -317,7 +317,7 @@ export default function DashboardScreen({
                     </TouchableOpacity>
                   )}
                 </View>
-                {item.status === 'processing' && item.progressPct != null && item.progressPct > 0 && (
+                {item.status === 'processing' && item.progressPct != null && item.progressPct >= 0 && (
                   <View style={styles.progressContainer}>
                     <View style={styles.progressBarBg}>
                       <View style={[styles.progressBarFill, { width: `${item.progressPct}%` }]} />

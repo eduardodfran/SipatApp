@@ -17,15 +17,16 @@ const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.72
 
 type Props = {
   visible: boolean
-  activeTab: 'dashboard' | 'feed'
+  activeTab: 'dashboard' | 'feed' | 'rides'
   user: User | null
   onClose: () => void
-  onTabChange: (tab: 'dashboard' | 'feed') => void
+  onTabChange: (tab: 'dashboard' | 'feed' | 'rides') => void
   onLogout: () => void
 }
 
-const NAV_ITEMS: { key: 'dashboard' | 'feed'; label: string; icon: string }[] = [
+const NAV_ITEMS: { key: 'dashboard' | 'feed' | 'rides'; label: string; icon: string }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: 'grid-outline' },
+  { key: 'rides', label: 'Rides', icon: 'bicycle-outline' },
   { key: 'feed', label: 'Feed', icon: 'images-outline' },
 ]
 

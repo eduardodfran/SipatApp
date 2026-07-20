@@ -6,7 +6,7 @@ import { User } from '@supabase/supabase-js'
 import * as SplashScreen from 'expo-splash-screen'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from './lib/supabase'
-import { fetchFastApi, resetFastApiPreference } from './lib/fastapi'
+import { fetchFastApi } from './lib/fastapi'
 import LoginScreen from './screens/LoginScreen'
 import DashboardScreen from './screens/DashboardScreen'
 import CameraScreen from './screens/CameraScreen'
@@ -16,6 +16,7 @@ import PhotoCaptureScreen from './screens/PhotoCaptureScreen'
 import FeedScreen from './screens/FeedScreen'
 import FeedDetailScreen from './screens/FeedDetailScreen'
 import OnboardingScreen from './screens/OnboardingScreen'
+import RidesScreen from './screens/RidesScreen'
 import AppSidebar from './components/AppSidebar'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
@@ -23,7 +24,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'photo' | 'map' | 'distress'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'photo' | 'map' | 'distress' | 'rides'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -105,11 +106,16 @@ export default function App() {
       pollInterval.current = setInterval(async () => {
         try {
           const rides = await fetchMyRides()
+          console.log(`[poll] fetched ${rides.length} rides`)
           setRecordings((prev) =>
             prev.map((r) => {
               if (!r.uploaded) return r
               const updated = rides.find((s) => s.id === r.rideId)
-              if (!updated || (updated.status === r.status && r.status !== 'processing')) return r
+              if (!updated) return r
+              if (updated.status !== r.status) {
+                console.log(`[poll] ride ${r.rideId?.slice(0,8)} status: ${r.status} → ${updated.status}`)
+              }
+              if (updated.status === r.status && r.status !== 'processing') return r
               return {
                 ...r,
                 status: updated.status,
@@ -120,8 +126,8 @@ export default function App() {
               }
             }),
           )
-        } catch {
-          // keep current state on error
+        } catch (e) {
+          console.log(`[poll] fetchMyRides failed: ${e}`)
         }
       }, 2000)
     }
@@ -139,7 +145,6 @@ export default function App() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
-    resetFastApiPreference()
     try {
       const rides = await fetchMyRides()
       const serverRecordings: Recording[] = rides.map((r) => ({
@@ -296,6 +301,19 @@ export default function App() {
           onMenuPress={() => setSidebarVisible(true)}
         />
       )}
+      {screen === 'rides' && (
+        <RidesScreen
+          recordings={recordings}
+          uploadingId={uploadingId}
+          processingId={processingId}
+          onUpload={handleUploadRecording}
+          onProcess={handleProcessRecording}
+          onDelete={handleDeleteRecording}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
+          onMenuPress={() => setSidebarVisible(true)}
+        />
+      )}
       {screen === 'feed' && (
         <FeedScreen
           feedRefreshKey={feedRefreshKey}
@@ -355,7 +373,7 @@ export default function App() {
 
       <AppSidebar
         visible={sidebarVisible}
-        activeTab={screen === 'feed' ? 'feed' : 'dashboard'}
+        activeTab={screen === 'feed' ? 'feed' : screen === 'rides' ? 'rides' : 'dashboard'}
         user={user}
         onClose={() => setSidebarVisible(false)}
         onTabChange={(tab) => setScreen(tab)}
