@@ -61,8 +61,9 @@ export default function ReportButton({ contentType, contentId, onReported }: Pro
     setLoading(false)
     if (!error) {
       setReported(true)
-      if (data && typeof data === 'object' && 'report_count' in data) {
-        onReported?.((data as { report_count: number }).report_count)
+      const row = Array.isArray(data) ? data[0] : data
+      if (row && typeof row === 'object' && 'report_count' in row) {
+        onReported?.((row as { report_count: number }).report_count)
       }
     }
   }

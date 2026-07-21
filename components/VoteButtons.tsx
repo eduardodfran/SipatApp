@@ -44,10 +44,11 @@ export default function VoteButtons({
             p_content_id: contentId,
           })
           if (error) throw error
-          setUpvotes(data.upvotes)
-          setDownvotes(data.downvotes)
-          setUserVote(data.user_vote)
-          onVoteChange?.(data.net_score)
+          const row = Array.isArray(data) ? data[0] : data
+          setUpvotes(row?.upvotes ?? 0)
+          setDownvotes(row?.downvotes ?? 0)
+          setUserVote(row?.user_vote ?? 0)
+          onVoteChange?.(row?.net_score ?? 0)
         } else {
           const { data, error } = await supabase.rpc('vote_content', {
             p_content_type: contentType,
@@ -55,10 +56,11 @@ export default function VoteButtons({
             p_vote_value: voteValue,
           })
           if (error) throw error
-          setUpvotes(data.upvotes)
-          setDownvotes(data.downvotes)
-          setUserVote(data.user_vote)
-          onVoteChange?.(data.net_score)
+          const row = Array.isArray(data) ? data[0] : data
+          setUpvotes(row?.upvotes ?? 0)
+          setDownvotes(row?.downvotes ?? 0)
+          setUserVote(row?.user_vote ?? 0)
+          onVoteChange?.(row?.net_score ?? 0)
         }
       } catch {
         // silently fail

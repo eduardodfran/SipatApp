@@ -85,7 +85,14 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
         p_content_type: item.type,
         p_content_id: item.type === 'photo' ? String(item.data.id) : String(item.data.pothole_id),
       })
-      if (data) setVoteData(data)
+      if (data) {
+        const row = Array.isArray(data) ? data[0] : data
+        setVoteData({
+          upvotes: row?.upvotes ?? 0,
+          downvotes: row?.downvotes ?? 0,
+          userVote: row?.user_vote ?? 0,
+        })
+      }
     }
     fetchVotes()
   }, [item])
