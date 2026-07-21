@@ -12,6 +12,8 @@ import {
   View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import ReportButton from '../components/ReportButton'
+import VoteButtons from '../components/VoteButtons'
 import { supabase } from '../lib/supabase'
 import { loadPendingPhotos, updatePhotoPost, deletePhotoPost } from '../lib/pendingPhotos'
 import { uploadCommunityPhoto } from '../lib/uploadCommunityPhoto'
@@ -97,6 +99,8 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
   const [commentsByPost, setCommentsByPost] = useState<Record<string, Comment[]>>({})
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({})
   const [postingComment, setPostingComment] = useState<Record<string, boolean>>({})
+  const [photoVotes, setPhotoVotes] = useState<Record<string, { upvotes: number; downvotes: number; userVote: number }>>({})
+  const [potholeVotes, setPotholeVotes] = useState<Record<string, { upvotes: number; downvotes: number; userVote: number }>>({})
 
   const [potholes, setPotholes] = useState<any[]>([])
   const [potholeExpandedId, setPotholeExpandedId] = useState<number | null>(null)
@@ -301,6 +305,16 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
             </TouchableOpacity>
             <Text style={styles.verifyCount}>{verifyCount}</Text>
           </View>
+          <View style={styles.voteRow}>
+            <VoteButtons
+              contentType="photo"
+              contentId={String(post.id)}
+              initialUpvotes={photoVotes[String(post.id)]?.upvotes ?? 0}
+              initialDownvotes={photoVotes[String(post.id)]?.downvotes ?? 0}
+              initialUserVote={photoVotes[String(post.id)]?.userVote ?? 0}
+            />
+            <ReportButton contentType="photo" contentId={String(post.id)} />
+          </View>
           <TouchableOpacity style={styles.commentsToggle} onPress={() => {
             if (commentCount > 0) {
               onViewDetail(item)
@@ -405,6 +419,16 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
           </TouchableOpacity>
           <Text style={styles.verifyCount}>{pVerifyCount}</Text>
         </View>
+        <View style={styles.voteRow}>
+          <VoteButtons
+            contentType="pothole"
+            contentId={String(p.pothole_id)}
+            initialUpvotes={potholeVotes[String(p.pothole_id)]?.upvotes ?? 0}
+            initialDownvotes={potholeVotes[String(p.pothole_id)]?.downvotes ?? 0}
+            initialUserVote={potholeVotes[String(p.pothole_id)]?.userVote ?? 0}
+          />
+          <ReportButton contentType="pothole" contentId={String(p.pothole_id)} />
+        </View>
         <TouchableOpacity style={styles.commentsToggle} onPress={() => {
           if (pCommentCount > 0) {
             onViewDetail(item)
@@ -447,7 +471,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
         )}
       </View>
     )
-  }, [commentsByPost, expandedPostId, commentDrafts, postingComment, potholeComments, potholeExpandedId, potholeDrafts, potholePosting, onViewDetail, toggleComments, handleVerify, handleSendComment, loadPotholeComments, handlePotholeVerify, handlePotholeSendComment])
+  }, [commentsByPost, expandedPostId, commentDrafts, postingComment, photoVotes, potholeVotes, potholeComments, potholeExpandedId, potholeDrafts, potholePosting, onViewDetail, toggleComments, handleVerify, handleSendComment, loadPotholeComments, handlePotholeVerify, handlePotholeSendComment])
 
   const hasNoContent = filteredFeedItems.length === 0 && filteredPending.length === 0
 
@@ -664,6 +688,7 @@ const styles = StyleSheet.create({
   commentSendBtn: { backgroundColor: 'rgba(230, 168, 23, 0.15)', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8 },
   commentSendBtnDisabled: { opacity: 0.4 },
   commentSendText: { color: '#e6a817', fontSize: 12, fontWeight: '700' },
+  voteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)' },
 
   loadingWrap: { paddingVertical: 40, alignItems: 'center' },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
