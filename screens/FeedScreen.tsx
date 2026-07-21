@@ -120,22 +120,10 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     const photoOff = page * PAGE_SIZE
     const potholeOff = page * PAGE_SIZE
 
-    const [pending, { data: photoData, count: photoCount }, { data: potholeData, count: potholeCount }] = await Promise.all([
+    const [pending, { data: photoData }, { data: potholeData }] = await Promise.all([
       page === 0 ? loadPendingPhotos() : Promise.resolve([] as LocalPhotoPost[]),
-      supabase.from('v_community_photos').select('*', { count: 'exact', head: false })
-        .order('created_at', { ascending: false }).range(photoOff, photoOff + PAGE_SIZE - 1),
-      supabase
-        .from('v_unified_potholes')
-        .select(
-          'pothole_id, consolidated_latitude, consolidated_longitude, worst_severity, '
-          + 'total_detection_hits, citizen_first_reported_at, latest_activity_at, '
-          + 'image_url, reporter_user_id, reporter_username, reporter_avatar, detectors_count, caption, '
-          + 'street, barangay, city, province, country, formatted_address',
-          { count: 'exact', head: false },
-        )
-        .not('worst_severity', 'is', null)
-        .order('citizen_first_reported_at', { ascending: false, nullsFirst: false })
-        .range(potholeOff, potholeOff + PAGE_SIZE - 1),
+      supabase.rpc('get_feed_photos', { p_offset: photoOff, p_limit: PAGE_SIZE }),
+      supabase.rpc('get_feed_potholes', { p_offset: potholeOff, p_limit: PAGE_SIZE }),
     ])
 
     if (page === 0) {
@@ -151,8 +139,8 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
       setPotholeOffset((prev) => prev + PAGE_SIZE)
     }
 
-    setHasMorePhotos(photoCount != null && photoOff + PAGE_SIZE < photoCount)
-    setHasMorePotholes(potholeCount != null && potholeOff + PAGE_SIZE < potholeCount)
+    setHasMorePhotos((photoData ?? []).length === PAGE_SIZE)
+    setHasMorePotholes((potholeData ?? []).length === PAGE_SIZE)
     setLoading(false)
     setLoadingMore(false)
   }, [])
@@ -247,9 +235,9 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     ...uploadedPosts.map((p) => ({ type: 'photo' as const, data: p })),
     ...potholes.map((p) => ({ type: 'pothole' as const, data: p })),
   ].sort((a: any, b: any) => {
-    const da = a.type === 'photo' ? a.data.created_at : a.data.citizen_first_reported_at
-    const db = b.type === 'photo' ? b.data.created_at : b.data.citizen_first_reported_at
-    return new Date(db || 0).getTime() - new Date(da || 0).getTime()
+    const sa = a.data.hot_score ?? 0
+    const sb = b.data.hot_score ?? 0
+    return sb - sa
   })
 
   const filteredFeedItems = feedItems.filter((item) => {
