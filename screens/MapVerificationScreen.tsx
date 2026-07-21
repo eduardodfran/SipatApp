@@ -9,6 +9,7 @@ type ViewMode = 'photos' | 'video' | 'all'
 type Props = {
   onBack: () => void
   focusItem?: { type: 'photo' | 'pothole'; id: number | string } | null
+  onViewFeedItem?: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
 }
 
 type VideoDistress = {
@@ -70,6 +71,7 @@ function buildMapHtml(
   tileKey: string | undefined,
   supabaseUrl: string,
   supabaseAnonKey: string,
+  sessionToken: string,
 ): string {
   const showVideo = viewMode === 'video' || viewMode === 'all'
   const showPhotos = viewMode === 'photos' || viewMode === 'all'
@@ -149,6 +151,7 @@ function buildMapHtml(
 <script>
   var SUPABASE_URL = '${supabaseUrl}';
   var SUPABASE_KEY = '${supabaseAnonKey}';
+  var SUPABASE_TOKEN = '${sessionToken}';
   var map = L.map('map').setView([14.5547, 121.0509], 13);
   L.tileLayer('${tileUrl}', {
     maxZoom: 19,
@@ -313,6 +316,8 @@ function buildMapHtml(
     html += '</div>';
     html += '</div>';
 
+    html += '<button id="feed-btn-' + p.id + '" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:8px;border:1px solid rgba(37,99,235,0.2);background:rgba(37,99,235,0.05);color:#60a5fa;font-size:12px;font-weight:600;cursor:pointer;outline:none;margin-bottom:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>View in Feed</button>';
+
     html += '<div style="font-size:10px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:6px;text-align:center;">Video Distress #' + p.id + '</div>';
     html += '</div>';
     return html;
@@ -370,13 +375,15 @@ function buildMapHtml(
       function doVerify(body) {
         fetch(SUPABASE_URL + '/rest/v1/rpc/create_detection_comment', {
           method: 'POST',
-          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
           body: JSON.stringify({ p_pothole_id: parseInt(p.id), p_body: body })
         }).then(function() { loadAndRender(); });
       }
 
       if (stillHereBtn) stillHereBtn.onclick = function() { doVerify('✅ Still here'); };
       if (fixedBtn) fixedBtn.onclick = function() { doVerify('✅ Fixed'); };
+      var feedBtn = document.getElementById('feed-btn-' + p.id);
+      if (feedBtn) feedBtn.onclick = function() { window.ReactNativeWebView.postMessage(JSON.stringify({type:'openFeed',itemType:'pothole',itemId:p.id})); };
       if (commentSend && commentInput) {
         var sendComment = function() {
           var text = commentInput.value.trim();
@@ -385,7 +392,7 @@ function buildMapHtml(
           commentInput.disabled = true;
           fetch(SUPABASE_URL + '/rest/v1/rpc/create_detection_comment', {
             method: 'POST',
-            headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
             body: JSON.stringify({ p_pothole_id: parseInt(p.id), p_body: text })
           }).then(function() {
             commentInput.value = '';
@@ -515,6 +522,8 @@ function buildMapHtml(
     html += '</div>';
     html += '</div>';
 
+    html += '<button id="cp-feed-btn-' + cp.id + '" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:8px;border:1px solid rgba(37,99,235,0.2);background:rgba(37,99,235,0.05);color:#60a5fa;font-size:12px;font-weight:600;cursor:pointer;outline:none;margin-bottom:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>View in Feed</button>';
+
     html += '<div style="font-size:11px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:6px;">';
     html += 'Photo by <span style="color:#a1a1aa;">' + (cp.reporter_username || 'Anonymous') + '</span> &middot; ' + (cp.created_at ? new Date(cp.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
     html += '</div></div>';
@@ -557,13 +566,15 @@ function buildMapHtml(
             function doVerify(body) {
               fetch(SUPABASE_URL + '/rest/v1/rpc/create_community_photo_comment', {
                 method: 'POST',
-                headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ p_photo_id: cp.id, p_body: body })
               }).then(function() { loadAndRender(); });
             }
 
             if (stillHereBtn) stillHereBtn.onclick = function() { doVerify('✅ Still here'); };
             if (fixedBtn) fixedBtn.onclick = function() { doVerify('✅ Fixed'); };
+            var cpFeedBtn = document.getElementById('cp-feed-btn-' + cp.id);
+            if (cpFeedBtn) cpFeedBtn.onclick = function() { window.ReactNativeWebView.postMessage(JSON.stringify({type:'openFeed',itemType:'photo',itemId:cp.id})); };
 
             if (commentSend && commentInput) {
               var sendComment = function() {
@@ -573,7 +584,7 @@ function buildMapHtml(
                 commentInput.disabled = true;
                 fetch(SUPABASE_URL + '/rest/v1/rpc/create_community_photo_comment', {
                   method: 'POST',
-                  headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+                  headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
                   body: JSON.stringify({ p_photo_id: cp.id, p_body: text })
                 }).then(function() {
                   commentInput.value = '';
@@ -614,12 +625,19 @@ function buildMapHtml(
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
-export default function MapVerificationScreen({ onBack, focusItem }: Props) {
+export default function MapVerificationScreen({ onBack, focusItem, onViewFeedItem }: Props) {
   const [videoDistress, setVideoDistress] = useState<VideoDistress[]>([])
   const [communityPhotos, setCommunityPhotos] = useState<CommunityPhoto[]>([])
   const [loading, setLoading] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('all')
+  const [sessionToken, setSessionToken] = useState('')
   const webViewRef = useRef<WebView>(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSessionToken(data.session?.access_token ?? '')
+    })
+  }, [])
 
   useEffect(() => {
     if (!focusItem || !webViewRef.current) return
@@ -701,13 +719,24 @@ export default function MapVerificationScreen({ onBack, focusItem }: Props) {
   }, [])
 
   const html = useMemo(
-    () => buildMapHtml(videoDistress, communityPhotos, viewMode, MAPTILER_KEY, SUPABASE_URL, SUPABASE_ANON_KEY),
-    [videoDistress, communityPhotos, viewMode],
+    () => buildMapHtml(videoDistress, communityPhotos, viewMode, MAPTILER_KEY, SUPABASE_URL, SUPABASE_ANON_KEY, sessionToken),
+    [videoDistress, communityPhotos, viewMode, sessionToken],
   )
 
-  const handleWebViewMessage = useCallback((_event: WebViewMessageEvent) => {
-    // no-op — pothole popups rendered inside WebView now
-  }, [])
+  const handleWebViewMessage = useCallback((event: WebViewMessageEvent) => {
+    try {
+      const msg = JSON.parse(event.nativeEvent.data)
+      if (msg.type === 'openFeed' && onViewFeedItem) {
+        if (msg.itemType === 'pothole') {
+          const p = videoDistress.find((v) => String(v.pothole_id) === String(msg.itemId))
+          if (p) onViewFeedItem({ type: 'pothole', data: { pothole_id: p.pothole_id, worst_severity: p.worst_severity, image_url: p.image_url, total_detection_hits: p.total_detection_hits, reporter_username: null, formatted_address: p.formatted_address, reporter_user_id: null } })
+        } else if (msg.itemType === 'photo') {
+          const cp = communityPhotos.find((c) => String(c.id) === String(msg.itemId))
+          if (cp) onViewFeedItem({ type: 'photo', data: { id: cp.id, image_url: cp.image_url, detection_status: cp.detection_status, worst_severity: cp.worst_severity, reporter_username: cp.reporter_username, user_id: null } })
+        }
+      }
+    } catch {}
+  }, [onViewFeedItem, videoDistress, communityPhotos])
 
   return (
     <View style={styles.container}>

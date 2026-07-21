@@ -16,6 +16,7 @@ import {
   View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { fetchFastApi } from '../lib/fastapi'
 import { supabase } from '../lib/supabase'
 
 type Comment = {
@@ -23,12 +24,14 @@ type Comment = {
   body: string
   created_at: string
   username: string | null
+  user_id: string | null
 }
 
 type Props = {
   item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }
   onBack: () => void
   onViewOnMap: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
+  onViewProfile?: (userId: string) => void
 }
 
 const SEVERITY_COLORS: Record<string, { color: string; bg: string }> = {
@@ -50,11 +53,14 @@ const formatAddress = (p: any) => {
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
 
-export default function FeedDetailScreen({ item, onBack, onViewOnMap }: Props) {
+export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProfile }: Props) {
   const [comments, setComments] = useState<Comment[] | null>(null)
   const [draft, setDraft] = useState('')
   const [posting, setPosting] = useState(false)
   const [fullScreenImageUri, setFullScreenImageUri] = useState<string | null>(null)
+  const [captionEditVisible, setCaptionEditVisible] = useState(false)
+  const [captionDraft, setCaptionDraft] = useState(item.type === 'pothole' ? (item.data.caption ?? '') : '')
+  const [savingCaption, setSavingCaption] = useState(false)
 
 
 
@@ -95,6 +101,27 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap }: Props) {
     setPosting(false)
   }, [draft, posting, item, loadComments])
 
+  const handleSaveCaption = useCallback(async () => {
+    if (item.type !== 'pothole' || savingCaption) return
+    setSavingCaption(true)
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token
+      await fetchFastApi(`/verified-potholes/${item.data.pothole_id}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ caption: captionDraft.trim() }),
+      })
+      item.data.caption = captionDraft.trim()
+      setCaptionEditVisible(false)
+    } catch {
+    } finally {
+      setSavingCaption(false)
+    }
+  }, [item, captionDraft, savingCaption])
+
   const verifyCount = comments ? comments.filter((c) => c.body.includes('✅')).length : 0
   const commentCount = comments ? comments.length : 0
 
@@ -119,10 +146,10 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap }: Props) {
           </TouchableOpacity>
           <View style={styles.content}>
             <View style={styles.metaRow}>
-              <View style={styles.reporterRow}>
+              <TouchableOpacity style={styles.reporterRow} onPress={() => post.user_id && onViewProfile?.(post.user_id)} activeOpacity={0.7}>
                 <Ionicons name="person-circle-outline" size={18} color="#52525b" />
                 <Text style={styles.reporter}>{post.reporter_username ?? 'Anonymous'}</Text>
-              </View>
+              </TouchableOpacity>
               <Text style={styles.date}>
                 {new Date(post.created_at).toLocaleDateString(undefined, {
                   month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -177,10 +204,10 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap }: Props) {
         )}
         <View style={styles.content}>
           <View style={styles.metaRow}>
-            <View style={styles.reporterRow}>
+            <TouchableOpacity style={styles.reporterRow} onPress={() => p.reporter_user_id && onViewProfile?.(p.reporter_user_id)} activeOpacity={0.7}>
               <Ionicons name="person-circle-outline" size={18} color="#52525b" />
               <Text style={styles.reporter}>{p.reporter_username ?? 'Auto-detected'}</Text>
-            </View>
+            </TouchableOpacity>
             <Text style={styles.date}>
               {p.citizen_first_reported_at
                 ? new Date(p.citizen_first_reported_at).toLocaleDateString(undefined, {
@@ -190,6 +217,12 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap }: Props) {
             </Text>
           </View>
           <Text style={styles.address}>{formatAddress(p)}</Text>
+          <View style={styles.captionRow}>
+            {p.caption ? <Text style={styles.captionText} numberOfLines={3}>{p.caption}</Text> : <Text style={styles.captionPlaceholder}>No description yet.</Text>}
+            <TouchableOpacity onPress={() => { setCaptionDraft(p.caption ?? ''); setCaptionEditVisible(true) }} style={styles.captionEditBtn} activeOpacity={0.7}>
+              <Ionicons name="pencil" size={14} color="#71717a" />
+            </TouchableOpacity>
+          </View>
           <View style={styles.metaRow}>
             <View style={[styles.severityBadge, { backgroundColor: sev.bg }]}>
               <View style={[styles.severityDot, { backgroundColor: sev.color }]} />
@@ -211,6 +244,22 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap }: Props) {
       {fullScreenImageUri && (
         <FullScreenViewer uri={fullScreenImageUri} onClose={() => setFullScreenImageUri(null)} />
       )}
+      <Modal visible={captionEditVisible} transparent animationType="fade" onRequestClose={() => setCaptionEditVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Edit Caption</Text>
+            <TextInput style={styles.modalInput} value={captionDraft} onChangeText={setCaptionDraft} placeholder="Describe this pothole…" placeholderTextColor="#52525b" multiline maxLength={280} autoFocus />
+            <View style={styles.modalActions}>
+              <TouchableOpacity onPress={() => setCaptionEditVisible(false)} style={styles.modalCancelBtn} activeOpacity={0.7}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSaveCaption} style={[styles.modalSaveBtn, savingCaption && { opacity: 0.5 }]} activeOpacity={0.7} disabled={savingCaption}>
+                <Text style={styles.modalSaveText}>{savingCaption ? 'Saving…' : 'Save'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   )
 
@@ -243,11 +292,13 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap }: Props) {
           ) : (
             comments.map((c) => (
               <View key={c.id} style={styles.commentRow}>
-                <View style={styles.commentAvatar}>
+                <TouchableOpacity style={styles.commentAvatar} onPress={() => c.user_id && onViewProfile?.(c.user_id)} activeOpacity={0.7}>
                   <Text style={styles.commentAvatarText}>{(c.username ?? '?').charAt(0).toUpperCase()}</Text>
-                </View>
+                </TouchableOpacity>
                 <View style={styles.commentBody}>
-                  <Text style={styles.commentUsername}>{c.username ?? 'Unknown'}</Text>
+                  <TouchableOpacity onPress={() => c.user_id && onViewProfile?.(c.user_id)} activeOpacity={0.7}>
+                    <Text style={styles.commentUsername}>{c.username ?? 'Unknown'}</Text>
+                  </TouchableOpacity>
                   <Text style={styles.commentText}>{c.body}</Text>
                   <Text style={styles.commentTime}>
                     {new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -375,7 +426,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0c0c14' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 56 : 30, paddingBottom: 12, paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 56 : 36, paddingBottom: 12, paddingHorizontal: 16,
   },
   backBtn: {
     width: 38, height: 38, borderRadius: 12,
@@ -454,4 +505,17 @@ const styles = StyleSheet.create({
   },
   commentSendBtnDisabled: { opacity: 0.4 },
   commentSendText: { color: '#e6a817', fontSize: 13, fontWeight: '700' },
+  captionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 8 },
+  captionText: { flex: 1, color: '#a1a1aa', fontSize: 12, lineHeight: 17, fontStyle: 'italic' },
+  captionPlaceholder: { flex: 1, color: '#3f3f46', fontSize: 12, fontStyle: 'italic' },
+  captionEditBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.04)', justifyContent: 'center', alignItems: 'center', marginTop: -2 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, width: '100%', maxWidth: 400, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  modalTitle: { color: '#f0f0f0', fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  modalInput: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 12, color: '#f0f0f0', fontSize: 14, minHeight: 80, textAlignVertical: 'top', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 14 },
+  modalCancelBtn: { paddingVertical: 8, paddingHorizontal: 16 },
+  modalCancelText: { color: '#71717a', fontSize: 13, fontWeight: '600' },
+  modalSaveBtn: { backgroundColor: 'rgba(230,168,23,0.15)', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 10 },
+  modalSaveText: { color: '#e6a817', fontSize: 13, fontWeight: '700' },
 })

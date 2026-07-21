@@ -17,6 +17,8 @@ import FeedScreen from './screens/FeedScreen'
 import FeedDetailScreen from './screens/FeedDetailScreen'
 import OnboardingScreen from './screens/OnboardingScreen'
 import RidesScreen from './screens/RidesScreen'
+import ProfileScreen from './screens/ProfileScreen'
+import PublicProfileScreen from './screens/PublicProfileScreen'
 import AppSidebar from './components/AppSidebar'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
@@ -24,7 +26,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'photo' | 'map' | 'distress' | 'rides'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'photo' | 'map' | 'distress' | 'rides' | 'profile' | 'publicprofile'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -235,6 +237,7 @@ export default function App() {
   const [sidebarVisible, setSidebarVisible] = useState(false)
   const [detailItem, setDetailItem] = useState<{ type: 'photo'; data: any } | { type: 'pothole'; data: any } | null>(null)
   const [focusItem, setFocusItem] = useState<{ type: 'photo' | 'pothole'; id: number | string } | null>(null)
+  const [publicProfileUserId, setPublicProfileUserId] = useState<string | null>(null)
 
   const handleViewOnMap = useCallback((item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => {
     const id = item.type === 'photo' ? item.data.id : item.data.pothole_id
@@ -326,6 +329,7 @@ export default function App() {
             setScreen('feeddetail')
           }}
           onViewOnMap={handleViewOnMap}
+          onViewProfile={(uid) => { setPublicProfileUserId(uid); setScreen('publicprofile') }}
         />
       )}
       {screen === 'feeddetail' && detailItem && (
@@ -333,6 +337,7 @@ export default function App() {
           item={detailItem}
           onBack={() => setScreen('feed')}
           onViewOnMap={handleViewOnMap}
+          onViewProfile={(uid) => { setPublicProfileUserId(uid); setScreen('publicprofile') }}
         />
       )}
       {screen === 'camera' && (
@@ -357,6 +362,7 @@ export default function App() {
         <MapVerificationScreen
           onBack={() => { setFocusItem(null); setScreen('dashboard') }}
           focusItem={focusItem}
+          onViewFeedItem={(item) => { setDetailItem(item); setScreen('feeddetail') }}
         />
       )}
       {screen === 'map' && Platform.OS === 'web' && (
@@ -370,6 +376,17 @@ export default function App() {
       {screen === 'distress' && (
         <DistressListScreen onBack={() => setScreen('dashboard')} />
       )}
+      {screen === 'profile' && user && (
+        <ProfileScreen user={user} onBack={() => setScreen('dashboard')} />
+      )}
+      {screen === 'publicprofile' && publicProfileUserId && (
+        <PublicProfileScreen
+          userId={publicProfileUserId}
+          onBack={() => setScreen('feed')}
+          onViewPhoto={(item) => { setDetailItem(item); setScreen('feeddetail') }}
+          onViewPothole={(item) => { setDetailItem(item); setScreen('feeddetail') }}
+        />
+      )}
 
       <AppSidebar
         visible={sidebarVisible}
@@ -378,6 +395,7 @@ export default function App() {
         onClose={() => setSidebarVisible(false)}
         onTabChange={(tab) => setScreen(tab)}
         onLogout={handleLogout}
+        onProfilePress={() => setScreen('profile')}
       />
     </>
   )

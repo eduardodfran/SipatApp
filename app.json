@@ -2,14 +2,15 @@
   "expo": {
     "name": "SipatApp",
     "slug": "SipatApp",
+    "scheme": "sipat",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/sipat-logo.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/sipat-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#09090b"
+      "backgroundColor": "#0c0c14"
     },
     "ios": {
       "supportsTablet": true
@@ -45,7 +46,8 @@
             "usesCleartextTraffic": true
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "web": {
       "favicon": "./assets/favicon.png"

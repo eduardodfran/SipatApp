@@ -35,7 +35,7 @@ export default function PhotoFeedSection({ refreshKey, userId }: Props) {
     setPendingPosts(pending)
 
     const { data } = await supabase
-      .from('community_photos')
+      .from('v_community_photos')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(50)

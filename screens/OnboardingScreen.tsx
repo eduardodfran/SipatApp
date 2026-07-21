@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import {
   Dimensions,
+  Image,
   NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
@@ -78,6 +79,7 @@ export default function OnboardingScreen({ onDone }: Props) {
       >
         {slides.map((slide, i) => (
           <View key={i} style={styles.slide}>
+            {i === 0 && <Image source={require('../assets/sipat-logo.png')} style={styles.slideLogo} resizeMode="contain" />}
             <View style={styles.illustrationWrap}>
               <slide.Illustration width={240} height={240} />
             </View>
@@ -140,6 +142,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  slideLogo: {
+    width: 120,
+    height: 120,
+    marginBottom: 24,
   },
   title: {
     fontSize: 26,

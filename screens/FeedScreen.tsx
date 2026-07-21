@@ -22,6 +22,7 @@ type Comment = {
   body: string
   created_at: string
   username: string | null
+  user_id: string | null
 }
 
 type Props = {
@@ -32,6 +33,7 @@ type Props = {
   onMenuPress: () => void
   onViewDetail: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
   onViewOnMap: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
+  onViewProfile: (userId: string) => void
 }
 
 type FeedItem = { type: 'photo'; data: any } | { type: 'pothole'; data: any }
@@ -86,7 +88,7 @@ function FilterBar({ filters, onFiltersChange }: { filters: { country: string; c
   )
 }
 
-export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto, onMenuPress, onViewDetail, onViewOnMap }: Props) {
+export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto, onMenuPress, onViewDetail, onViewOnMap, onViewProfile }: Props) {
   const [pendingPosts, setPendingPosts] = useState<LocalPhotoPost[]>([])
   const [uploadedPosts, setUploadedPosts] = useState<any[]>([])
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set())
@@ -116,14 +118,14 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
 
     const [pending, { data: photoData, count: photoCount }, { data: potholeData, count: potholeCount }] = await Promise.all([
       page === 0 ? loadPendingPhotos() : Promise.resolve([] as LocalPhotoPost[]),
-      supabase.from('community_photos').select('*', { count: 'exact', head: false })
+      supabase.from('v_community_photos').select('*', { count: 'exact', head: false })
         .order('created_at', { ascending: false }).range(photoOff, photoOff + PAGE_SIZE - 1),
       supabase
         .from('v_unified_potholes')
         .select(
           'pothole_id, consolidated_latitude, consolidated_longitude, worst_severity, '
           + 'total_detection_hits, citizen_first_reported_at, latest_activity_at, '
-          + 'image_url, reporter_username, reporter_avatar, detectors_count, '
+          + 'image_url, reporter_user_id, reporter_username, reporter_avatar, detectors_count, caption, '
           + 'street, barangay, city, province, country, formatted_address',
           { count: 'exact', head: false },
         )
@@ -270,10 +272,10 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
             <Image source={{ uri: post.image_url }} style={styles.postImage} />
             <View style={styles.postBody}>
               <View style={styles.postTopRow}>
-                <View style={styles.reporterRow}>
+                <TouchableOpacity style={styles.reporterRow} onPress={() => post.user_id && onViewProfile(post.user_id)} activeOpacity={0.7}>
                   <Ionicons name="person-circle-outline" size={16} color="#52525b" />
                   <Text style={styles.reporter}>{post.reporter_username ?? 'Anonymous'}</Text>
-                </View>
+                </TouchableOpacity>
                 <Text style={styles.time}>
                   {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </Text>
@@ -299,12 +301,18 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
             </TouchableOpacity>
             <Text style={styles.verifyCount}>{verifyCount}</Text>
           </View>
-          <TouchableOpacity style={styles.commentsToggle} onPress={() => toggleComments(post.id)} activeOpacity={0.7}>
-            <Ionicons name={isExpanded ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#6b7280" />
+          <TouchableOpacity style={styles.commentsToggle} onPress={() => {
+            if (commentCount > 0) {
+              onViewDetail(item)
+            } else {
+              toggleComments(post.id)
+            }
+          }} activeOpacity={0.7}>
+            <Ionicons name={commentCount > 0 ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#6b7280" />
             <Text style={styles.commentsToggleText}>
-              {commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Comment'}
+              {commentCount > 0 ? `View all ${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Comment'}
             </Text>
-            <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={12} color="#52525b" />
+            {commentCount > 0 && <Ionicons name="open-outline" size={12} color="#52525b" />}
           </TouchableOpacity>
           {isExpanded && (
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -316,11 +324,13 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                 ) : (
                   comments.map((c: Comment) => (
                     <View key={c.id} style={styles.commentRow}>
-                      <View style={styles.commentAvatar}>
+                      <TouchableOpacity style={styles.commentAvatar} onPress={() => c.user_id && onViewProfile(c.user_id)} activeOpacity={0.7}>
                         <Text style={styles.commentAvatarText}>{(c.username ?? '?').charAt(0).toUpperCase()}</Text>
-                      </View>
+                      </TouchableOpacity>
                       <View style={styles.commentBody}>
-                        <Text style={styles.commentUsername}>{c.username ?? 'Unknown'}</Text>
+                        <TouchableOpacity onPress={() => c.user_id && onViewProfile(c.user_id)} activeOpacity={0.7}>
+                          <Text style={styles.commentUsername}>{c.username ?? 'Unknown'}</Text>
+                        </TouchableOpacity>
                         <Text style={styles.commentText}>{c.body}</Text>
                         <Text style={styles.commentTime}>
                           {new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -363,10 +373,10 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
           )}
           <View style={styles.postBody}>
             <View style={styles.postTopRow}>
-              <View style={styles.reporterRow}>
+              <TouchableOpacity style={styles.reporterRow} onPress={() => p.reporter_user_id && onViewProfile(p.reporter_user_id)} activeOpacity={0.7}>
                 <Ionicons name="person-circle-outline" size={16} color="#52525b" />
                 <Text style={styles.reporter}>{p.reporter_username ?? 'Auto-detected'}</Text>
-              </View>
+              </TouchableOpacity>
               <Text style={styles.time}>
                 {p.citizen_first_reported_at ? new Date(p.citizen_first_reported_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : null}
               </Text>
@@ -375,6 +385,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
               </TouchableOpacity>
             </View>
             <Text style={styles.address}>{formatAddress(p)}</Text>
+            {p.caption ? <Text style={styles.potholeCaption} numberOfLines={1}>{p.caption}</Text> : null}
             <View style={styles.potholeMetaRow}>
               <View style={[styles.severityBadge, { backgroundColor: sev.bg }]}>
                 <View style={[styles.severityDot, { backgroundColor: sev.color }]} />
@@ -395,12 +406,16 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
           <Text style={styles.verifyCount}>{pVerifyCount}</Text>
         </View>
         <TouchableOpacity style={styles.commentsToggle} onPress={() => {
-          if (potholeExpandedId === potholeKey) { setPotholeExpandedId(null) }
-          else { setPotholeExpandedId(potholeKey); if (!potholeComments[potholeKey]) loadPotholeComments(potholeKey) }
+          if (pCommentCount > 0) {
+            onViewDetail(item)
+          } else {
+            if (potholeExpandedId === potholeKey) { setPotholeExpandedId(null) }
+            else { setPotholeExpandedId(potholeKey); if (!potholeComments[potholeKey]) loadPotholeComments(potholeKey) }
+          }
         }} activeOpacity={0.7}>
-          <Ionicons name={pIsExpanded ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#6b7280" />
-          <Text style={styles.commentsToggleText}>{pCommentCount > 0 ? `${pCommentCount} comment${pCommentCount !== 1 ? 's' : ''}` : 'Comment'}</Text>
-          <Ionicons name={pIsExpanded ? 'chevron-up' : 'chevron-down'} size={12} color="#52525b" />
+          <Ionicons name={pCommentCount > 0 ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#6b7280" />
+          <Text style={styles.commentsToggleText}>{pCommentCount > 0 ? `View all ${pCommentCount} comment${pCommentCount !== 1 ? 's' : ''}` : 'Comment'}</Text>
+          {pCommentCount > 0 && <Ionicons name="open-outline" size={12} color="#52525b" />}
         </TouchableOpacity>
         {pIsExpanded && (
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -409,9 +424,13 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
               : pComments.length === 0 ? <Text style={styles.noComments}>No comments yet</Text>
               : pComments.map((c: any) => (
                 <View key={c.id} style={styles.commentRow}>
-                  <View style={styles.commentAvatar}><Text style={styles.commentAvatarText}>{(c.username ?? '?').charAt(0).toUpperCase()}</Text></View>
+                  <TouchableOpacity style={styles.commentAvatar} onPress={() => c.user_id && onViewProfile(c.user_id)} activeOpacity={0.7}>
+                    <Text style={styles.commentAvatarText}>{(c.username ?? '?').charAt(0).toUpperCase()}</Text>
+                  </TouchableOpacity>
                   <View style={styles.commentBody}>
-                    <Text style={styles.commentUsername}>{c.username ?? 'Unknown'}</Text>
+                    <TouchableOpacity onPress={() => c.user_id && onViewProfile(c.user_id)} activeOpacity={0.7}>
+                      <Text style={styles.commentUsername}>{c.username ?? 'Unknown'}</Text>
+                    </TouchableOpacity>
                     <Text style={styles.commentText}>{c.body}</Text>
                     <Text style={styles.commentTime}>{new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
                   </View>
@@ -556,7 +575,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0c0c14' },
   feedHeader: {
     flexDirection: 'row', alignItems: 'center',
-    paddingTop: 56, paddingBottom: 12, paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 56 : 36, paddingBottom: 12, paddingHorizontal: 20,
   },
   menuBtn: {
     width: 38, height: 38, borderRadius: 12,
@@ -597,6 +616,7 @@ const styles = StyleSheet.create({
   noCaption: { color: '#3f3f46', fontSize: 13, fontStyle: 'italic' },
   time: { color: '#52525b', fontSize: 11, marginTop: 4 },
   address: { color: '#a1a1aa', fontSize: 12, lineHeight: 16, marginTop: 2 },
+  potholeCaption: { color: '#71717a', fontSize: 11, lineHeight: 15, marginTop: 4, fontStyle: 'italic' },
 
   postActions: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 14 },
   uploadBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(6,182,212,0.1)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },

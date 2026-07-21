@@ -22,6 +22,7 @@ type Props = {
   onClose: () => void
   onTabChange: (tab: 'dashboard' | 'feed' | 'rides') => void
   onLogout: () => void
+  onProfilePress: () => void
 }
 
 const NAV_ITEMS: { key: 'dashboard' | 'feed' | 'rides'; label: string; icon: string }[] = [
@@ -30,7 +31,7 @@ const NAV_ITEMS: { key: 'dashboard' | 'feed' | 'rides'; label: string; icon: str
   { key: 'feed', label: 'Feed', icon: 'images-outline' },
 ]
 
-export default function AppSidebar({ visible, activeTab, user, onClose, onTabChange, onLogout }: Props) {
+export default function AppSidebar({ visible, activeTab, user, onClose, onTabChange, onLogout, onProfilePress }: Props) {
   const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current
   const fadeAnim = useRef(new Animated.Value(0)).current
 
@@ -90,7 +91,14 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
           </TouchableOpacity>
 
           {/* Profile section */}
-          <View style={styles.profileSection}>
+          <TouchableOpacity
+            style={styles.profileSection}
+            onPress={() => {
+              onProfilePress()
+              onClose()
+            }}
+            activeOpacity={0.7}
+          >
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{initial}</Text>
             </View>
@@ -98,7 +106,7 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
             {profileEmail ? (
               <Text style={styles.profileEmail} numberOfLines={1}>{profileEmail}</Text>
             ) : null}
-          </View>
+          </TouchableOpacity>
 
           {/* Divider */}
           <View style={styles.divider} />

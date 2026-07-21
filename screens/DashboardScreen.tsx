@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Platform,
   ScrollView,
   StatusBar,
@@ -100,6 +101,7 @@ export default function DashboardScreen({
           <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn} activeOpacity={0.7}>
             <Ionicons name="menu" size={22} color="#e0e0e0" />
           </TouchableOpacity>
+          <Image source={require('../assets/sipat-logo.png')} style={styles.headerLogo} resizeMode="contain" />
           <View>
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.title}>Sipat</Text>
@@ -165,26 +167,49 @@ export default function DashboardScreen({
           </View>
         </View>
 
+        {/* Map Card */}
+        {Platform.OS !== 'web' && (
+          <View style={styles.mapCardSection}>
+            <TouchableOpacity style={styles.mapCard} onPress={onMap} activeOpacity={0.8}>
+              <View style={styles.mapCardBg}>
+                <View style={styles.mapGridLine1} />
+                <View style={styles.mapGridLine2} />
+                <View style={styles.mapGridLine3} />
+                <View style={styles.mapGridLine4} />
+                <View style={styles.mapPin1}>
+                  <View style={styles.mapPinDot} />
+                </View>
+                <View style={styles.mapPin2}>
+                  <View style={[styles.mapPinDot, { backgroundColor: '#dc2626' }]} />
+                </View>
+                <View style={styles.mapPin3}>
+                  <View style={[styles.mapPinDot, { backgroundColor: '#22c55e' }]} />
+                </View>
+              </View>
+              <View style={styles.mapCardOverlay} />
+              <View style={styles.mapCardContent}>
+                <View style={styles.mapCardLeft}>
+                  <View style={styles.mapCardIcon}>
+                    <Ionicons name="map" size={20} color="#fff" />
+                  </View>
+                  <View>
+                    <Text style={styles.mapCardTitle}>Explore Map</Text>
+                    <Text style={styles.mapCardSub}>Potholes near you</Text>
+                  </View>
+                </View>
+                <View style={styles.mapCardBadge}>
+                  <Ionicons name="navigate" size={14} color="#60a5fa" />
+                  <Text style={styles.mapCardBadgeText}>Open</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
-            {Platform.OS !== 'web' && (
-              <TouchableOpacity style={styles.actionCard} onPress={onMap} activeOpacity={0.7}>
-                <View style={[styles.actionIcon, { backgroundColor: 'rgba(37, 99, 235, 0.12)' }]}>
-                  <Ionicons name="map" size={24} color="#2563eb" />
-                </View>
-                <Text style={styles.actionLabel}>View Map</Text>
-                <Text style={styles.actionSub}>Potholes near you</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity style={styles.actionCard} onPress={onRecord} activeOpacity={0.7}>
-              <View style={[styles.actionIcon, { backgroundColor: 'rgba(222, 38, 38, 0.12)' }]}>
-                <Ionicons name="radio-button-on" size={24} color="#dc2626" />
-              </View>
-              <Text style={styles.actionLabel}>Record Ride</Text>
-              <Text style={styles.actionSub}>Capture potholes</Text>
-            </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionCard}
               onPress={onRefresh}
@@ -206,13 +231,6 @@ export default function DashboardScreen({
               </View>
               <Text style={styles.actionLabel}>Distress</Text>
               <Text style={styles.actionSub}>All detections</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionCard} onPress={onPhoto} activeOpacity={0.7}>
-              <View style={[styles.actionIcon, { backgroundColor: 'rgba(6, 182, 212, 0.12)' }]}>
-                <Ionicons name="camera" size={24} color="#06b6d4" />
-              </View>
-              <Text style={styles.actionLabel}>Report Distress</Text>
-              <Text style={styles.actionSub}>Snap a photo</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -374,7 +392,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 54 : 20,
+    paddingTop: Platform.OS === 'ios' ? 56 : 36,
     paddingBottom: 12,
     paddingHorizontal: 20,
   },
@@ -393,6 +411,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.06)',
     marginRight: 4,
+  },
+  headerLogo: {
+    width: 36,
+    height: 36,
+    marginRight: 8,
   },
   avatarCircle: {
     width: 40,
@@ -530,6 +553,153 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
+  // Map Card
+  mapCardSection: {
+    paddingHorizontal: 20,
+    marginTop: 16,
+  },
+  mapCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    height: 150,
+    position: 'relative',
+    backgroundColor: '#0f1923',
+    borderWidth: 1,
+    borderColor: 'rgba(37, 99, 235, 0.2)',
+  },
+  mapCardBg: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  mapGridLine1: {
+    position: 'absolute',
+    top: 30,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    transform: [{ rotate: '-12deg' }],
+  },
+  mapGridLine2: {
+    position: 'absolute',
+    top: 70,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    transform: [{ rotate: '-12deg' }],
+  },
+  mapGridLine3: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 60,
+    width: 1,
+    backgroundColor: 'rgba(37, 99, 235, 0.06)',
+    transform: [{ rotate: '20deg' }],
+  },
+  mapGridLine4: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 160,
+    width: 1,
+    backgroundColor: 'rgba(37, 99, 235, 0.06)',
+    transform: [{ rotate: '20deg' }],
+  },
+  mapPin1: {
+    position: 'absolute',
+    top: 25,
+    right: 80,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(230, 168, 23, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapPin2: {
+    position: 'absolute',
+    top: 55,
+    right: 40,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(220, 38, 38, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapPin3: {
+    position: 'absolute',
+    bottom: 35,
+    right: 110,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapPinDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#e6a817',
+  },
+  mapCardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(12, 12, 20, 0.4)',
+  },
+  mapCardContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+  },
+  mapCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  mapCardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(37, 99, 235, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(37, 99, 235, 0.3)',
+  },
+  mapCardTitle: {
+    color: '#f0f0f0',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  mapCardSub: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  mapCardBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(37, 99, 235, 0.15)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(37, 99, 235, 0.25)',
+  },
+  mapCardBadgeText: {
+    color: '#60a5fa',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
   // Quick Actions
   section: {
     paddingHorizontal: 20,
@@ -555,11 +725,10 @@ const styles = StyleSheet.create({
   },
   actionsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 10,
   },
   actionCard: {
-    width: '31%',
+    flex: 1,
     backgroundColor: '#141420',
     borderRadius: 16,
     padding: 14,
