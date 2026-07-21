@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
@@ -20,6 +20,15 @@ const REPORT_REASONS = [
 export default function ReportButton({ contentType, contentId, onReported }: Props) {
   const [reported, setReported] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    supabase.rpc('has_user_reported', {
+      p_content_type: contentType,
+      p_content_id: contentId,
+    }).then(({ data }) => {
+      if (data === true) setReported(true)
+    })
+  }, [contentType, contentId])
 
   const handleReport = useCallback(() => {
     if (reported) {

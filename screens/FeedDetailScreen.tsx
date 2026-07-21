@@ -311,6 +311,9 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
               initialUpvotes={voteData.upvotes}
               initialDownvotes={voteData.downvotes}
               initialUserVote={voteData.userVote}
+              onVoteChange={(upvotes, downvotes, userVote) =>
+                setVoteData({ upvotes, downvotes, userVote })
+              }
             />
             <ReportButton
               contentType={item.type}

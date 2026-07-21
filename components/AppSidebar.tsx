@@ -17,18 +17,19 @@ const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.72
 
 type Props = {
   visible: boolean
-  activeTab: 'dashboard' | 'feed' | 'rides'
+  activeTab: 'dashboard' | 'feed' | 'rides' | 'map'
   user: User | null
   onClose: () => void
-  onTabChange: (tab: 'dashboard' | 'feed' | 'rides') => void
+  onTabChange: (tab: 'dashboard' | 'feed' | 'rides' | 'map') => void
   onLogout: () => void
   onProfilePress: () => void
 }
 
-const NAV_ITEMS: { key: 'dashboard' | 'feed' | 'rides'; label: string; icon: string }[] = [
+const NAV_ITEMS: { key: 'dashboard' | 'feed' | 'rides' | 'map'; label: string; icon: string }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: 'grid-outline' },
   { key: 'rides', label: 'Rides', icon: 'bicycle-outline' },
   { key: 'feed', label: 'Feed', icon: 'images-outline' },
+  { key: 'map', label: 'Map', icon: 'map-outline' },
 ]
 
 export default function AppSidebar({ visible, activeTab, user, onClose, onTabChange, onLogout, onProfilePress }: Props) {

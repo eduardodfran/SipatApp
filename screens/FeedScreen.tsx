@@ -120,21 +120,46 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     const photoOff = page * PAGE_SIZE
     const potholeOff = page * PAGE_SIZE
 
-    const [pending, { data: photoData }, { data: potholeData }] = await Promise.all([
+    const [pending, photoRes, potholeRes] = await Promise.all([
       page === 0 ? loadPendingPhotos() : Promise.resolve([] as LocalPhotoPost[]),
       supabase.rpc('get_feed_photos', { p_offset: photoOff, p_limit: PAGE_SIZE }),
       supabase.rpc('get_feed_potholes', { p_offset: potholeOff, p_limit: PAGE_SIZE }),
     ])
+    const photoData = photoRes.data
+    const potholeData = potholeRes.data
+    if (photoRes.error) console.error('[FeedScreen] get_feed_photos error:', photoRes.error)
+    if (potholeRes.error) console.error('[FeedScreen] get_feed_potholes error:', potholeRes.error)
+
+    const pvMap: Record<string, { upvotes: number; downvotes: number; userVote: number }> = {}
+    for (const p of photoData ?? []) {
+      pvMap[String(p.id)] = {
+        upvotes: Number(p.upvote_count ?? 0),
+        downvotes: Number(p.downvote_count ?? 0),
+        userVote: Number(p.user_vote ?? 0),
+      }
+    }
+    const hvMap: Record<string, { upvotes: number; downvotes: number; userVote: number }> = {}
+    for (const h of potholeData ?? []) {
+      hvMap[String(h.pothole_id)] = {
+        upvotes: Number(h.upvote_count ?? 0),
+        downvotes: Number(h.downvote_count ?? 0),
+        userVote: Number(h.user_vote ?? 0),
+      }
+    }
 
     if (page === 0) {
       setPendingPosts(pending as LocalPhotoPost[])
       setUploadedPosts(photoData ?? [])
       setPotholes(potholeData ?? [])
+      setPhotoVotes(pvMap)
+      setPotholeVotes(hvMap)
       setPhotoOffset(PAGE_SIZE)
       setPotholeOffset(PAGE_SIZE)
     } else {
       setUploadedPosts((prev) => [...prev, ...(photoData ?? [])])
       setPotholes((prev) => [...prev, ...(potholeData ?? [])])
+      setPhotoVotes((prev) => ({ ...prev, ...pvMap }))
+      setPotholeVotes((prev) => ({ ...prev, ...hvMap }))
       setPhotoOffset((prev) => prev + PAGE_SIZE)
       setPotholeOffset((prev) => prev + PAGE_SIZE)
     }
@@ -147,6 +172,10 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
 
   useEffect(() => {
     loadPosts(0)
+    loadPendingPhotos().then((posts) => {
+      const stale = posts.filter((p) => p.status === 'uploaded')
+      stale.forEach((p) => deletePhotoPost(p.id))
+    })
   }, [feedRefreshKey])
 
   const handleLoadMore = useCallback(() => {
@@ -162,7 +191,8 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     await updatePhotoPost(post.id, { status: 'uploading' })
     try {
       const result = await uploadCommunityPhoto(userId, post.imageUri, post.latitude, post.longitude, post.caption)
-      await updatePhotoPost(post.id, { status: 'uploaded', remoteId: result.photoId, imageUrl: result.imageUrl, detection_status: 'pending' })
+      await deletePhotoPost(post.id)
+      setPendingPosts((prev) => prev.filter((p) => p.id !== post.id))
     } catch (e: any) {
       await updatePhotoPost(post.id, { status: 'pending' })
     } finally {
@@ -225,9 +255,9 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     setPotholePosting((prev) => ({ ...prev, [potholeId]: false }))
   }, [potholeDrafts, potholePosting, loadPotholeComments])
 
-  const allUploadedIds = new Set(uploadedPosts.map((p) => p.id))
+  const allUploadedIds = new Set(uploadedPosts.map((p) => String(p.id)))
   const filteredPending = pendingPosts.filter((p) => {
-    if (p.status === 'uploaded' && p.remoteId && allUploadedIds.has(p.remoteId)) return false
+    if (p.status === 'uploaded' && p.remoteId != null && allUploadedIds.has(String(p.remoteId))) return false
     return true
   })
 
@@ -300,6 +330,9 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
               initialUpvotes={photoVotes[String(post.id)]?.upvotes ?? 0}
               initialDownvotes={photoVotes[String(post.id)]?.downvotes ?? 0}
               initialUserVote={photoVotes[String(post.id)]?.userVote ?? 0}
+              onVoteChange={(upvotes, downvotes, userVote) =>
+                setPhotoVotes((prev) => ({ ...prev, [String(post.id)]: { upvotes, downvotes, userVote } }))
+              }
             />
             <ReportButton contentType="photo" contentId={String(post.id)} />
           </View>
@@ -414,6 +447,9 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
             initialUpvotes={potholeVotes[String(p.pothole_id)]?.upvotes ?? 0}
             initialDownvotes={potholeVotes[String(p.pothole_id)]?.downvotes ?? 0}
             initialUserVote={potholeVotes[String(p.pothole_id)]?.userVote ?? 0}
+            onVoteChange={(upvotes, downvotes, userVote) =>
+              setPotholeVotes((prev) => ({ ...prev, [String(p.pothole_id)]: { upvotes, downvotes, userVote } }))
+            }
           />
           <ReportButton contentType="pothole" contentId={String(p.pothole_id)} />
         </View>

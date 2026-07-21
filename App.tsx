@@ -363,6 +363,7 @@ export default function App() {
           onBack={() => { setFocusItem(null); setScreen('dashboard') }}
           focusItem={focusItem}
           onViewFeedItem={(item) => { setDetailItem(item); setScreen('feeddetail') }}
+          onMenuPress={() => setSidebarVisible(true)}
         />
       )}
       {screen === 'map' && Platform.OS === 'web' && (
@@ -390,7 +391,7 @@ export default function App() {
 
       <AppSidebar
         visible={sidebarVisible}
-        activeTab={screen === 'feed' ? 'feed' : screen === 'rides' ? 'rides' : 'dashboard'}
+        activeTab={screen === 'feed' ? 'feed' : screen === 'rides' ? 'rides' : screen === 'map' ? 'map' : 'dashboard'}
         user={user}
         onClose={() => setSidebarVisible(false)}
         onTabChange={(tab) => setScreen(tab)}

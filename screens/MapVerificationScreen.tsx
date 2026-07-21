@@ -10,6 +10,7 @@ type Props = {
   onBack: () => void
   focusItem?: { type: 'photo' | 'pothole'; id: number | string } | null
   onViewFeedItem?: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
+  onMenuPress?: () => void
 }
 
 type VideoDistress = {
@@ -410,7 +411,10 @@ function buildMapHtml(
           headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
           body: JSON.stringify({ p_content_type: 'pothole', p_content_id: String(p.id), p_vote_value: 1 })
         }).then(function(r) { return r.json(); }).then(function(data) {
-          if (voteScore && data) voteScore.textContent = data.net_score;
+          if (voteScore && data) {
+            var row = Array.isArray(data) ? data[0] : data;
+            if (row) voteScore.textContent = row.net_score;
+          }
         });
       };
 
@@ -420,26 +424,70 @@ function buildMapHtml(
           headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
           body: JSON.stringify({ p_content_type: 'pothole', p_content_id: String(p.id), p_vote_value: -1 })
         }).then(function(r) { return r.json(); }).then(function(data) {
-          if (voteScore && data) voteScore.textContent = data.net_score;
+          if (voteScore && data) {
+            var row = Array.isArray(data) ? data[0] : data;
+            if (row) voteScore.textContent = row.net_score;
+          }
         });
       };
 
+      // Initial score fetch
+      fetch(SUPABASE_URL + '/rest/v1/rpc/get_content_votes', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_content_type: 'pothole', p_content_id: String(p.id) })
+      }).then(function(r) { return r.json(); }).then(function(data) {
+        if (voteScore && data) {
+          var row = Array.isArray(data) ? data[0] : data;
+          if (row) voteScore.textContent = row.net_score;
+        }
+      });
+
       var reportBtn = document.getElementById('report-btn-' + p.id);
-      if (reportBtn) reportBtn.onclick = function() {
-        fetch(SUPABASE_URL + '/rest/v1/rpc/report_content', {
+      if (reportBtn) {
+        var isReported = false;
+
+        fetch(SUPABASE_URL + '/rest/v1/rpc/has_user_reported', {
           method: 'POST',
-          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_content_type: 'pothole', p_content_id: String(p.id), p_reason: 'other' })
+          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_content_type: 'pothole', p_content_id: String(p.id) })
         }).then(function(r) { return r.json(); }).then(function(data) {
-          if (data && data.is_hidden) {
-            reportBtn.textContent = 'Hidden';
-            reportBtn.style.color = '#ef4444';
-          } else {
+          if (data === true) {
+            isReported = true;
             reportBtn.textContent = 'Reported';
             reportBtn.style.color = '#ef4444';
           }
         });
-      };
+
+        reportBtn.onclick = function() {
+          if (isReported) {
+            fetch(SUPABASE_URL + '/rest/v1/rpc/unreport_content', {
+              method: 'POST',
+              headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ p_content_type: 'pothole', p_content_id: String(p.id) })
+            }).then(function(r) { return r.json(); }).then(function() {
+              isReported = false;
+              reportBtn.textContent = 'Report';
+              reportBtn.style.color = '#6b7280';
+            });
+          } else {
+            fetch(SUPABASE_URL + '/rest/v1/rpc/report_content', {
+              method: 'POST',
+              headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ p_content_type: 'pothole', p_content_id: String(p.id), p_reason: 'other' })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+              if (data) {
+                var row = Array.isArray(data) ? data[0] : data;
+                if (row) {
+                  isReported = true;
+                  reportBtn.textContent = row.is_hidden ? 'Hidden' : 'Reported';
+                  reportBtn.style.color = '#ef4444';
+                }
+              }
+            });
+          }
+        };
+      }
 
       if (commentSend && commentInput) {
         var sendComment = function() {
@@ -658,7 +706,10 @@ function buildMapHtml(
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_vote_value: 1 })
               }).then(function(r) { return r.json(); }).then(function(data) {
-                if (cpVoteScore && data) cpVoteScore.textContent = data.net_score;
+                if (cpVoteScore && data) {
+                  var row = Array.isArray(data) ? data[0] : data;
+                  if (row) cpVoteScore.textContent = row.net_score;
+                }
               });
             };
 
@@ -668,26 +719,70 @@ function buildMapHtml(
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_vote_value: -1 })
               }).then(function(r) { return r.json(); }).then(function(data) {
-                if (cpVoteScore && data) cpVoteScore.textContent = data.net_score;
+                if (cpVoteScore && data) {
+                  var row = Array.isArray(data) ? data[0] : data;
+                  if (row) cpVoteScore.textContent = row.net_score;
+                }
               });
             };
 
             var cpReportBtn = document.getElementById('cp-report-btn-' + cp.id);
-            if (cpReportBtn) cpReportBtn.onclick = function() {
-              fetch(SUPABASE_URL + '/rest/v1/rpc/report_content', {
+            if (cpReportBtn) {
+              var cpIsReported = false;
+
+              fetch(SUPABASE_URL + '/rest/v1/rpc/has_user_reported', {
                 method: 'POST',
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_reason: 'other' })
+                headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id) })
               }).then(function(r) { return r.json(); }).then(function(data) {
-                if (data && data.is_hidden) {
-                  cpReportBtn.textContent = 'Hidden';
-                  cpReportBtn.style.color = '#ef4444';
-                } else {
+                if (data === true) {
+                  cpIsReported = true;
                   cpReportBtn.textContent = 'Reported';
                   cpReportBtn.style.color = '#ef4444';
                 }
               });
-            };
+
+              cpReportBtn.onclick = function() {
+                if (cpIsReported) {
+                  fetch(SUPABASE_URL + '/rest/v1/rpc/unreport_content', {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id) })
+                  }).then(function(r) { return r.json(); }).then(function() {
+                    cpIsReported = false;
+                    cpReportBtn.textContent = 'Report';
+                    cpReportBtn.style.color = '#6b7280';
+                  });
+                } else {
+                  fetch(SUPABASE_URL + '/rest/v1/rpc/report_content', {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_reason: 'other' })
+                  }).then(function(r) { return r.json(); }).then(function(data) {
+                    if (data) {
+                      var row = Array.isArray(data) ? data[0] : data;
+                      if (row) {
+                        cpIsReported = true;
+                        cpReportBtn.textContent = row.is_hidden ? 'Hidden' : 'Reported';
+                        cpReportBtn.style.color = '#ef4444';
+                      }
+                    }
+                  });
+                }
+              };
+            }
+
+            // Initial score fetch
+            fetch(SUPABASE_URL + '/rest/v1/rpc/get_content_votes', {
+              method: 'POST',
+              headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id) })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+              if (cpVoteScore && data) {
+                var row = Array.isArray(data) ? data[0] : data;
+                if (row) cpVoteScore.textContent = row.net_score;
+              }
+            });
 
             if (commentSend && commentInput) {
               var sendComment = function() {
@@ -718,6 +813,139 @@ function buildMapHtml(
         })
         .catch(function() {
           popup.setContent(communityPhotoPopupHtml(cp, []));
+          setTimeout(function() {
+            var stillHereBtn = document.getElementById('cp-verify-stillhere-' + cp.id);
+            var fixedBtn = document.getElementById('cp-verify-fixed-' + cp.id);
+            var commentInput = document.getElementById('cp-comment-input-' + cp.id);
+            var commentSend = document.getElementById('cp-comment-send-' + cp.id);
+
+            function doVerify(body) {
+              fetch(SUPABASE_URL + '/rest/v1/rpc/create_community_photo_comment', {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_photo_id: cp.id, p_body: body })
+              }).then(function() { loadAndRender(); });
+            }
+
+            if (stillHereBtn) stillHereBtn.onclick = function() { doVerify('✅ Still here'); };
+            if (fixedBtn) fixedBtn.onclick = function() { doVerify('✅ Fixed'); };
+            var cpFeedBtn = document.getElementById('cp-feed-btn-' + cp.id);
+            if (cpFeedBtn) cpFeedBtn.onclick = function() { window.ReactNativeWebView.postMessage(JSON.stringify({type:'openFeed',itemType:'photo',itemId:cp.id})); };
+
+            var cpVoteUpBtn = document.getElementById('cp-vote-up-' + cp.id);
+            var cpVoteDownBtn = document.getElementById('cp-vote-down-' + cp.id);
+            var cpVoteScore = document.getElementById('cp-vote-score-' + cp.id);
+
+            if (cpVoteUpBtn) cpVoteUpBtn.onclick = function() {
+              fetch(SUPABASE_URL + '/rest/v1/rpc/vote_content', {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_vote_value: 1 })
+              }).then(function(r) { return r.json(); }).then(function(data) {
+                if (cpVoteScore && data) {
+                  var row = Array.isArray(data) ? data[0] : data;
+                  if (row) cpVoteScore.textContent = row.net_score;
+                }
+              });
+            };
+
+            if (cpVoteDownBtn) cpVoteDownBtn.onclick = function() {
+              fetch(SUPABASE_URL + '/rest/v1/rpc/vote_content', {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_vote_value: -1 })
+              }).then(function(r) { return r.json(); }).then(function(data) {
+                if (cpVoteScore && data) {
+                  var row = Array.isArray(data) ? data[0] : data;
+                  if (row) cpVoteScore.textContent = row.net_score;
+                }
+              });
+            };
+
+            var cpReportBtn = document.getElementById('cp-report-btn-' + cp.id);
+            if (cpReportBtn) {
+              var cpIsReported = false;
+
+              fetch(SUPABASE_URL + '/rest/v1/rpc/has_user_reported', {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id) })
+              }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data === true) {
+                  cpIsReported = true;
+                  cpReportBtn.textContent = 'Reported';
+                  cpReportBtn.style.color = '#ef4444';
+                }
+              });
+
+              cpReportBtn.onclick = function() {
+                if (cpIsReported) {
+                  fetch(SUPABASE_URL + '/rest/v1/rpc/unreport_content', {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id) })
+                  }).then(function(r) { return r.json(); }).then(function() {
+                    cpIsReported = false;
+                    cpReportBtn.textContent = 'Report';
+                    cpReportBtn.style.color = '#6b7280';
+                  });
+                } else {
+                  fetch(SUPABASE_URL + '/rest/v1/rpc/report_content', {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_reason: 'other' })
+                  }).then(function(r) { return r.json(); }).then(function(data) {
+                    if (data) {
+                      var row = Array.isArray(data) ? data[0] : data;
+                      if (row) {
+                        cpIsReported = true;
+                        cpReportBtn.textContent = row.is_hidden ? 'Hidden' : 'Reported';
+                        cpReportBtn.style.color = '#ef4444';
+                      }
+                    }
+                  });
+                }
+              };
+            }
+
+            // Initial score fetch
+            fetch(SUPABASE_URL + '/rest/v1/rpc/get_content_votes', {
+              method: 'POST',
+              headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id) })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+              if (cpVoteScore && data) {
+                var row = Array.isArray(data) ? data[0] : data;
+                if (row) cpVoteScore.textContent = row.net_score;
+              }
+            });
+
+            if (commentSend && commentInput) {
+              var sendComment = function() {
+                var text = commentInput.value.trim();
+                if (!text) return;
+                commentSend.textContent = '...';
+                commentInput.disabled = true;
+                fetch(SUPABASE_URL + '/rest/v1/rpc/create_community_photo_comment', {
+                  method: 'POST',
+                  headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ p_photo_id: cp.id, p_body: text })
+                }).then(function() {
+                  commentInput.value = '';
+                  commentInput.disabled = false;
+                  commentSend.textContent = 'Send';
+                  loadAndRender();
+                }).catch(function() {
+                  commentInput.disabled = false;
+                  commentSend.textContent = 'Send';
+                });
+              };
+              commentSend.onclick = sendComment;
+              commentInput.onkeydown = function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendComment(); }
+              };
+            }
+          }, 0);
         });
       }
 
@@ -738,7 +966,7 @@ function buildMapHtml(
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
-export default function MapVerificationScreen({ onBack, focusItem, onViewFeedItem }: Props) {
+export default function MapVerificationScreen({ onBack, focusItem, onViewFeedItem, onMenuPress }: Props) {
   const [videoDistress, setVideoDistress] = useState<VideoDistress[]>([])
   const [communityPhotos, setCommunityPhotos] = useState<CommunityPhoto[]>([])
   const [loading, setLoading] = useState(false)
@@ -772,6 +1000,7 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
         const { data, error } = await supabase
           .from('v_unified_potholes')
           .select('*')
+          .not('caption', 'like', '[HIDDEN]%')
           .order('total_detection_hits', { ascending: false })
           .limit(500)
 
@@ -812,6 +1041,7 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
         const { data: photoData, error: photoError } = await supabase
           .from('v_community_photos')
           .select('id, latitude, longitude, detection_status, worst_severity, image_url, formatted_address, street, barangay, city, province, region, country, confidence, class_name, reporter_username, created_at')
+          .neq('detection_status', 'hidden')
           .order('created_at', { ascending: false })
           .limit(100)
 
@@ -862,9 +1092,16 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
         onMessage={handleWebViewMessage}
       />
 
-      <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-        <Ionicons name="arrow-back" size={20} color="#f0f0f0" />
-      </TouchableOpacity>
+      <View style={styles.topLeftRow}>
+        <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={20} color="#f0f0f0" />
+        </TouchableOpacity>
+        {onMenuPress && (
+          <TouchableOpacity style={styles.menuBtn} onPress={onMenuPress} activeOpacity={0.7}>
+            <Ionicons name="menu-outline" size={22} color="#f0f0f0" />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={styles.toggleRow}>
         {(['photos', 'video', 'all'] as ViewMode[]).map((mode) => (
@@ -924,16 +1161,28 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   backBtn: {
-    position: 'absolute',
-    top: 54,
-    left: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  topLeftRow: {
+    position: 'absolute',
+    top: 54,
+    left: 16,
+    flexDirection: 'row',
+    gap: 10,
     zIndex: 10,
+  },
+  menuBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   toggleRow: {
     position: 'absolute',

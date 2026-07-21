@@ -9,7 +9,7 @@ type Props = {
   initialUpvotes?: number
   initialDownvotes?: number
   initialUserVote?: number
-  onVoteChange?: (score: number) => void
+  onVoteChange?: (upvotes: number, downvotes: number, userVote: number) => void
 }
 
 export default function VoteButtons({
@@ -48,7 +48,7 @@ export default function VoteButtons({
           setUpvotes(row?.upvotes ?? 0)
           setDownvotes(row?.downvotes ?? 0)
           setUserVote(row?.user_vote ?? 0)
-          onVoteChange?.(row?.net_score ?? 0)
+          onVoteChange?.(row?.upvotes ?? 0, row?.downvotes ?? 0, row?.user_vote ?? 0)
         } else {
           const { data, error } = await supabase.rpc('vote_content', {
             p_content_type: contentType,
@@ -60,10 +60,10 @@ export default function VoteButtons({
           setUpvotes(row?.upvotes ?? 0)
           setDownvotes(row?.downvotes ?? 0)
           setUserVote(row?.user_vote ?? 0)
-          onVoteChange?.(row?.net_score ?? 0)
+          onVoteChange?.(row?.upvotes ?? 0, row?.downvotes ?? 0, row?.user_vote ?? 0)
         }
-      } catch {
-        // silently fail
+      } catch (err) {
+        console.log('[VoteButtons] vote error:', err)
       } finally {
         setLoading(false)
       }
