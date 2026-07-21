@@ -308,6 +308,21 @@ function buildMapHtml(
     html += '<div style="font-size:10px;color:#71717a;text-align:center;">' + verifyCount + ' community verification' + (verifyCount !== 1 ? 's' : '') + '</div>';
     html += '</div>';
 
+    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Community</div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+    html += '<div style="display:flex;align-items:center;gap:4px;">';
+    html += '<button id="vote-up-' + p.id + '" style="padding:4px;border-radius:4px;background:rgba(34,197,94,0.1);border:none;cursor:pointer;">';
+    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>';
+    html += '<span id="vote-score-' + p.id + '" style="font-size:12px;font-weight:600;color:#a1a1aa;min-width:24px;text-align:center;">0</span>';
+    html += '<button id="vote-down-' + p.id + '" style="padding:4px;border-radius:4px;background:rgba(239,68,68,0.1);border:none;cursor:pointer;">';
+    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>';
+    html += '</div>';
+    html += '<button id="report-btn-' + p.id + '" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:4px;background:rgba(107,114,128,0.1);border:none;cursor:pointer;font-size:11px;color:#6b7280;">';
+    html += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Report</button>';
+    html += '</div>';
+    html += '</div>';
+
     // Comment form
     html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
     html += '<div style="display:flex;gap:6px;">';
@@ -384,6 +399,48 @@ function buildMapHtml(
       if (fixedBtn) fixedBtn.onclick = function() { doVerify('✅ Fixed'); };
       var feedBtn = document.getElementById('feed-btn-' + p.id);
       if (feedBtn) feedBtn.onclick = function() { window.ReactNativeWebView.postMessage(JSON.stringify({type:'openFeed',itemType:'pothole',itemId:p.id})); };
+
+      var voteUpBtn = document.getElementById('vote-up-' + p.id);
+      var voteDownBtn = document.getElementById('vote-down-' + p.id);
+      var voteScore = document.getElementById('vote-score-' + p.id);
+
+      if (voteUpBtn) voteUpBtn.onclick = function() {
+        fetch(SUPABASE_URL + '/rest/v1/rpc/vote_content', {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_content_type: 'pothole', p_content_id: String(p.id), p_vote_value: 1 })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+          if (voteScore && data) voteScore.textContent = data.net_score;
+        });
+      };
+
+      if (voteDownBtn) voteDownBtn.onclick = function() {
+        fetch(SUPABASE_URL + '/rest/v1/rpc/vote_content', {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_content_type: 'pothole', p_content_id: String(p.id), p_vote_value: -1 })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+          if (voteScore && data) voteScore.textContent = data.net_score;
+        });
+      };
+
+      var reportBtn = document.getElementById('report-btn-' + p.id);
+      if (reportBtn) reportBtn.onclick = function() {
+        fetch(SUPABASE_URL + '/rest/v1/rpc/report_content', {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_content_type: 'pothole', p_content_id: String(p.id), p_reason: 'other' })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+          if (data && data.is_hidden) {
+            reportBtn.textContent = 'Hidden';
+            reportBtn.style.color = '#ef4444';
+          } else {
+            reportBtn.textContent = 'Reported';
+            reportBtn.style.color = '#ef4444';
+          }
+        });
+      };
+
       if (commentSend && commentInput) {
         var sendComment = function() {
           var text = commentInput.value.trim();
@@ -516,6 +573,21 @@ function buildMapHtml(
     html += '</div>';
 
     html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Community</div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+    html += '<div style="display:flex;align-items:center;gap:4px;">';
+    html += '<button id="cp-vote-up-' + cp.id + '" style="padding:4px;border-radius:4px;background:rgba(34,197,94,0.1);border:none;cursor:pointer;">';
+    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>';
+    html += '<span id="cp-vote-score-' + cp.id + '" style="font-size:12px;font-weight:600;color:#a1a1aa;min-width:24px;text-align:center;">0</span>';
+    html += '<button id="cp-vote-down-' + cp.id + '" style="padding:4px;border-radius:4px;background:rgba(239,68,68,0.1);border:none;cursor:pointer;">';
+    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>';
+    html += '</div>';
+    html += '<button id="cp-report-btn-' + cp.id + '" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:4px;background:rgba(107,114,128,0.1);border:none;cursor:pointer;font-size:11px;color:#6b7280;">';
+    html += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Report</button>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
     html += '<div style="display:flex;gap:6px;">';
     html += '<input id="cp-comment-input-' + cp.id + '" type="text" placeholder="Write a comment..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:#0c0c14;color:#e4e4e7;font-size:12px;outline:none;min-width:0;" />';
     html += '<button id="cp-comment-send-' + cp.id + '" style="padding:6px 12px;border-radius:6px;background:rgba(230,168,23,0.15);color:#e6a817;font-size:11px;font-weight:700;border:none;cursor:pointer;outline:none;">Send</button>';
@@ -575,6 +647,47 @@ function buildMapHtml(
             if (fixedBtn) fixedBtn.onclick = function() { doVerify('✅ Fixed'); };
             var cpFeedBtn = document.getElementById('cp-feed-btn-' + cp.id);
             if (cpFeedBtn) cpFeedBtn.onclick = function() { window.ReactNativeWebView.postMessage(JSON.stringify({type:'openFeed',itemType:'photo',itemId:cp.id})); };
+
+            var cpVoteUpBtn = document.getElementById('cp-vote-up-' + cp.id);
+            var cpVoteDownBtn = document.getElementById('cp-vote-down-' + cp.id);
+            var cpVoteScore = document.getElementById('cp-vote-score-' + cp.id);
+
+            if (cpVoteUpBtn) cpVoteUpBtn.onclick = function() {
+              fetch(SUPABASE_URL + '/rest/v1/rpc/vote_content', {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_vote_value: 1 })
+              }).then(function(r) { return r.json(); }).then(function(data) {
+                if (cpVoteScore && data) cpVoteScore.textContent = data.net_score;
+              });
+            };
+
+            if (cpVoteDownBtn) cpVoteDownBtn.onclick = function() {
+              fetch(SUPABASE_URL + '/rest/v1/rpc/vote_content', {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_vote_value: -1 })
+              }).then(function(r) { return r.json(); }).then(function(data) {
+                if (cpVoteScore && data) cpVoteScore.textContent = data.net_score;
+              });
+            };
+
+            var cpReportBtn = document.getElementById('cp-report-btn-' + cp.id);
+            if (cpReportBtn) cpReportBtn.onclick = function() {
+              fetch(SUPABASE_URL + '/rest/v1/rpc/report_content', {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_reason: 'other' })
+              }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data && data.is_hidden) {
+                  cpReportBtn.textContent = 'Hidden';
+                  cpReportBtn.style.color = '#ef4444';
+                } else {
+                  cpReportBtn.textContent = 'Reported';
+                  cpReportBtn.style.color = '#ef4444';
+                }
+              });
+            };
 
             if (commentSend && commentInput) {
               var sendComment = function() {
