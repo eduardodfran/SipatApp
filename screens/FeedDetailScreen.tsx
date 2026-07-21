@@ -18,6 +18,8 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { fetchFastApi } from '../lib/fastapi'
 import { supabase } from '../lib/supabase'
+import ReportButton from '../components/ReportButton'
+import VoteButtons from '../components/VoteButtons'
 
 type Comment = {
   id: string
@@ -61,8 +63,7 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
   const [captionEditVisible, setCaptionEditVisible] = useState(false)
   const [captionDraft, setCaptionDraft] = useState(item.type === 'pothole' ? (item.data.caption ?? '') : '')
   const [savingCaption, setSavingCaption] = useState(false)
-
-
+  const [voteData, setVoteData] = useState({ upvotes: 0, downvotes: 0, userVote: 0 })
 
   const loadComments = useCallback(async () => {
     if (item.type === 'photo') {
@@ -77,6 +78,17 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
   useEffect(() => {
     loadComments()
   }, [])
+
+  useEffect(() => {
+    const fetchVotes = async () => {
+      const { data } = await supabase.rpc('get_content_votes', {
+        p_content_type: item.type,
+        p_content_id: item.type === 'photo' ? String(item.data.id) : String(item.data.pothole_id),
+      })
+      if (data) setVoteData(data)
+    }
+    fetchVotes()
+  }, [item])
 
   const handleVerify = useCallback(async (body: string) => {
     if (item.type === 'photo') {
@@ -279,6 +291,24 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
               <Text style={styles.verifyBtnFixedText}>Fixed</Text>
             </TouchableOpacity>
             <Text style={styles.verifyCount}>{verifyCount}</Text>
+          </View>
+        </View>
+
+        <View style={styles.divider} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Community</Text>
+          <View style={styles.communityRow}>
+            <VoteButtons
+              contentType={item.type}
+              contentId={item.type === 'photo' ? String(item.data.id) : String(item.data.pothole_id)}
+              initialUpvotes={voteData.upvotes}
+              initialDownvotes={voteData.downvotes}
+              initialUserVote={voteData.userVote}
+            />
+            <ReportButton
+              contentType={item.type}
+              contentId={item.type === 'photo' ? String(item.data.id) : String(item.data.pothole_id)}
+            />
           </View>
         </View>
 
@@ -505,6 +535,11 @@ const styles = StyleSheet.create({
   },
   commentSendBtnDisabled: { opacity: 0.4 },
   commentSendText: { color: '#e6a817', fontSize: 13, fontWeight: '700' },
+  communityRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   captionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 8 },
   captionText: { flex: 1, color: '#a1a1aa', fontSize: 12, lineHeight: 17, fontStyle: 'italic' },
   captionPlaceholder: { flex: 1, color: '#3f3f46', fontSize: 12, fontStyle: 'italic' },
