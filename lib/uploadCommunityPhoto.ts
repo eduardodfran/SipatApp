@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { FASTAPI_URL } from './env'
+import { AZURE_URL, LOCAL_URL } from './env'
 
 export type UploadResult = {
   photoId: number
@@ -26,7 +26,7 @@ export async function uploadCommunityPhoto(
   formData.append('longitude', String(longitude))
   if (caption) formData.append('caption', caption)
 
-  const resp = await fetch(`${FASTAPI_URL}/community-photo/upload`, {
+  const resp = await fetch(`${AZURE_URL}/community-photo/upload`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${session.access_token}` },
     body: formData,

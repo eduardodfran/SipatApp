@@ -1,5 +1,5 @@
 const DEV_URL = 'http://192.168.1.7:8000'
-const PROD_URL = 'http://20.17.182.83:8000'
+const PROD_URL = 'http://85.211.193.145'
 
 export const AZURE_URL = PROD_URL
 export const LOCAL_URL = DEV_URL

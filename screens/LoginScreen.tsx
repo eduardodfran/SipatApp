@@ -44,7 +44,7 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Image source={require('../assets/sipat-logo.png')} style={styles.logo} resizeMode="contain" />
+      <Image source={require('../assets/sipat-logo-main.png')} style={styles.logo} resizeMode="contain" />
 
       <Text style={styles.subtitle}>
         {mode === 'login' ? 'Road safety starts here' : 'Join the community'}

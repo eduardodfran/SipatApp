@@ -101,7 +101,7 @@ export default function DashboardScreen({
           <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn} activeOpacity={0.7}>
             <Ionicons name="menu" size={22} color="#e0e0e0" />
           </TouchableOpacity>
-          <Image source={require('../assets/sipat-logo.png')} style={styles.headerLogo} resizeMode="contain" />
+          <Image source={require('../assets/sipat-logo-main.png')} style={styles.headerLogo} resizeMode="contain" />
           <View>
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.title}>Sipat</Text>

@@ -79,7 +79,7 @@ export default function OnboardingScreen({ onDone }: Props) {
       >
         {slides.map((slide, i) => (
           <View key={i} style={styles.slide}>
-            {i === 0 && <Image source={require('../assets/sipat-logo.png')} style={styles.slideLogo} resizeMode="contain" />}
+            {i === 0 && <Image source={require('../assets/sipat-logo-main.png')} style={styles.slideLogo} resizeMode="contain" />}
             <View style={styles.illustrationWrap}>
               <slide.Illustration width={240} height={240} />
             </View>

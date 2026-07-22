@@ -5,10 +5,10 @@
     "scheme": "sipat",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/sipat-logo.png",
+    "icon": "./assets/sipat-logo-main.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/sipat-logo.png",
+      "image": "./assets/sipat-logo-splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#0c0c14"
     },
@@ -16,13 +16,8 @@
       "supportsTablet": true
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#09090b",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
+      "icon": "./assets/sipat-logo-main.png",
+      "package": "com.eduardofran.SipatApp"
     },
     "plugins": [
       [
@@ -47,10 +42,16 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font"
     ],
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "789b21e9-5033-40c1-9d9d-7f99483c9f3e"
+      }
     }
   }
 }
