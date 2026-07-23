@@ -344,9 +344,9 @@ export default function App() {
         <CameraScreen
           onFinish={(rec) => {
             addRecording(rec)
-            setScreen('dashboard')
           }}
           onCancel={() => setScreen('dashboard')}
+          segmentCount={3}
         />
       )}
       {screen === 'photo' && (

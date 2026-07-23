@@ -16,6 +16,7 @@ import type { Recording } from '../lib/types'
 type Props = {
   onFinish: (recording: Recording) => void
   onCancel: () => void
+  segmentCount?: number
 }
 
 function gpsStatus(accuracy: number | null): { label: string; color: string } {
@@ -32,7 +33,7 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-export default function CameraScreen({ onFinish, onCancel }: Props) {
+export default function CameraScreen({ onFinish, onCancel, segmentCount = 3 }: Props) {
   const [permission, requestPermission] = useCameraPermissions()
   const [micPerm, requestMicPermission] = useMicrophonePermissions()
   const [recording, setRecording] = useState(false)
@@ -43,12 +44,19 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
 
   const [recordingGpsCount, setRecordingGpsCount] = useState(0)
 
+  const [autoMode, setAutoMode] = useState(false)
+  const [currentSegment, setCurrentSegment] = useState(0)
+  const [waitingForNext, setWaitingForNext] = useState(false)
+
   const cameraRef = useRef<CameraView>(null)
   const gpsDataRef = useRef<Location.LocationObject[]>([])
   const locationSubRef = useRef<Location.LocationSubscription | null>(null)
   const recordingRef = useRef(false)
   const recordingStartTimeRef = useRef<number | null>(null)
   const lastPreRecordPointRef = useRef<Location.LocationObject | null>(null)
+
+  const userStoppedRef = useRef(false)
+  const segmentStartTimesRef = useRef<number[]>([])
 
   useEffect(() => {
     ;(async () => {
@@ -82,6 +90,104 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
     return () => clearInterval(interval)
   }, [recording])
 
+  function buildRecordingFromGps(
+    videoUri: string,
+    responseId: string,
+    segmentStartTime: number,
+    segmentEndTime: number,
+    segmentIndex: number,
+  ): Recording | null {
+    let gpsPoints = gpsDataRef.current
+      .filter((loc) => loc.timestamp >= segmentStartTime && loc.timestamp < segmentEndTime)
+      .map((loc) => ({
+        lat: loc.coords.latitude,
+        lng: loc.coords.longitude,
+        timestamp_seconds: (loc.timestamp - segmentStartTime) / 1000,
+      }))
+
+    if (gpsPoints.length === 0 && lastPreRecordPointRef.current && segmentIndex === 0) {
+      const loc = lastPreRecordPointRef.current
+      gpsPoints = [{
+        lat: loc.coords.latitude,
+        lng: loc.coords.longitude,
+        timestamp_seconds: 0,
+      }]
+    }
+
+    if (gpsPoints.length === 0) return null
+
+    const csvHeader = 'timestamp,latitude,longitude'
+    const csvRows = gpsPoints.map(
+      (p) => `${p.timestamp_seconds},${p.lat},${p.lng}`,
+    )
+    const csvContent = [csvHeader, ...csvRows].join('\n')
+
+    const csvFile = new File(Paths.cache, `${responseId}.csv`)
+    csvFile.create()
+    csvFile.write(csvContent)
+
+    return {
+      id: responseId,
+      videoUri,
+      csvUri: csvFile.uri,
+      timestamp: Date.now(),
+      uploaded: false,
+    }
+  }
+
+  async function recordSegment(index: number) {
+    userStoppedRef.current = false
+    segmentStartTimesRef.current[index] = Date.now()
+    recordingStartTimeRef.current = Date.now()
+    setCurrentSegment(index)
+    setRecordingGpsCount(0)
+    setRecording(true)
+
+    try {
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
+        .then((loc) => { gpsDataRef.current.push(loc); setGpsCount(gpsDataRef.current.length) })
+        .catch(() => {})
+    } catch {}
+
+    try {
+      const result = await cameraRef.current!.recordAsync({
+        maxDuration: 300,
+      })
+      const endTime = Date.now()
+      setRecording(false)
+
+      if (result?.uri) {
+        const segmentStartTime = segmentStartTimesRef.current[index]
+        const responseId = `rec_${Date.now()}_${index}`
+        const recording = buildRecordingFromGps(result.uri, responseId, segmentStartTime, endTime, index)
+
+        if (recording) {
+          onFinish(recording)
+        }
+      }
+
+      const nextIndex = index + 1
+      if (!userStoppedRef.current && nextIndex < segmentCount) {
+        setWaitingForNext(true)
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+        setWaitingForNext(false)
+        await recordSegment(nextIndex)
+      } else {
+        setAutoMode(false)
+        setWaitingForNext(false)
+        if (result?.uri) {
+          setVideoUri(result.uri)
+        }
+        onCancel()
+      }
+    } catch (err: any) {
+      setRecording(false)
+      if (!recordingRef.current) return
+      Alert.alert('Recording failed', err?.message ?? 'Unknown error')
+      setAutoMode(false)
+    }
+  }
+
   if (!permission || !micPerm) return null
   if (!permission.granted) {
     return (
@@ -106,6 +212,12 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
 
   const startRecording = async () => {
     if (!cameraRef.current) return
+
+    if (segmentCount > 1) {
+      setAutoMode(true)
+      await recordSegment(0)
+      return
+    }
 
     recordingStartTimeRef.current = Date.now()
     setRecordingGpsCount(0)
@@ -132,6 +244,7 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
   }
 
   const stopRecording = () => {
+    userStoppedRef.current = true
     cameraRef.current?.stopRecording()
     setRecording(false)
   }
@@ -146,45 +259,16 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
 
     try {
       const startTime = recordingStartTimeRef.current!
-      let gpsPoints = gpsDataRef.current
-        .filter((loc) => loc.timestamp >= startTime)
-        .map((loc) => ({
-          lat: loc.coords.latitude,
-          lng: loc.coords.longitude,
-          timestamp_seconds: (loc.timestamp - startTime) / 1000,
-        }))
+      const endTime = Date.now()
+      const recording = buildRecordingFromGps(videoUri, `rec_${Date.now()}`, startTime, endTime, 0)
 
-      if (gpsPoints.length === 0 && lastPreRecordPointRef.current) {
-        const loc = lastPreRecordPointRef.current
-        gpsPoints = [{
-          lat: loc.coords.latitude,
-          lng: loc.coords.longitude,
-          timestamp_seconds: 0,
-        }]
-      }
-
-      if (gpsPoints.length === 0) {
+      if (!recording) {
         Alert.alert('No GPS Data', 'No GPS points were recorded. Try again with a clear sky view or outdoors.')
         return
       }
 
-      const csvHeader = 'timestamp,latitude,longitude'
-      const csvRows = gpsPoints.map(
-        (p) => `${p.timestamp_seconds},${p.lat},${p.lng}`,
-      )
-      const csvContent = [csvHeader, ...csvRows].join('\n')
-
-      const id = `rec_${Date.now()}`
-      const csvFile = new File(Paths.cache, `${id}.csv`)
-      csvFile.create()
-      csvFile.write(csvContent)
-      onFinish({
-        id,
-        videoUri,
-        csvUri: csvFile.uri,
-        timestamp: Date.now(),
-        uploaded: false,
-      })
+      onFinish(recording)
+      onCancel()
     } catch (err: any) {
       Alert.alert('Save failed', err?.message ?? 'Error saving recording')
     }
@@ -194,7 +278,7 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
     setVideoUri(null)
   }
 
-  if (videoUri) {
+  if (videoUri && !autoMode) {
     return (
       <View style={styles.container}>
         <View style={styles.previewOverlay}>
@@ -251,6 +335,13 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
             <Ionicons name="close" size={26} color="#f0f0f0" />
           </TouchableOpacity>
 
+          {!recording && !waitingForNext && segmentCount > 1 && (
+            <View style={styles.modeBadge}>
+              <Ionicons name="layers-outline" size={13} color="#e6a817" />
+              <Text style={styles.modeLabel}>Auto {segmentCount}x5min</Text>
+            </View>
+          )}
+
           <View style={[styles.gpsBadge, { borderColor: gps.color }]}>
             <View style={[styles.gpsDot, { backgroundColor: gps.color }]} />
             <Ionicons name="locate" size={13} color={gps.color} />
@@ -265,10 +356,19 @@ export default function CameraScreen({ onFinish, onCancel }: Props) {
         </View>
 
         <View style={styles.bottomSection}>
-          {recording && (
+          {(recording || waitingForNext) && (
             <View style={styles.recordingBadge}>
-              <View style={styles.recordingDot} />
-              <Text style={styles.elapsedText}>{formatTime(elapsed)}</Text>
+              {waitingForNext ? (
+                <Text style={styles.waitingText}>Next segment...</Text>
+              ) : (
+                <>
+                  <View style={styles.recordingDot} />
+                  {segmentCount > 1 && (
+                    <Text style={styles.segmentLabel}>Seg {currentSegment + 1}/{segmentCount}</Text>
+                  )}
+                  <Text style={styles.elapsedText}>{formatTime(elapsed)}</Text>
+                </>
+              )}
             </View>
           )}
           <TouchableOpacity
@@ -323,6 +423,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  modeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(230, 168, 23, 0.12)',
+    paddingVertical: 6,
+    paddingHorizontal: 11,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(230, 168, 23, 0.3)',
+  },
+  modeLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#e6a817',
+  },
   gpsBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -368,11 +484,21 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#dc2626',
   },
+  segmentLabel: {
+    color: '#e6a817',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   elapsedText: {
     color: '#f0f0f0',
     fontSize: 16,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
+  },
+  waitingText: {
+    color: '#9ca3af',
+    fontSize: 14,
+    fontWeight: '600',
   },
   bottomSection: {
     alignItems: 'center',
