@@ -16,7 +16,7 @@ import type { Recording } from '../lib/types'
 
 type Props = {
   recordings: Recording[]
-  uploadingId: string | null
+  uploadingIds: Set<string>
   processingId: string | null
   onRecord: () => void
   onPhoto: () => void
@@ -42,7 +42,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 
 export default function DashboardScreen({
   recordings,
-  uploadingId,
+  uploadingIds,
   processingId,
   onRecord,
   onPhoto,
@@ -310,10 +310,10 @@ export default function DashboardScreen({
                     <TouchableOpacity
                       style={styles.rideAction}
                       onPress={() => debounce(`upload-${item.id}`) && onUpload(item)}
-                      disabled={uploadingId === item.id}
+                      disabled={uploadingIds.has(item.id)}
                       activeOpacity={0.7}
                     >
-                      {uploadingId === item.id ? (
+                      {uploadingIds.has(item.id) ? (
                         <ActivityIndicator size="small" color="#2563eb" />
                       ) : (
                         <Ionicons name="cloud-upload" size={16} color="#2563eb" />

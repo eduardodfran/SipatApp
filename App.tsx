@@ -2,6 +2,7 @@ import 'react-native-get-random-values'
 import 'react-native-url-polyfill/auto'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, Platform, Text, TouchableOpacity, View } from 'react-native'
+import { File } from 'expo-file-system'
 import { User } from '@supabase/supabase-js'
 import * as SplashScreen from 'expo-splash-screen'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -32,7 +33,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [recordings, setRecordings] = useState<Recording[]>([])
-  const [uploadingId, setUploadingId] = useState<string | null>(null)
+  const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set())
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [feedRefreshKey, setFeedRefreshKey] = useState(0)
@@ -75,6 +76,14 @@ export default function App() {
     if (!user) return
     ;(async () => {
       try {
+        const storedJson = await AsyncStorage.getItem('@sipat_recordings')
+        let localRecordings: Recording[] = []
+        if (storedJson) {
+          try {
+            localRecordings = JSON.parse(storedJson).filter((r: Recording) => !r.uploaded)
+          } catch {}
+        }
+
         const rides = await fetchMyRides()
         const serverRecordings: Recording[] = rides.map((r) => ({
           id: r.id,
@@ -90,10 +99,7 @@ export default function App() {
           progressMessage: r.progress_message ?? '',
           storagePaths: { video: r.video_bucket_path, gps: r.gps_bucket_path },
         }))
-        setRecordings((prev) => {
-          const local = prev.filter((r) => !r.uploaded)
-          return [...serverRecordings, ...local]
-        })
+        setRecordings([...serverRecordings, ...localRecordings])
       } catch {
         // silently fail — user can pull-to-refresh later
       }
@@ -145,6 +151,18 @@ export default function App() {
     }
   }, [recordings])
 
+  // Persist recordings to AsyncStorage on every change
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const json = JSON.stringify(recordings)
+        await AsyncStorage.setItem('@sipat_recordings', json)
+      } catch {
+        // best-effort
+      }
+    })()
+  }, [recordings])
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     try {
@@ -180,6 +198,17 @@ export default function App() {
 
   const handleDeleteRecording = useCallback(
     async (recording: Recording) => {
+      if (!recording.uploaded) {
+        try {
+          const csvFile = new File(recording.csvUri)
+          if (csvFile.exists) csvFile.delete()
+          const videoFile = new File(recording.videoUri)
+          if (videoFile.exists) videoFile.delete()
+        } catch {
+          // best-effort
+        }
+      }
+
       if (recording.rideId) {
         try {
           const token = (await supabase.auth.getSession()).data.session?.access_token
@@ -206,7 +235,7 @@ export default function App() {
       }
       if (recording.uploaded) return
 
-      setUploadingId(recording.id)
+      setUploadingIds((prev) => new Set(prev).add(recording.id))
       try {
         const uploaded = await uploadRideData(user.id, recording.videoUri, recording.csvUri)
 
@@ -224,11 +253,26 @@ export default function App() {
           ),
         )
 
-        Alert.alert('Upload Complete', 'Your ride has been uploaded to Azure.')
+        try {
+          await triggerProcessing(uploaded.rideId)
+          setRecordings((prev) =>
+            prev.map((item) =>
+              item.id === recording.id ? { ...item, status: 'processing' } : item,
+            ),
+          )
+        } catch (procErr: any) {
+          console.log(`[upload] auto-process failed for ${uploaded.rideId}: ${procErr}`)
+        }
+
+        Alert.alert('Upload Complete', 'Your ride has been uploaded and queued for processing.')
       } catch (error: any) {
         Alert.alert('Upload Failed', error?.message ?? 'Unknown error')
       } finally {
-        setUploadingId(null)
+        setUploadingIds((prev) => {
+          const next = new Set(prev)
+          next.delete(recording.id)
+          return next
+        })
       }
     },
     [user],
@@ -287,7 +331,7 @@ export default function App() {
       {screen === 'dashboard' && (
         <DashboardScreen
           recordings={recordings}
-          uploadingId={uploadingId}
+          uploadingIds={uploadingIds}
           processingId={processingId}
           onRefresh={handleRefresh}
           refreshing={refreshing}
@@ -307,7 +351,7 @@ export default function App() {
       {screen === 'rides' && (
         <RidesScreen
           recordings={recordings}
-          uploadingId={uploadingId}
+          uploadingIds={uploadingIds}
           processingId={processingId}
           onUpload={handleUploadRecording}
           onProcess={handleProcessRecording}
@@ -344,6 +388,7 @@ export default function App() {
         <CameraScreen
           onFinish={(rec) => {
             addRecording(rec)
+            handleUploadRecording(rec)
           }}
           onCancel={() => setScreen('dashboard')}
           segmentCount={3}

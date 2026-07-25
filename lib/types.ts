@@ -5,6 +5,7 @@ export type Recording = {
   csvUri: string
   timestamp: number
   uploaded: boolean
+  recovered?: boolean
   status?: 'queued' | 'processing' | 'completed' | 'failed'
   errorLog?: string
   progressPct?: number

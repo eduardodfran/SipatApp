@@ -15,7 +15,7 @@ import type { Recording } from '../lib/types'
 
 type Props = {
   recordings: Recording[]
-  uploadingId: string | null
+  uploadingIds: Set<string>
   processingId: string | null
   onUpload: (recording: Recording) => void | Promise<void>
   onProcess: (recording: Recording) => void | Promise<void>
@@ -34,7 +34,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 
 export default function RidesScreen({
   recordings,
-  uploadingId,
+  uploadingIds,
   processingId,
   onUpload,
   onProcess,
@@ -179,10 +179,10 @@ export default function RidesScreen({
                     <TouchableOpacity
                       style={styles.actionBtn}
                       onPress={() => debounce(`upload-${item.id}`) && onUpload(item)}
-                      disabled={uploadingId === item.id}
+                      disabled={uploadingIds.has(item.id)}
                       activeOpacity={0.7}
                     >
-                      {uploadingId === item.id ? (
+                      {uploadingIds.has(item.id) ? (
                         <ActivityIndicator size="small" color="#2563eb" />
                       ) : (
                         <>
