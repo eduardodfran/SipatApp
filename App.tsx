@@ -1,7 +1,7 @@
 import 'react-native-get-random-values'
 import 'react-native-url-polyfill/auto'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Platform, Text, TouchableOpacity, View } from 'react-native'
+import { Alert, BackHandler, Platform, Text, TouchableOpacity, View } from 'react-native'
 import { File } from 'expo-file-system'
 import { User } from '@supabase/supabase-js'
 import * as SplashScreen from 'expo-splash-screen'
@@ -282,6 +282,35 @@ export default function App() {
   const [detailItem, setDetailItem] = useState<{ type: 'photo'; data: any } | { type: 'pothole'; data: any } | null>(null)
   const [focusItem, setFocusItem] = useState<{ type: 'photo' | 'pothole'; id: number | string } | null>(null)
   const [publicProfileUserId, setPublicProfileUserId] = useState<string | null>(null)
+
+  // Android back button handler
+  useEffect(() => {
+    const onBackPress = () => {
+      if (sidebarVisible) {
+        setSidebarVisible(false)
+        return true
+      }
+      switch (screen) {
+        case 'feed':
+        case 'camera':
+        case 'photo':
+        case 'map':
+        case 'distress':
+        case 'rides':
+        case 'profile':
+          setScreen('dashboard')
+          return true
+        case 'feeddetail':
+        case 'publicprofile':
+          setScreen('feed')
+          return true
+        default:
+          return false
+      }
+    }
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress)
+    return () => sub.remove()
+  }, [screen, sidebarVisible])
 
   const handleViewOnMap = useCallback((item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => {
     const id = item.type === 'photo' ? item.data.id : item.data.pothole_id
