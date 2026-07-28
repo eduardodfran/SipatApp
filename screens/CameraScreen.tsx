@@ -85,10 +85,13 @@ export default function CameraScreen({ onFinish, onCancel, segmentCount = 3 }: P
 
   useEffect(() => {
     recordingRef.current = recording
-    if (!recording) { setElapsed(0); return }
+    if (!recording) {
+      if (!waitingForNext) setElapsed(0)
+      return
+    }
     const interval = setInterval(() => setElapsed((e) => e + 1), 1000)
     return () => clearInterval(interval)
-  }, [recording])
+  }, [recording, waitingForNext])
 
   function buildRecordingFromGps(
     videoUri: string,
@@ -153,16 +156,18 @@ export default function CameraScreen({ onFinish, onCancel, segmentCount = 3 }: P
       const result = await cameraRef.current!.recordAsync({
         maxDuration: 300,
       })
-      const endTime = Date.now()
+      const segmentStartTime = segmentStartTimesRef.current[index]
+      const endTime = segmentStartTime + 300_000
       setRecording(false)
 
       if (result?.uri) {
-        const segmentStartTime = segmentStartTimesRef.current[index]
         const responseId = `rec_${Date.now()}_${index}`
         const recording = buildRecordingFromGps(result.uri, responseId, segmentStartTime, endTime, index)
 
         if (recording) {
           onFinish(recording)
+        } else {
+          Alert.alert('Segment skipped', `Segment ${index + 1} had no GPS signal and was discarded.`)
         }
       }
 
