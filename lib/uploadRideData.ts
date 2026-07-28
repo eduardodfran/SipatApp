@@ -200,24 +200,40 @@ async function uploadBlob(sasUrl: string, fileUri: string, mimeType: string) {
     },
   })
 
-  const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Upload timed out after 5 minutes')), UPLOAD_TIMEOUT),
-  )
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('Upload timed out after 5 minutes')), UPLOAD_TIMEOUT)
+  })
 
-  const result = await Promise.race([uploadPromise, timeoutPromise])
+  try {
+    const result = await Promise.race([uploadPromise, timeoutPromise])
 
-  if (result.status >= 400) {
-    throw new Error(`Upload failed (${result.status}): ${result.body}`)
+    if (result.status >= 400) {
+      throw new Error(`Upload failed (${result.status}): ${result.body}`)
+    }
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId)
   }
 }
 
 async function uploadBlobWithRetry(sasUrl: string, fileUri: string, mimeType: string) {
-  try {
-    await uploadBlob(sasUrl, fileUri, mimeType)
-  } catch (err) {
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    await uploadBlob(sasUrl, fileUri, mimeType)
+  const MAX_RETRIES = 3
+  let lastError: Error | null = null
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      await uploadBlob(sasUrl, fileUri, mimeType)
+      return
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err))
+      if (attempt < MAX_RETRIES) {
+        const delay = Math.pow(2, attempt + 1) * 1000
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+    }
   }
+
+  throw lastError
 }
 
 async function completeUpload(
@@ -292,18 +308,29 @@ export async function uploadRideData(
     throw new Error('CSV file must contain at least one GPS row')
   }
 
-  const { video_sas_url, gps_sas_url, video_path, gps_path } = await initUpload(
-    videoFilename,
-    gpsFilename,
-  )
+  let initResult = await initUpload(videoFilename, gpsFilename)
+  let { video_sas_url, gps_sas_url, video_path, gps_path, expires_at } = initResult
 
   let videoPath = video_path
   let gpsPath = gps_path
+
+  const checkAndRefreshSas = async () => {
+    const expiryTime = new Date(expires_at).getTime()
+    const now = Date.now()
+    const fiveMinutes = 5 * 60 * 1000
+    if (expiryTime - now < fiveMinutes) {
+      const refreshed = await initUpload(videoFilename, gpsFilename)
+      video_sas_url = refreshed.video_sas_url
+      gps_sas_url = refreshed.gps_sas_url
+      expires_at = refreshed.expires_at
+    }
+  }
 
   try {
     const gpsFile = new File(Paths.cache, `sipat_gps_${rideId}.json`)
     gpsFile.create()
     gpsFile.write(JSON.stringify(gpsTrackingArray))
+    await checkAndRefreshSas()
     await uploadBlobWithRetry(gps_sas_url, gpsFile.uri, 'application/json')
     gpsFile.delete()
 
@@ -311,6 +338,7 @@ export async function uploadRideData(
     if (!videoFile.exists || videoFile.size === 0) {
       throw new Error(`Video file is empty or missing: ${videoUri}`)
     }
+    await checkAndRefreshSas()
     await uploadBlobWithRetry(video_sas_url, videoFile.uri, 'video/mp4')
 
     await completeUpload(rideId, videoPath, gpsPath)

@@ -254,8 +254,10 @@ export default function App() {
           ),
         )
 
+        let processStarted = false
         try {
           await triggerProcessing(uploaded.rideId)
+          processStarted = true
           setRecordings((prev) =>
             prev.map((item) =>
               item.id === recording.id ? { ...item, status: 'processing' } : item,
@@ -265,7 +267,11 @@ export default function App() {
           console.log(`[upload] auto-process failed for ${uploaded.rideId}: ${procErr}`)
         }
 
-        Alert.alert('Upload Complete', 'Your ride has been uploaded and queued for processing.')
+        if (processStarted) {
+          Alert.alert('Upload Complete', 'Your ride is now being processed.')
+        } else {
+          Alert.alert('Upload Complete', 'Your ride was uploaded. Processing will start shortly.')
+        }
       } catch (error: any) {
         Alert.alert('Upload Failed', error?.message ?? 'Unknown error')
       } finally {
