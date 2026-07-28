@@ -132,39 +132,37 @@ export default function DashboardScreen({
                 <View style={styles.heroIcon}>
                   <Ionicons name="videocam" size={22} color="#e6a817" />
                 </View>
-                <View style={styles.heroTrend}>
-                  <Ionicons name="trending-up" size={14} color="#22c55e" />
-                  <Text style={styles.heroTrendText}>Active</Text>
-                </View>
               </View>
               <Text style={styles.heroNumber}>{totalRecordings}</Text>
               <Text style={styles.heroLabel}>Total Rides</Text>
             </View>
           </View>
 
-          <View style={styles.heroRow}>
-            <View style={[styles.heroSmallCard, { borderColor: 'rgba(34, 197, 94, 0.15)' }]}>
-              <View style={[styles.heroSmallIcon, { backgroundColor: 'rgba(34, 197, 94, 0.12)' }]}>
-                <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
+          {(completed > 0 || processing > 0 || failed > 0) && (
+            <View style={styles.heroRow}>
+              <View style={[styles.heroSmallCard, { borderColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                <View style={[styles.heroSmallIcon, { backgroundColor: 'rgba(34, 197, 94, 0.12)' }]}>
+                  <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
+                </View>
+                <Text style={styles.heroSmallNumber}>{completed}</Text>
+                <Text style={styles.heroSmallLabel}>Done</Text>
               </View>
-              <Text style={styles.heroSmallNumber}>{completed}</Text>
-              <Text style={styles.heroSmallLabel}>Done</Text>
-            </View>
-            <View style={[styles.heroSmallCard, { borderColor: 'rgba(245, 158, 11, 0.15)' }]}>
-              <View style={[styles.heroSmallIcon, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-                <Ionicons name="sync" size={18} color="#f59e0b" />
+              <View style={[styles.heroSmallCard, { borderColor: 'rgba(245, 158, 11, 0.15)' }]}>
+                <View style={[styles.heroSmallIcon, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
+                  <Ionicons name="sync" size={18} color="#f59e0b" />
+                </View>
+                <Text style={styles.heroSmallNumber}>{processing}</Text>
+                <Text style={styles.heroSmallLabel}>Processing</Text>
               </View>
-              <Text style={styles.heroSmallNumber}>{processing}</Text>
-              <Text style={styles.heroSmallLabel}>Processing</Text>
-            </View>
-            <View style={[styles.heroSmallCard, { borderColor: 'rgba(222, 38, 38, 0.15)' }]}>
-              <View style={[styles.heroSmallIcon, { backgroundColor: 'rgba(222, 38, 38, 0.12)' }]}>
-                <Ionicons name="alert-circle" size={18} color="#dc2626" />
+              <View style={[styles.heroSmallCard, { borderColor: 'rgba(222, 38, 38, 0.15)' }]}>
+                <View style={[styles.heroSmallIcon, { backgroundColor: 'rgba(222, 38, 38, 0.12)' }]}>
+                  <Ionicons name="alert-circle" size={18} color="#dc2626" />
+                </View>
+                <Text style={styles.heroSmallNumber}>{failed}</Text>
+                <Text style={styles.heroSmallLabel}>Failed</Text>
               </View>
-              <Text style={styles.heroSmallNumber}>{failed}</Text>
-              <Text style={styles.heroSmallLabel}>Failed</Text>
             </View>
-          </View>
+          )}
         </View>
 
         {/* Map Card */}
@@ -229,8 +227,8 @@ export default function DashboardScreen({
               <View style={[styles.actionIcon, { backgroundColor: 'rgba(230, 168, 23, 0.12)' }]}>
                 <Ionicons name="warning" size={24} color="#e6a817" />
               </View>
-              <Text style={styles.actionLabel}>Distress</Text>
-              <Text style={styles.actionSub}>All detections</Text>
+              <Text style={styles.actionLabel}>All Detections</Text>
+              <Text style={styles.actionSub}>View all hazards</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -261,14 +259,10 @@ export default function DashboardScreen({
               <View style={styles.emptyIcon}>
                 <Ionicons name="bicycle-outline" size={40} color="#2a2a3a" />
               </View>
-              <Text style={styles.emptyTitle}>No rides yet</Text>
-              <Text style={styles.emptySub}>
-                Start recording to detect potholes on your route
-              </Text>
-              <TouchableOpacity style={styles.emptyBtn} onPress={onRecord} activeOpacity={0.8}>
-                <Ionicons name="radio-button-on" size={16} color="#0c0c14" />
-                <Text style={styles.emptyBtnText}>Start Recording</Text>
-              </TouchableOpacity>
+                <Text style={styles.emptyTitle}>No rides yet</Text>
+                <Text style={styles.emptySub}>
+                  Tap the red Record button below to start detecting potholes
+                </Text>
             </View>
           ) : (
             recentRecordings.map((item, index) => {
@@ -493,20 +487,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(230, 168, 23, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  heroTrend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-  },
-  heroTrendText: {
-    color: '#22c55e',
-    fontSize: 11,
-    fontWeight: '700',
   },
   heroNumber: {
     color: '#f0f0f0',
@@ -895,21 +875,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
     paddingHorizontal: 40,
-  },
-  emptyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#e6a817',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 14,
-    marginTop: 20,
-  },
-  emptyBtnText: {
-    color: '#0c0c14',
-    fontSize: 14,
-    fontWeight: '700',
   },
 
   // Bottom Action Bar
