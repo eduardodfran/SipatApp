@@ -2,6 +2,7 @@ import 'react-native-get-random-values'
 import 'react-native-url-polyfill/auto'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, BackHandler, Platform, Text, TouchableOpacity, View } from 'react-native'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { File } from 'expo-file-system'
 import { User } from '@supabase/supabase-js'
 import * as SplashScreen from 'expo-splash-screen'
@@ -348,7 +349,7 @@ export default function App() {
   )
 
   return (
-    <>
+    <SafeAreaProvider>
       {screen === 'onboarding' && (
         <OnboardingScreen
           onDone={() => {
@@ -472,6 +473,6 @@ export default function App() {
         onLogout={handleLogout}
         onProfilePress={() => setScreen('profile')}
       />
-    </>
+    </SafeAreaProvider>
   )
 }

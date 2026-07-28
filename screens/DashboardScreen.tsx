@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 import { useRef } from 'react'
 import { Ionicons } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { Recording } from '../lib/types'
 
 type Props = {
@@ -60,6 +61,7 @@ export default function DashboardScreen({
 }: Props) {
 
   const lastPressRef = useRef<Record<string, number>>({})
+  const insets = useSafeAreaInsets()
   const debounce = (key: string) => {
     const now = Date.now()
     if (now - (lastPressRef.current[key] ?? 0) < 500) return false
@@ -96,7 +98,7 @@ export default function DashboardScreen({
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn} activeOpacity={0.7}>
             <Ionicons name="menu" size={22} color="#e0e0e0" />
@@ -247,17 +249,12 @@ export default function DashboardScreen({
 
         {/* Recent Activity */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Rides</Text>
-            {totalRecordings > 3 && (
-              <Text style={styles.sectionLink}>View all</Text>
-            )}
-          </View>
+          <Text style={styles.sectionTitle}>Recent Rides</Text>
 
           {recentRecordings.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIcon}>
-                <Ionicons name="bicycle-outline" size={40} color="#2a2a3a" />
+                <Ionicons name="bicycle-outline" size={40} color="rgba(230, 168, 23, 0.4)" />
               </View>
                 <Text style={styles.emptyTitle}>No rides yet</Text>
                 <Text style={styles.emptySub}>
@@ -345,11 +342,11 @@ export default function DashboardScreen({
           )}
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: insets.bottom + 100 }} />
       </ScrollView>
 
       {/* Bottom Action Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { bottom: insets.bottom + 16 }]}>
         <TouchableOpacity style={styles.fabBtn} onPress={onRecord} activeOpacity={0.8}>
           <View style={[styles.fabGlow, { backgroundColor: 'rgba(222, 38, 38, 0.15)' }]} />
           <View style={[styles.fabOuter, { backgroundColor: '#dc2626' }]}>
@@ -386,7 +383,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 56 : 36,
+    paddingTop: 12,
     paddingBottom: 12,
     paddingHorizontal: 20,
   },
@@ -396,9 +393,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   menuBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -440,9 +437,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -685,23 +682,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 24,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
   sectionTitle: {
     color: '#f0f0f0',
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: -0.3,
     marginBottom: 14,
-  },
-  sectionLink: {
-    color: '#e6a817',
-    fontSize: 13,
-    fontWeight: '600',
   },
   actionsGrid: {
     flexDirection: 'row',
@@ -838,9 +824,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   rideAction: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -880,7 +866,7 @@ const styles = StyleSheet.create({
   // Bottom Action Bar
   bottomBar: {
     position: 'absolute',
-    bottom: 36,
+    bottom: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 24,

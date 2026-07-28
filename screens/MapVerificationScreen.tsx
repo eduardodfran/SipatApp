@@ -1083,14 +1083,16 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
 
   return (
     <View style={styles.container}>
-      <WebView
-        ref={webViewRef}
-        source={{ html }}
-        style={styles.map}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        onMessage={handleWebViewMessage}
-      />
+      {sessionToken && (
+        <WebView
+          ref={webViewRef}
+          source={{ html }}
+          style={styles.map}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          onMessage={handleWebViewMessage}
+        />
+      )}
 
       <View style={styles.topLeftRow}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
