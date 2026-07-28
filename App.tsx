@@ -258,19 +258,29 @@ export default function App() {
         try {
           await triggerProcessing(uploaded.rideId)
           processStarted = true
-          setRecordings((prev) =>
-            prev.map((item) =>
-              item.id === recording.id ? { ...item, status: 'processing' } : item,
-            ),
-          )
         } catch (procErr: any) {
-          console.log(`[upload] auto-process failed for ${uploaded.rideId}: ${procErr}`)
+          console.log(`[upload] auto-process failed for ${uploaded.rideId}, retrying in 3s: ${procErr}`)
+          await new Promise((r) => setTimeout(r, 3000))
+          try {
+            await triggerProcessing(uploaded.rideId)
+            processStarted = true
+          } catch (retryErr: any) {
+            console.log(`[upload] process retry also failed for ${uploaded.rideId}: ${retryErr}`)
+          }
         }
+
+        setRecordings((prev) =>
+          prev.map((item) =>
+            item.id === recording.id
+              ? { ...item, status: processStarted ? 'processing' : 'queued' }
+              : item,
+          ),
+        )
 
         if (processStarted) {
           Alert.alert('Upload Complete', 'Your ride is now being processed.')
         } else {
-          Alert.alert('Upload Complete', 'Your ride was uploaded. Processing will start shortly.')
+          Alert.alert('Upload Complete', 'Your ride was uploaded. Tap "Play" to start processing.')
         }
       } catch (error: any) {
         Alert.alert('Upload Failed', error?.message ?? 'Unknown error')
