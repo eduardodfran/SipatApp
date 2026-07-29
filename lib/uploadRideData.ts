@@ -216,19 +216,33 @@ async function uploadBlob(sasUrl: string, fileUri: string, mimeType: string) {
   }
 }
 
-async function uploadBlobWithRetry(sasUrl: string, fileUri: string, mimeType: string) {
+async function uploadBlobWithRetry(
+  sasUrl: string,
+  fileUri: string,
+  mimeType: string,
+  refreshSas?: () => Promise<{ sasUrl: string }>,
+) {
   const MAX_RETRIES = 3
   let lastError: Error | null = null
+  let currentSasUrl = sasUrl
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      await uploadBlob(sasUrl, fileUri, mimeType)
+      await uploadBlob(currentSasUrl, fileUri, mimeType)
       return
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err))
       if (attempt < MAX_RETRIES) {
         const delay = Math.pow(2, attempt + 1) * 1000
         await new Promise((resolve) => setTimeout(resolve, delay))
+        if (refreshSas) {
+          try {
+            const refreshed = await refreshSas()
+            currentSasUrl = refreshed.sasUrl
+          } catch {
+            // keep using current SAS URL if refresh fails
+          }
+        }
       }
     }
   }
@@ -319,11 +333,27 @@ export async function uploadRideData(
     const now = Date.now()
     const fiveMinutes = 5 * 60 * 1000
     if (expiryTime - now < fiveMinutes) {
-      const refreshed = await initUpload(videoFilename, gpsFilename)
-      video_sas_url = refreshed.video_sas_url
-      gps_sas_url = refreshed.gps_sas_url
-      expires_at = refreshed.expires_at
+      try {
+        const refreshed = await initUpload(videoFilename, gpsFilename)
+        video_sas_url = refreshed.video_sas_url
+        gps_sas_url = refreshed.gps_sas_url
+        expires_at = refreshed.expires_at
+        videoPath = refreshed.video_path
+        gpsPath = refreshed.gps_path
+      } catch {
+        // keep using current SAS URLs and paths if refresh fails
+      }
     }
+  }
+
+  const refreshGpsSas = async () => {
+    await checkAndRefreshSas()
+    return { sasUrl: gps_sas_url }
+  }
+
+  const refreshVideoSas = async () => {
+    await checkAndRefreshSas()
+    return { sasUrl: video_sas_url }
   }
 
   try {
@@ -331,7 +361,7 @@ export async function uploadRideData(
     gpsFile.create()
     gpsFile.write(JSON.stringify(gpsTrackingArray))
     await checkAndRefreshSas()
-    await uploadBlobWithRetry(gps_sas_url, gpsFile.uri, 'application/json')
+    await uploadBlobWithRetry(gps_sas_url, gpsFile.uri, 'application/json', refreshGpsSas)
     gpsFile.delete()
 
     const videoFile = new File(videoUri)
@@ -339,7 +369,7 @@ export async function uploadRideData(
       throw new Error(`Video file is empty or missing: ${videoUri}`)
     }
     await checkAndRefreshSas()
-    await uploadBlobWithRetry(video_sas_url, videoFile.uri, 'video/mp4')
+    await uploadBlobWithRetry(video_sas_url, videoFile.uri, 'video/mp4', refreshVideoSas)
 
     await completeUpload(rideId, videoPath, gpsPath)
 

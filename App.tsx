@@ -3,7 +3,7 @@ import 'react-native-url-polyfill/auto'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, BackHandler, Platform, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { File } from 'expo-file-system'
+import { File, FileSystem } from 'expo-file-system'
 import { User } from '@supabase/supabase-js'
 import * as SplashScreen from 'expo-splash-screen'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -85,6 +85,18 @@ export default function App() {
           } catch {}
         }
 
+        // Cache validation: check if videoUri and csvUri files still exist
+        const validatedLocal: Recording[] = []
+        for (const r of localRecordings) {
+          const videoInfo = await FileSystem.getInfoAsync(r.videoUri)
+          const csvInfo = await FileSystem.getInfoAsync(r.csvUri)
+          if (videoInfo.exists && csvInfo.exists) {
+            validatedLocal.push(r)
+          } else {
+            console.log(`[restore] Skipping recording ${r.id} — missing cache files`)
+          }
+        }
+
         const rides = await fetchMyRides()
         const serverRecordings: Recording[] = rides.map((r) => ({
           id: r.id,
@@ -100,7 +112,12 @@ export default function App() {
           progressMessage: r.progress_message ?? '',
           storagePaths: { video: r.video_bucket_path, gps: r.gps_bucket_path },
         }))
-        setRecordings([...serverRecordings, ...localRecordings])
+
+        // Deduplication: skip local recordings that already exist on server (by rideId)
+        const serverRideIds = new Set(serverRecordings.map((r) => r.rideId).filter(Boolean))
+        const deduplicatedLocal = validatedLocal.filter((r) => !serverRideIds.has(r.rideId))
+
+        setRecordings([...serverRecordings, ...deduplicatedLocal])
       } catch {
         // silently fail — user can pull-to-refresh later
       }
@@ -156,7 +173,11 @@ export default function App() {
   useEffect(() => {
     ;(async () => {
       try {
-        const json = JSON.stringify(recordings)
+        const toStore = recordings
+          .filter((r) => !r.uploaded)
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 20)
+        const json = JSON.stringify(toStore)
         await AsyncStorage.setItem('@sipat_recordings', json)
       } catch {
         // best-effort
