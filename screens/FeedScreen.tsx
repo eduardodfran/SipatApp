@@ -45,14 +45,14 @@ const PAGE_SIZE = 10
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'Analyzing...', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
   processed: { label: 'Detected', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
-  no_detection: { label: 'No Distress', color: '#6b7280', bg: 'rgba(107, 114, 128, 0.1)' },
+  no_detection: { label: 'No Distress', color: '#71717a', bg: 'rgba(107, 114, 128, 0.1)' },
 }
 
 const SEVERITY_COLORS: Record<string, { color: string; bg: string }> = {
   Minor: { color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
   Moderate: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-  Severe: { color: '#dc2626', bg: 'rgba(222,38,38,0.1)' },
-  Unknown: { color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
+  Severe: { color: '#ef4444', bg: 'rgba(239, 68, 68,0.1)' },
+  Unknown: { color: '#71717a', bg: 'rgba(107,114,128,0.1)' },
 }
 
 const formatAddress = (p: any) => {
@@ -72,13 +72,13 @@ function FilterBar({ filters, onFiltersChange }: { filters: { country: string; c
       <TouchableOpacity style={styles.filterToggle} onPress={() => setExpanded((v) => !v)} activeOpacity={0.7}>
         <Ionicons name="funnel-outline" size={14} color="#a1a1aa" />
         <Text style={styles.filterToggleText}>{expanded ? 'Hide filters' : 'Filter by location'}</Text>
-        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={12} color="#52525b" />
+        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={12} color="#71717a" />
       </TouchableOpacity>
       {expanded && (
         <View style={styles.filterRow}>
-          <TextInput style={styles.filterInput} value={local.country} onChangeText={(t) => setLocal((p) => ({ ...p, country: t }))} onBlur={() => onFiltersChange(local)} placeholder="Country" placeholderTextColor="#374151" />
-          <TextInput style={styles.filterInput} value={local.city} onChangeText={(t) => setLocal((p) => ({ ...p, city: t }))} onBlur={() => onFiltersChange(local)} placeholder="City" placeholderTextColor="#374151" />
-          <TextInput style={styles.filterInput} value={local.street} onChangeText={(t) => setLocal((p) => ({ ...p, street: t }))} onBlur={() => onFiltersChange(local)} placeholder="Street" placeholderTextColor="#374151" />
+          <TextInput style={styles.filterInput} value={local.country} onChangeText={(t) => setLocal((p) => ({ ...p, country: t }))} onBlur={() => onFiltersChange(local)} placeholder="Country" placeholderTextColor="#71717a" />
+          <TextInput style={styles.filterInput} value={local.city} onChangeText={(t) => setLocal((p) => ({ ...p, city: t }))} onBlur={() => onFiltersChange(local)} placeholder="City" placeholderTextColor="#71717a" />
+          <TextInput style={styles.filterInput} value={local.street} onChangeText={(t) => setLocal((p) => ({ ...p, street: t }))} onBlur={() => onFiltersChange(local)} placeholder="Street" placeholderTextColor="#71717a" />
           {(filters.country || filters.city || filters.street) && (
             <TouchableOpacity onPress={() => { setLocal({ country: '', city: '', street: '' }); onFiltersChange({ country: '', city: '', street: '' }) }} style={styles.filterClear} activeOpacity={0.7}>
               <Text style={styles.filterClearText}>Clear</Text>
@@ -295,14 +295,14 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
             <View style={styles.postBody}>
               <View style={styles.postTopRow}>
                 <TouchableOpacity style={styles.reporterRow} onPress={() => post.user_id && onViewProfile(post.user_id)} activeOpacity={0.7}>
-                  <Ionicons name="person-circle-outline" size={16} color="#52525b" />
+                  <Ionicons name="person-circle-outline" size={16} color="#71717a" />
                   <Text style={styles.reporter}>{post.reporter_username ?? 'Anonymous'}</Text>
                 </TouchableOpacity>
                 <Text style={styles.time}>
                   {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </Text>
                 <TouchableOpacity onPress={() => onViewOnMap(item)} style={styles.mapBtn} activeOpacity={0.7}>
-                  <Ionicons name="map-outline" size={15} color="#6b7280" />
+                  <Ionicons name="map-outline" size={15} color="#71717a" />
                 </TouchableOpacity>
               </View>
               {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
@@ -343,17 +343,17 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
               toggleComments(post.id)
             }
           }} activeOpacity={0.7}>
-            <Ionicons name={commentCount > 0 ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#6b7280" />
+            <Ionicons name={commentCount > 0 ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#71717a" />
             <Text style={styles.commentsToggleText}>
               {commentCount > 0 ? `View all ${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Comment'}
             </Text>
-            {commentCount > 0 && <Ionicons name="open-outline" size={12} color="#52525b" />}
+            {commentCount > 0 && <Ionicons name="open-outline" size={12} color="#71717a" />}
           </TouchableOpacity>
           {isExpanded && (
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
               <View style={styles.commentsSection}>
                 {!comments ? (
-                  <ActivityIndicator size="small" color="#6b7280" />
+                  <ActivityIndicator size="small" color="#71717a" />
                 ) : comments.length === 0 ? (
                   <Text style={styles.noComments}>No comments yet</Text>
                 ) : (
@@ -375,7 +375,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                   ))
                 )}
                 <View style={styles.commentInputRow}>
-                  <TextInput style={styles.commentInput} value={commentDrafts[postKey] ?? ''} onChangeText={(text) => setCommentDrafts((prev) => ({ ...prev, [postKey]: text }))} placeholder="Write a comment..." placeholderTextColor="#374151" multiline={false} />
+                  <TextInput style={styles.commentInput} value={commentDrafts[postKey] ?? ''} onChangeText={(text) => setCommentDrafts((prev) => ({ ...prev, [postKey]: text }))} placeholder="Write a comment..." placeholderTextColor="#71717a" multiline={false} />
                   <TouchableOpacity style={[styles.commentSendBtn, (!commentDrafts[postKey]?.trim() || postingComment[postKey]) && styles.commentSendBtnDisabled]} disabled={!commentDrafts[postKey]?.trim() || postingComment[postKey]} onPress={() => handleSendComment(post.id)}>
                     <Text style={styles.commentSendText}>{postingComment[postKey] ? '...' : 'Send'}</Text>
                   </TouchableOpacity>
@@ -409,14 +409,14 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
           <View style={styles.postBody}>
             <View style={styles.postTopRow}>
               <TouchableOpacity style={styles.reporterRow} onPress={() => p.reporter_user_id && onViewProfile(p.reporter_user_id)} activeOpacity={0.7}>
-                <Ionicons name="person-circle-outline" size={16} color="#52525b" />
+                <Ionicons name="person-circle-outline" size={16} color="#71717a" />
                 <Text style={styles.reporter}>{p.reporter_username ?? 'Auto-detected'}</Text>
               </TouchableOpacity>
               <Text style={styles.time}>
                 {p.citizen_first_reported_at ? new Date(p.citizen_first_reported_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : null}
               </Text>
               <TouchableOpacity onPress={() => onViewOnMap(item)} style={styles.mapBtn} activeOpacity={0.7}>
-                <Ionicons name="map-outline" size={15} color="#6b7280" />
+                <Ionicons name="map-outline" size={15} color="#71717a" />
               </TouchableOpacity>
             </View>
             <Text style={styles.address}>{formatAddress(p)}</Text>
@@ -426,8 +426,8 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                 <View style={[styles.severityDot, { backgroundColor: sev.color }]} />
                 <Text style={[styles.severityLabel, { color: sev.color }]}>{p.worst_severity}</Text>
               </View>
-              <View style={styles.hitsBadge}><Ionicons name="flash" size={12} color="#6b7280" /><Text style={styles.hitsText}>{p.total_detection_hits} hit{p.total_detection_hits !== 1 ? 's' : ''}</Text></View>
-              <View style={styles.hitsBadge}><Ionicons name="people" size={12} color="#6b7280" /><Text style={styles.hitsText}>{p.detectors_count} detector{p.detectors_count !== 1 ? 's' : ''}</Text></View>
+              <View style={styles.hitsBadge}><Ionicons name="flash" size={12} color="#71717a" /><Text style={styles.hitsText}>{p.total_detection_hits} hit{p.total_detection_hits !== 1 ? 's' : ''}</Text></View>
+              <View style={styles.hitsBadge}><Ionicons name="people" size={12} color="#71717a" /><Text style={styles.hitsText}>{p.detectors_count} detector{p.detectors_count !== 1 ? 's' : ''}</Text></View>
             </View>
           </View>
         </TouchableOpacity>
@@ -461,14 +461,14 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
             else { setPotholeExpandedId(potholeKey); if (!potholeComments[potholeKey]) loadPotholeComments(potholeKey) }
           }
         }} activeOpacity={0.7}>
-          <Ionicons name={pCommentCount > 0 ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#6b7280" />
+          <Ionicons name={pCommentCount > 0 ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={14} color="#71717a" />
           <Text style={styles.commentsToggleText}>{pCommentCount > 0 ? `View all ${pCommentCount} comment${pCommentCount !== 1 ? 's' : ''}` : 'Comment'}</Text>
-          {pCommentCount > 0 && <Ionicons name="open-outline" size={12} color="#52525b" />}
+          {pCommentCount > 0 && <Ionicons name="open-outline" size={12} color="#71717a" />}
         </TouchableOpacity>
         {pIsExpanded && (
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={styles.commentsSection}>
-              {!pComments ? <ActivityIndicator size="small" color="#6b7280" />
+              {!pComments ? <ActivityIndicator size="small" color="#71717a" />
               : pComments.length === 0 ? <Text style={styles.noComments}>No comments yet</Text>
               : pComments.map((c: any) => (
                 <View key={c.id} style={styles.commentRow}>
@@ -485,7 +485,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                 </View>
               ))}
               <View style={styles.commentInputRow}>
-                <TextInput style={styles.commentInput} value={potholeDrafts[potholeKey] ?? ''} onChangeText={(text) => setPotholeDrafts((prev) => ({ ...prev, [potholeKey]: text }))} placeholder="Write a comment..." placeholderTextColor="#374151" multiline={false} />
+                <TextInput style={styles.commentInput} value={potholeDrafts[potholeKey] ?? ''} onChangeText={(text) => setPotholeDrafts((prev) => ({ ...prev, [potholeKey]: text }))} placeholder="Write a comment..." placeholderTextColor="#71717a" multiline={false} />
                 <TouchableOpacity style={[styles.commentSendBtn, (!potholeDrafts[potholeKey]?.trim() || potholePosting[potholeKey]) && styles.commentSendBtnDisabled]} disabled={!potholeDrafts[potholeKey]?.trim() || potholePosting[potholeKey]} onPress={() => handlePotholeSendComment(potholeKey)}>
                   <Text style={styles.commentSendText}>{potholePosting[potholeKey] ? '...' : 'Send'}</Text>
                 </TouchableOpacity>
@@ -529,7 +529,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                         <Text style={styles.uploadBtnText}>Upload</Text>
                       </TouchableOpacity>
                       <TouchableOpacity onPress={() => handleDelete(post.id)} style={styles.deleteBtn} activeOpacity={0.7}>
-                        <Ionicons name="trash-outline" size={14} color="#dc2626" />
+                        <Ionicons name="trash-outline" size={14} color="#ef4444" />
                       </TouchableOpacity>
                     </>
                   )}
@@ -565,10 +565,10 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
   ), [filteredPending, uploadingIds, filteredFeedItems.length, handleUpload, handleDelete])
 
   const ListEmpty = useCallback(() => {
-    if (loading) return <View style={styles.loadingWrap}><ActivityIndicator size="small" color="#e6a817" /></View>
+    if (loading) return <View style={styles.loadingWrap}><ActivityIndicator size="small" color="#06b6d4" /></View>
     if (hasNoContent) return (
       <View style={styles.emptyState}>
-        <View style={styles.emptyIconWrap}><Ionicons name="camera-outline" size={32} color="#52525b" /></View>
+        <View style={styles.emptyIconWrap}><Ionicons name="camera-outline" size={32} color="#71717a" /></View>
         <Text style={styles.emptyTitle}>No reports yet</Text>
         <Text style={styles.emptySub}>Be the first to capture road distress</Text>
         <TouchableOpacity style={styles.emptyBtn} onPress={onPhoto} activeOpacity={0.7}>
@@ -585,7 +585,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
   }, [loading, hasNoContent, onPhoto])
 
   const ListFooter = useCallback(() => {
-    if (loadingMore) return <View style={styles.loadingWrap}><ActivityIndicator size="small" color="#e6a817" /></View>
+    if (loadingMore) return <View style={styles.loadingWrap}><ActivityIndicator size="small" color="#06b6d4" /></View>
     if (!hasMorePhotos && !hasMorePotholes && filteredFeedItems.length > 0) return <Text style={styles.endText}>That's all</Text>
     return null
   }, [loadingMore, hasMorePhotos, hasMorePotholes, filteredFeedItems.length])
@@ -594,7 +594,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     <View style={styles.container}>
       <View style={styles.feedHeader}>
         <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn} activeOpacity={0.7}>
-          <Ionicons name="menu" size={22} color="#e0e0e0" />
+          <Ionicons name="menu" size={22} color="#fafafa" />
         </TouchableOpacity>
         <View style={styles.feedHeaderCenter}>
           <Text style={styles.feedHeaderLabel}>Sipat</Text>
@@ -627,49 +627,49 @@ const styles = StyleSheet.create({
   },
   menuBtn: {
     width: 38, height: 38, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)', justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
   },
   feedHeaderCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginRight: 38 },
-  feedHeaderLabel: { color: '#f0f0f0', fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
-  feedHeaderDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#e6a817' },
+  feedHeaderLabel: { color: '#fafafa', fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
+  feedHeaderDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#06b6d4' },
   scrollContent: { paddingBottom: 40, paddingHorizontal: 16 },
 
   section: { marginTop: 16 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  sectionDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#e6a817' },
+  sectionDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#06b6d4' },
   sectionTitle: { color: '#a1a1aa', fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, flex: 1 },
-  sectionCount: { color: '#52525b', fontSize: 11, fontWeight: '600', backgroundColor: 'rgba(255,255,255,0.04)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, overflow: 'hidden' },
+  sectionCount: { color: '#71717a', fontSize: 11, fontWeight: '600', backgroundColor: 'rgba(255, 255, 255, 0.06)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, overflow: 'hidden' },
 
   // Filter
   filterToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 4 },
   filterToggleText: { color: '#a1a1aa', fontSize: 13, fontWeight: '500', flex: 1 },
   filterRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   filterInput: {
-    flex: 1, minWidth: 80, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10,
-    paddingVertical: 10, paddingHorizontal: 12, color: '#f0f0f0', fontSize: 13,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)',
+    flex: 1, minWidth: 80, backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: 10,
+    paddingVertical: 10, paddingHorizontal: 12, color: '#fafafa', fontSize: 13,
+    borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)',
   },
-  filterClear: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10, backgroundColor: 'rgba(230,168,23,0.1)' },
-  filterClearText: { color: '#e6a817', fontSize: 12, fontWeight: '600' },
+  filterClear: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10, backgroundColor: 'rgba(6, 182, 212,0.1)' },
+  filterClearText: { color: '#06b6d4', fontSize: 12, fontWeight: '600' },
 
-  postCard: { backgroundColor: '#141420', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)', marginBottom: 12 },
+  postCard: { backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)', marginBottom: 12 },
   postImage: { width: '100%', height: 180, resizeMode: 'cover' },
   postBody: { padding: 14 },
   postTopRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 },
   reporterRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
-  mapBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#191925', alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
+  mapBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#18181b', alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
   reporter: { color: '#a1a1aa', fontSize: 13, fontWeight: '500' },
-  caption: { color: '#e4e4e7', fontSize: 14, lineHeight: 20 },
-  noCaption: { color: '#3f3f46', fontSize: 13, fontStyle: 'italic' },
-  time: { color: '#52525b', fontSize: 11, marginTop: 4 },
+  caption: { color: '#fafafa', fontSize: 14, lineHeight: 20 },
+  noCaption: { color: '#71717a', fontSize: 13, fontStyle: 'italic' },
+  time: { color: '#71717a', fontSize: 11, marginTop: 4 },
   address: { color: '#a1a1aa', fontSize: 12, lineHeight: 16, marginTop: 2 },
   potholeCaption: { color: '#71717a', fontSize: 11, lineHeight: 15, marginTop: 4, fontStyle: 'italic' },
 
   postActions: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 14 },
   uploadBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(6,182,212,0.1)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
   uploadBtnText: { color: '#06b6d4', fontSize: 13, fontWeight: '600' },
-  deleteBtn: { padding: 8, backgroundColor: 'rgba(220,38,38,0.08)', borderRadius: 10 },
+  deleteBtn: { padding: 8, backgroundColor: 'rgba(239, 68, 68,0.08)', borderRadius: 10 },
   uploadingBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(245,158,11,0.1)', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10 },
   uploadingText: { color: '#f59e0b', fontSize: 12, fontWeight: '600' },
   analyzingBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(245,158,11,0.08)', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10 },
@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
   severityDot: { width: 6, height: 6, borderRadius: 3 },
   severityLabel: { fontSize: 11, fontWeight: '700' },
   hitsBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  hitsText: { color: '#6b7280', fontSize: 11, fontWeight: '500' },
+  hitsText: { color: '#71717a', fontSize: 11, fontWeight: '500' },
 
   verifyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 10 },
   verifyBtnStill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(34,197,94,0.08)', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(34,197,94,0.15)' },
@@ -697,29 +697,29 @@ const styles = StyleSheet.create({
   verifyCount: { color: '#71717a', fontSize: 11, fontWeight: '600', marginLeft: 'auto' },
 
   commentsToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingBottom: 10 },
-  commentsToggleText: { color: '#6b7280', fontSize: 12, fontWeight: '500', flex: 1 },
+  commentsToggleText: { color: '#71717a', fontSize: 12, fontWeight: '500', flex: 1 },
   commentsSection: { paddingHorizontal: 14, paddingBottom: 14 },
-  noComments: { color: '#374151', fontSize: 12, textAlign: 'center', paddingVertical: 8 },
+  noComments: { color: '#71717a', fontSize: 12, textAlign: 'center', paddingVertical: 8 },
   commentRow: { flexDirection: 'row', gap: 8, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)' },
-  commentAvatar: { width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(230, 168, 23, 0.12)', justifyContent: 'center', alignItems: 'center' },
-  commentAvatarText: { color: '#e6a817', fontSize: 10, fontWeight: '700' },
+  commentAvatar: { width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(6, 182, 212, 0.12)', justifyContent: 'center', alignItems: 'center' },
+  commentAvatarText: { color: '#06b6d4', fontSize: 10, fontWeight: '700' },
   commentBody: { flex: 1 },
-  commentUsername: { color: '#e4e4e7', fontSize: 11, fontWeight: '600' },
+  commentUsername: { color: '#fafafa', fontSize: 11, fontWeight: '600' },
   commentText: { color: '#a1a1aa', fontSize: 12, marginTop: 1, lineHeight: 16 },
-  commentTime: { color: '#6b7280', fontSize: 10, marginTop: 2 },
+  commentTime: { color: '#71717a', fontSize: 10, marginTop: 2 },
   commentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-  commentInput: { flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12, color: '#f0f0f0', fontSize: 13, borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)' },
-  commentSendBtn: { backgroundColor: 'rgba(230, 168, 23, 0.15)', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8 },
+  commentInput: { flex: 1, backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12, color: '#fafafa', fontSize: 13, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)' },
+  commentSendBtn: { backgroundColor: 'rgba(6, 182, 212, 0.15)', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8 },
   commentSendBtnDisabled: { opacity: 0.4 },
-  commentSendText: { color: '#e6a817', fontSize: 12, fontWeight: '700' },
-  voteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)' },
+  commentSendText: { color: '#06b6d4', fontSize: 12, fontWeight: '700' },
+  voteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.06)' },
 
   loadingWrap: { paddingVertical: 40, alignItems: 'center' },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyIconWrap: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.03)', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  emptyTitle: { color: '#f0f0f0', fontSize: 16, fontWeight: '700' },
-  emptySub: { color: '#4b5563', fontSize: 13, marginTop: 6, textAlign: 'center' },
-  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#e6a817', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 14, marginTop: 20 },
+  emptyTitle: { color: '#fafafa', fontSize: 16, fontWeight: '700' },
+  emptySub: { color: '#71717a', fontSize: 13, marginTop: 6, textAlign: 'center' },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#06b6d4', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 14, marginTop: 20 },
   emptyBtnText: { color: '#0c0c14', fontSize: 14, fontWeight: '700' },
-  endText: { color: '#374151', fontSize: 12, textAlign: 'center', paddingVertical: 24 },
+  endText: { color: '#71717a', fontSize: 12, textAlign: 'center', paddingVertical: 24 },
 })

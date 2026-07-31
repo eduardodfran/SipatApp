@@ -65,7 +65,7 @@ export default function LoginScreen() {
             <TextInput
               style={styles.input}
               placeholder="Email"
-              placeholderTextColor="#4b5563"
+              placeholderTextColor="#71717a"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -77,7 +77,7 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.passwordInput}
                 placeholder="Password"
-                placeholderTextColor="#4b5563"
+                placeholderTextColor="#71717a"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -172,18 +172,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   subtitle: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 32,
   },
   input: {
     width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 15,
     marginBottom: 12,
     borderWidth: 1,
@@ -196,12 +196,12 @@ const styles = StyleSheet.create({
   },
   passwordInput: {
     width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
     paddingRight: 50,
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 15,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 14,
     borderWidth: 2,
-    borderColor: '#6b7280',
+    borderColor: '#71717a',
     borderRadius: 10,
   },
   eyeIris: {
@@ -232,14 +232,14 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#6b7280',
+    backgroundColor: '#71717a',
   },
   eyePupil: {
     position: 'absolute',
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#fafafa',
   },
   eyeClosed: {
     borderColor: '#ef4444',
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     width: '100%',
-    backgroundColor: '#e6a817',
+    backgroundColor: '#06b6d4',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   switchText: {
-    color: '#e6a817',
+    color: '#06b6d4',
     fontSize: 13,
     fontWeight: '500',
   },

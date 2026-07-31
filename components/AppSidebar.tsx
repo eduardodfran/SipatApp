@@ -88,7 +88,7 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
         <Animated.View style={[styles.sidebar, { transform: [{ translateX: slideAnim }] }]}>
           {/* Close button */}
           <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
-            <Ionicons name="close" size={22} color="#6b7280" />
+            <Ionicons name="close" size={22} color="#71717a" />
           </TouchableOpacity>
 
           {/* Profile section */}
@@ -130,7 +130,7 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
                     <Ionicons
                       name={item.icon as any}
                       size={20}
-                      color={isActive ? '#e6a817' : '#6b7280'}
+                      color={isActive ? '#06b6d4' : '#71717a'}
                     />
                   </View>
                   <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
@@ -158,7 +158,7 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
             activeOpacity={0.7}
           >
             <View style={styles.logoutIconWrap}>
-              <Ionicons name="log-out-outline" size={20} color="#dc2626" />
+              <Ionicons name="log-out-outline" size={20} color="#ef4444" />
             </View>
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -189,12 +189,12 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     width: SIDEBAR_WIDTH,
-    backgroundColor: '#111118',
+    backgroundColor: '#1c1c22',
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 40,
     paddingHorizontal: 20,
     borderRightWidth: 1,
-    borderRightColor: 'rgba(255,255,255,0.04)',
+    borderRightColor: 'rgba(255, 255, 255, 0.06)',
     shadowColor: '#000',
     shadowOffset: { width: 4, height: 0 },
     shadowOpacity: 0.4,
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
@@ -222,33 +222,33 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(230, 168, 23, 0.12)',
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: 'rgba(230, 168, 23, 0.2)',
+    borderColor: 'rgba(6, 182, 212, 0.2)',
   },
   avatarText: {
-    color: '#e6a817',
+    color: '#06b6d4',
     fontSize: 22,
     fontWeight: '800',
   },
   profileName: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 17,
     fontWeight: '700',
     textAlign: 'center',
   },
   profileEmail: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 12,
     marginTop: 3,
     textAlign: 'center',
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     marginVertical: 8,
   },
   navSection: {
@@ -263,18 +263,18 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   navItemActive: {
-    backgroundColor: 'rgba(230, 168, 23, 0.08)',
+    backgroundColor: 'rgba(6, 182, 212, 0.08)',
   },
   navIconWrap: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   navIconWrapActive: {
-    backgroundColor: 'rgba(230, 168, 23, 0.12)',
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
   },
   navLabel: {
     color: '#a1a1aa',
@@ -283,14 +283,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   navLabelActive: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontWeight: '700',
   },
   navActiveDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#e6a817',
+    backgroundColor: '#06b6d4',
   },
   logoutBtn: {
     flexDirection: 'row',
@@ -304,17 +304,17 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: 'rgba(222, 38, 38, 0.08)',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoutText: {
-    color: '#dc2626',
+    color: '#ef4444',
     fontSize: 15,
     fontWeight: '600',
   },
   version: {
-    color: '#374151',
+    color: '#71717a',
     fontSize: 11,
     textAlign: 'center',
     marginTop: 12,

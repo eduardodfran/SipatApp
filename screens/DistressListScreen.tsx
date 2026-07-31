@@ -19,10 +19,10 @@ type Props = {
 
 function severityColor(severity: string): string {
   switch (severity?.toLowerCase()) {
-    case 'severe': return '#dc2626'
+    case 'severe': return '#ef4444'
     case 'moderate': return '#f59e0b'
     case 'minor': return '#22c55e'
-    default: return '#6b7280'
+    default: return '#71717a'
   }
 }
 
@@ -43,10 +43,10 @@ export default function DistressListScreen({ onBack }: Props) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={20} color="#f0f0f0" />
+          <Ionicons name="arrow-back" size={20} color="#fafafa" />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Ionicons name="warning" size={18} color="#e6a817" />
+          <Ionicons name="warning" size={18} color="#06b6d4" />
           <Text style={styles.headerTitle}>Road Distress</Text>
         </View>
         <View style={styles.headerRight}>
@@ -58,7 +58,7 @@ export default function DistressListScreen({ onBack }: Props) {
       {/* Content */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#e6a817" />
+          <ActivityIndicator size="large" color="#06b6d4" />
           <Text style={styles.loadingText}>Loading detections...</Text>
         </View>
       ) : distresstypes.length === 0 ? (
@@ -98,7 +98,7 @@ export default function DistressListScreen({ onBack }: Props) {
             onPress={() => setSelectedImage(null)}
             activeOpacity={0.7}
           >
-            <Ionicons name="close" size={28} color="#fff" />
+            <Ionicons name="close" size={28} color="#fafafa" />
           </TouchableOpacity>
           {selectedImage && (
             <Image
@@ -133,7 +133,7 @@ function DistressCard({
             resizeMode="cover"
           />
           <View style={styles.imageOverlay}>
-            <Ionicons name="expand-outline" size={18} color="#fff" />
+            <Ionicons name="expand-outline" size={18} color="#fafafa" />
           </View>
         </TouchableOpacity>
       ) : (
@@ -159,13 +159,13 @@ function DistressCard({
 
         <View style={styles.cardStats}>
           <View style={styles.statItem}>
-            <Ionicons name="eye" size={14} color="#6b7280" />
+            <Ionicons name="eye" size={14} color="#71717a" />
             <Text style={styles.statValue}>{item.detection_count}</Text>
             <Text style={styles.statLabel}>detections</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Ionicons name="pulse" size={14} color="#6b7280" />
+            <Ionicons name="pulse" size={14} color="#71717a" />
             <Text style={styles.statValue}>{(item.avg_confidence * 100).toFixed(0)}%</Text>
             <Text style={styles.statLabel}>confidence</Text>
           </View>
@@ -187,13 +187,13 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 56 : 36,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 17,
     fontWeight: '700',
   },
@@ -214,12 +214,12 @@ const styles = StyleSheet.create({
     minWidth: 40,
   },
   totalCount: {
-    color: '#e6a817',
+    color: '#06b6d4',
     fontSize: 18,
     fontWeight: '800',
   },
   totalLabel: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 9,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 14,
   },
   emptyContainer: {
@@ -242,13 +242,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyTitle: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 18,
     fontWeight: '700',
     marginTop: 8,
   },
   emptySubtitle: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
@@ -262,16 +262,16 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   card: {
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   cardImage: {
     width: '100%',
     height: 180,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#18181b',
   },
   cardImagePlaceholder: {
     justifyContent: 'center',
@@ -301,12 +301,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   className: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 20,
     fontWeight: '800',
   },
   friendlyName: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 13,
     marginTop: 2,
   },
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   statItem: {
     flexDirection: 'row',
@@ -343,12 +343,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   statValue: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 14,
     fontWeight: '700',
   },
   statLabel: {
-    color: '#4b5563',
+    color: '#71717a',
     fontSize: 11,
   },
   statDivider: {

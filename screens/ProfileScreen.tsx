@@ -109,7 +109,7 @@ export default function ProfileScreen({ user, onBack }: Props) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color="#e0e0e0" />
+          <Ionicons name="arrow-back" size={22} color="#fafafa" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
         <View style={{ width: 38 }} />
@@ -131,7 +131,7 @@ export default function ProfileScreen({ user, onBack }: Props) {
             value={username}
             onChangeText={setUsername}
             placeholder="Enter username"
-            placeholderTextColor="#4b5563"
+            placeholderTextColor="#71717a"
             autoCapitalize="none"
             autoCorrect={false}
             editable={!cooldown.locked}
@@ -146,7 +146,7 @@ export default function ProfileScreen({ user, onBack }: Props) {
           <Text style={styles.label}>Email</Text>
           <View style={styles.readOnlyField}>
             <Text style={styles.readOnlyText}>{email}</Text>
-            <Ionicons name="lock-closed" size={14} color="#4b5563" />
+            <Ionicons name="lock-closed" size={14} color="#71717a" />
           </View>
 
           <TouchableOpacity
@@ -164,7 +164,7 @@ export default function ProfileScreen({ user, onBack }: Props) {
 
         <View style={styles.dangerSection}>
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
-            <Ionicons name="log-out-outline" size={18} color="#dc2626" />
+            <Ionicons name="log-out-outline" size={18} color="#ef4444" />
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </View>
@@ -189,13 +189,13 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
   },
-  headerTitle: { color: '#f0f0f0', fontSize: 16, fontWeight: '700' },
+  headerTitle: { color: '#fafafa', fontSize: 16, fontWeight: '700' },
   scroll: { flex: 1 },
   avatarSection: {
     alignItems: 'center',
@@ -205,25 +205,25 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(230, 168, 23, 0.12)',
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(230, 168, 23, 0.25)',
+    borderColor: 'rgba(6, 182, 212, 0.25)',
     marginBottom: 12,
   },
   avatarInitial: {
-    color: '#e6a817',
+    color: '#06b6d4',
     fontSize: 32,
     fontWeight: '800',
   },
   displayName: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 20,
     fontWeight: '700',
   },
   email: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 13,
     marginTop: 4,
   },
@@ -238,11 +238,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   input: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 15,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
@@ -270,14 +270,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   readOnlyText: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 15,
   },
   saveBtn: {
-    backgroundColor: '#e6a817',
+    backgroundColor: '#06b6d4',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -300,14 +300,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: 'rgba(220, 38, 38, 0.08)',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
     borderRadius: 12,
     paddingVertical: 14,
     borderWidth: 1,
-    borderColor: 'rgba(220, 38, 38, 0.15)',
+    borderColor: 'rgba(239, 68, 68, 0.15)',
   },
   logoutText: {
-    color: '#dc2626',
+    color: '#ef4444',
     fontSize: 15,
     fontWeight: '600',
   },

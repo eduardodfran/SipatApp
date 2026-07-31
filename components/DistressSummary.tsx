@@ -13,10 +13,10 @@ import { useDistressSummary, friendlyClassName, type DistressType } from '../lib
 
 function severityDotColor(severity: string): string {
   switch (severity?.toLowerCase()) {
-    case 'severe': return '#dc2626'
+    case 'severe': return '#ef4444'
     case 'moderate': return '#f59e0b'
     case 'minor': return '#22c55e'
-    default: return '#6b7280'
+    default: return '#71717a'
   }
 }
 
@@ -27,7 +27,7 @@ export default function DistressSummary() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color="#e6a817" />
+        <ActivityIndicator size="small" color="#06b6d4" />
       </View>
     )
   }
@@ -40,7 +40,7 @@ export default function DistressSummary() {
     <>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Ionicons name="warning" size={16} color="#e6a817" />
+          <Ionicons name="warning" size={16} color="#06b6d4" />
           <Text style={styles.headerTitle}>Distress Types Detected</Text>
           <Text style={styles.headerCount}>{distresstypes.length}</Text>
         </View>
@@ -66,7 +66,7 @@ export default function DistressSummary() {
             onPress={() => setSelectedImage(null)}
             activeOpacity={0.7}
           >
-            <Ionicons name="close" size={28} color="#fff" />
+            <Ionicons name="close" size={28} color="#fafafa" />
           </TouchableOpacity>
           {selectedImage && (
             <Image
@@ -109,7 +109,7 @@ function DistressRow({
         </Text>
         {item.sample_image_url && (
           <TouchableOpacity onPress={onImagePress} style={styles.imageBtn}>
-            <Ionicons name="image" size={14} color="#e6a817" />
+            <Ionicons name="image" size={14} color="#06b6d4" />
           </TouchableOpacity>
         )}
       </View>
@@ -119,17 +119,17 @@ function DistressRow({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
     overflow: 'hidden',
   },
   loadingContainer: {
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
     padding: 20,
     alignItems: 'center',
   },
@@ -140,10 +140,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   headerTitle: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -151,10 +151,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerCount: {
-    color: '#e6a817',
+    color: '#06b6d4',
     fontSize: 12,
     fontWeight: '700',
-    backgroundColor: 'rgba(230, 168, 23, 0.12)',
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
     paddingVertical: 2,
     paddingHorizontal: 8,
     borderRadius: 8,
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   rowLeft: {
     flexDirection: 'row',
@@ -183,12 +183,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   className: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 14,
     fontWeight: '700',
   },
   friendlyName: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 11,
     marginTop: 1,
   },
@@ -197,12 +197,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   count: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 16,
     fontWeight: '700',
   },
   countLabel: {
-    color: '#4b5563',
+    color: '#71717a',
     fontSize: 9,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   confidence: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(230, 168, 23, 0.12)',
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },

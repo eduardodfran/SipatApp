@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#ffffff',
+    color: '#fafafa',
     textAlign: 'center',
     marginBottom: 12,
   },
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#3f3f46',
+    backgroundColor: '#71717a',
   },
   dotActive: {
     backgroundColor: '#06b6d4',

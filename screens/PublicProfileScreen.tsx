@@ -91,13 +91,13 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#e0e0e0" />
+            <Ionicons name="arrow-back" size={22} color="#fafafa" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile</Text>
           <View style={{ width: 38 }} />
         </View>
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color="#e6a817" />
+          <ActivityIndicator size="large" color="#06b6d4" />
         </View>
       </View>
     )
@@ -107,7 +107,7 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color="#e0e0e0" />
+          <Ionicons name="arrow-back" size={22} color="#fafafa" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
         <View style={{ width: 38 }} />
@@ -143,7 +143,7 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
             onPress={() => setActiveTab('photos')}
             activeOpacity={0.7}
           >
-            <Ionicons name="camera" size={16} color={activeTab === 'photos' ? '#e6a817' : '#6b7280'} />
+            <Ionicons name="camera" size={16} color={activeTab === 'photos' ? '#06b6d4' : '#71717a'} />
             <Text style={[styles.tabText, activeTab === 'photos' && styles.tabTextActive]}>Photos</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -151,7 +151,7 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
             onPress={() => setActiveTab('potholes')}
             activeOpacity={0.7}
           >
-            <Ionicons name="warning" size={16} color={activeTab === 'potholes' ? '#e6a817' : '#6b7280'} />
+            <Ionicons name="warning" size={16} color={activeTab === 'potholes' ? '#06b6d4' : '#71717a'} />
             <Text style={[styles.tabText, activeTab === 'potholes' && styles.tabTextActive]}>Detections</Text>
           </TouchableOpacity>
         </View>
@@ -192,7 +192,7 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
               </View>
             ) : (
               potholes.map((p) => {
-                const sevColor = p.worst_severity === 'Severe' ? '#dc2626' : p.worst_severity === 'Moderate' ? '#f59e0b' : '#22c55e'
+                const sevColor = p.worst_severity === 'Severe' ? '#ef4444' : p.worst_severity === 'Moderate' ? '#f59e0b' : '#22c55e'
                 return (
                   <TouchableOpacity
                     key={p.pothole_id}
@@ -235,29 +235,29 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     width: 38, height: 38, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)', justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
   },
-  headerTitle: { color: '#f0f0f0', fontSize: 16, fontWeight: '700' },
+  headerTitle: { color: '#fafafa', fontSize: 16, fontWeight: '700' },
   scroll: { flex: 1 },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   profileSection: { alignItems: 'center', paddingVertical: 24 },
   avatarCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(230, 168, 23, 0.12)',
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 2, borderColor: 'rgba(230, 168, 23, 0.25)',
+    borderWidth: 2, borderColor: 'rgba(6, 182, 212, 0.25)',
     marginBottom: 12, overflow: 'hidden',
   },
   avatarImage: { width: 80, height: 80, borderRadius: 40 },
-  avatarInitial: { color: '#e6a817', fontSize: 32, fontWeight: '800' },
-  displayName: { color: '#f0f0f0', fontSize: 20, fontWeight: '700' },
+  avatarInitial: { color: '#06b6d4', fontSize: 32, fontWeight: '800' },
+  displayName: { color: '#fafafa', fontSize: 20, fontWeight: '700' },
   statsRow: {
     flexDirection: 'row', alignItems: 'center', gap: 24, marginTop: 16,
   },
   statItem: { alignItems: 'center' },
-  statNumber: { color: '#f0f0f0', fontSize: 18, fontWeight: '700' },
-  statLabel: { color: '#6b7280', fontSize: 12, fontWeight: '500', marginTop: 2 },
+  statNumber: { color: '#fafafa', fontSize: 18, fontWeight: '700' },
+  statLabel: { color: '#71717a', fontSize: 12, fontWeight: '500', marginTop: 2 },
   statDivider: { width: 1, height: 24, backgroundColor: 'rgba(255,255,255,0.06)' },
   tabRow: {
     flexDirection: 'row', marginHorizontal: 20, gap: 8, marginBottom: 16,
@@ -265,35 +265,35 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     paddingVertical: 10, borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)',
   },
-  tabActive: { backgroundColor: 'rgba(230, 168, 23, 0.08)', borderColor: 'rgba(230, 168, 23, 0.15)' },
-  tabText: { color: '#6b7280', fontSize: 13, fontWeight: '600' },
-  tabTextActive: { color: '#e6a817' },
+  tabActive: { backgroundColor: 'rgba(6, 182, 212, 0.08)', borderColor: 'rgba(6, 182, 212, 0.15)' },
+  tabText: { color: '#71717a', fontSize: 13, fontWeight: '600' },
+  tabTextActive: { color: '#06b6d4' },
   gridSection: { paddingHorizontal: 20 },
   gridItem: {
     width: '100%', height: 200, borderRadius: 14, overflow: 'hidden',
-    marginBottom: 10, backgroundColor: '#141420',
+    marginBottom: 10, backgroundColor: '#18181b',
   },
   gridImage: { width: '100%', height: '100%' },
   gridOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     padding: 10, backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  gridDate: { color: '#e0e0e0', fontSize: 11, fontWeight: '600' },
+  gridDate: { color: '#fafafa', fontSize: 11, fontWeight: '600' },
   listSection: { paddingHorizontal: 20 },
   potholeCard: {
-    flexDirection: 'row', backgroundColor: '#141420', borderRadius: 14,
-    overflow: 'hidden', marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)',
+    flexDirection: 'row', backgroundColor: '#18181b', borderRadius: 14,
+    overflow: 'hidden', marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   potholeImage: { width: 90, height: 90 },
   potholeInfo: { flex: 1, padding: 12, justifyContent: 'center' },
   potholeTop: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   severityDot: { width: 7, height: 7, borderRadius: 3.5 },
-  severityText: { color: '#f0f0f0', fontSize: 12, fontWeight: '700' },
-  potholeHits: { color: '#6b7280', fontSize: 11, marginLeft: 'auto' },
+  severityText: { color: '#fafafa', fontSize: 12, fontWeight: '700' },
+  potholeHits: { color: '#71717a', fontSize: 11, marginLeft: 'auto' },
   potholeCaption: { color: '#a1a1aa', fontSize: 11, fontStyle: 'italic', marginTop: 2 },
-  potholeAddress: { color: '#52525b', fontSize: 10, marginTop: 2 },
+  potholeAddress: { color: '#71717a', fontSize: 10, marginTop: 2 },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { color: '#374151', fontSize: 13, marginTop: 8 },
+  emptyText: { color: '#71717a', fontSize: 13, marginTop: 8 },
 })

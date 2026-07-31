@@ -87,7 +87,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
   if (!permission.granted) {
     return (
       <View style={styles.permissionWrap}>
-        <Ionicons name="camera-outline" size={48} color="#e6a817" />
+        <Ionicons name="camera-outline" size={48} color="#06b6d4" />
         <Text style={styles.permissionTitle}>Camera Access Needed</Text>
         <Text style={styles.permissionSub}>Allow Sipat to access your camera to capture road distress</Text>
         <TouchableOpacity style={styles.permissionBtn} onPress={requestPermission}>
@@ -105,7 +105,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
       <View style={styles.container}>
         <View style={styles.previewHeader}>
           <TouchableOpacity style={styles.previewCloseBtn} onPress={() => { setPhoto(null); setCaption('') }}>
-            <Ionicons name="close" size={22} color="#fff" />
+            <Ionicons name="close" size={22} color="#fafafa" />
           </TouchableOpacity>
           <Text style={styles.previewTitle}>Preview</Text>
           <View style={{ width: 38 }} />
@@ -114,7 +114,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
           <TextInput
             style={styles.captionInput}
             placeholder="Add a caption..."
-            placeholderTextColor="#52525b"
+            placeholderTextColor="#71717a"
             value={caption}
             onChangeText={setCaption}
             multiline
@@ -137,7 +137,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
             onPress={() => { setPhoto(null); setCaption(''); setLocation(null) }}
             activeOpacity={0.7}
           >
-            <Ionicons name="refresh" size={18} color="#fff" />
+            <Ionicons name="refresh" size={18} color="#fafafa" />
             <Text style={styles.retakeBtnText}>Retake</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -163,13 +163,13 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
       <CameraView ref={cameraRef} style={styles.camera} facing="back">
         <View style={styles.cameraOverlay}>
           <TouchableOpacity style={styles.closeBtn} onPress={onCancel}>
-            <Ionicons name="close" size={28} color="#fff" />
+            <Ionicons name="close" size={28} color="#fafafa" />
           </TouchableOpacity>
           <View style={styles.cameraBottom}>
             <View style={styles.viewfinder} />
             {capturing ? (
               <View style={styles.captureBtn}>
-                <ActivityIndicator size="large" color="#e6a817" />
+                <ActivityIndicator size="large" color="#06b6d4" />
               </View>
             ) : (
               <TouchableOpacity style={styles.captureBtn} onPress={takePicture} activeOpacity={0.8}>
@@ -197,14 +197,14 @@ const styles = StyleSheet.create({
   },
   cameraBottom: { alignItems: 'center', paddingBottom: 40 },
   viewfinder: {
-    width: 200, height: 200, borderWidth: 2, borderColor: 'rgba(230,168,23,0.6)',
+    width: 200, height: 200, borderWidth: 2, borderColor: 'rgba(6, 182, 212,0.6)',
     borderRadius: 12, marginBottom: 24,
   },
   captureBtn: {
     width: 72, height: 72, borderRadius: 36, borderWidth: 4,
-    borderColor: '#e6a817', justifyContent: 'center', alignItems: 'center',
+    borderColor: '#06b6d4', justifyContent: 'center', alignItems: 'center',
   },
-  captureBtnInner: { width: 58, height: 58, borderRadius: 29, backgroundColor: '#e6a817' },
+  captureBtnInner: { width: 58, height: 58, borderRadius: 29, backgroundColor: '#06b6d4' },
   cameraHint: { color: '#a1a1aa', fontSize: 13, marginTop: 12 },
 
   // Preview
@@ -217,10 +217,10 @@ const styles = StyleSheet.create({
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center',
   },
-  previewTitle: { color: '#f0f0f0', fontSize: 16, fontWeight: '600' },
+  previewTitle: { color: '#fafafa', fontSize: 16, fontWeight: '600' },
   previewCaptionArea: { paddingHorizontal: 16, paddingBottom: 12 },
   captionInput: {
-    padding: 14, backgroundColor: '#141420', borderRadius: 12, color: '#f0f0f0',
+    padding: 14, backgroundColor: '#18181b', borderRadius: 12, color: '#fafafa',
     fontSize: 14, maxHeight: 100, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
   },
   previewImageWrap: { flex: 1, backgroundColor: '#000' },
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#27272a', borderRadius: 14, paddingVertical: 14,
   },
-  retakeBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  retakeBtnText: { color: '#fafafa', fontSize: 14, fontWeight: '600' },
   saveBtn: {
     flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#06b6d4', borderRadius: 14, paddingVertical: 14,
@@ -251,11 +251,11 @@ const styles = StyleSheet.create({
   permissionWrap: {
     flex: 1, backgroundColor: '#0c0c14', justifyContent: 'center', alignItems: 'center', padding: 40,
   },
-  permissionTitle: { color: '#f0f0f0', fontSize: 20, fontWeight: '700', marginTop: 16, marginBottom: 8 },
-  permissionSub: { color: '#6b7280', fontSize: 14, textAlign: 'center', marginBottom: 24 },
+  permissionTitle: { color: '#fafafa', fontSize: 20, fontWeight: '700', marginTop: 16, marginBottom: 8 },
+  permissionSub: { color: '#71717a', fontSize: 14, textAlign: 'center', marginBottom: 24 },
   permissionBtn: {
-    backgroundColor: '#e6a817', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 16,
+    backgroundColor: '#06b6d4', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 16,
   },
   permissionBtnText: { color: '#0c0c14', fontSize: 15, fontWeight: '700' },
-  cancelText: { color: '#6b7280', fontSize: 14 },
+  cancelText: { color: '#71717a', fontSize: 14 },
 })

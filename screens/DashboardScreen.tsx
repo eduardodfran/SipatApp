@@ -35,10 +35,10 @@ type Props = {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  queued: { label: 'Queued', color: '#7bb7ff', bg: 'rgba(37, 99, 235, 0.12)' },
+  queued: { label: 'Queued', color: '#60a5fa', bg: 'rgba(37, 99, 235, 0.12)' },
   processing: { label: 'Processing', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
   completed: { label: 'Completed', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
-  failed: { label: 'Failed', color: '#dc2626', bg: 'rgba(222, 38, 38, 0.1)' },
+  failed: { label: 'Failed', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
 }
 
 export default function DashboardScreen({
@@ -101,7 +101,7 @@ export default function DashboardScreen({
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn} activeOpacity={0.7}>
-            <Ionicons name="menu" size={22} color="#e0e0e0" />
+            <Ionicons name="menu" size={22} color="#fafafa" />
           </TouchableOpacity>
           <Image source={require('../assets/sipat-logo-main.png')} style={styles.headerLogo} resizeMode="contain" />
           <View>
@@ -112,9 +112,9 @@ export default function DashboardScreen({
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={onRefresh} style={styles.iconBtn}>
             {refreshing ? (
-              <ActivityIndicator size="small" color="#e6a817" />
+              <ActivityIndicator size="small" color="#06b6d4" />
             ) : (
-              <Ionicons name="refresh" size={20} color="#e0e0e0" />
+              <Ionicons name="refresh" size={20} color="#fafafa" />
             )}
           </TouchableOpacity>
         </View>
@@ -132,7 +132,7 @@ export default function DashboardScreen({
             <View style={styles.heroCardContent}>
               <View style={styles.heroIconRow}>
                 <View style={styles.heroIcon}>
-                  <Ionicons name="videocam" size={22} color="#e6a817" />
+                  <Ionicons name="videocam" size={22} color="#06b6d4" />
                 </View>
               </View>
               <Text style={styles.heroNumber}>{totalRecordings}</Text>
@@ -156,9 +156,9 @@ export default function DashboardScreen({
                 <Text style={styles.heroSmallNumber}>{processing}</Text>
                 <Text style={styles.heroSmallLabel}>Processing</Text>
               </View>
-              <View style={[styles.heroSmallCard, { borderColor: 'rgba(222, 38, 38, 0.15)' }]}>
-                <View style={[styles.heroSmallIcon, { backgroundColor: 'rgba(222, 38, 38, 0.12)' }]}>
-                  <Ionicons name="alert-circle" size={18} color="#dc2626" />
+              <View style={[styles.heroSmallCard, { borderColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                <View style={[styles.heroSmallIcon, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
+                  <Ionicons name="alert-circle" size={18} color="#ef4444" />
                 </View>
                 <Text style={styles.heroSmallNumber}>{failed}</Text>
                 <Text style={styles.heroSmallLabel}>Failed</Text>
@@ -180,7 +180,7 @@ export default function DashboardScreen({
                   <View style={styles.mapPinDot} />
                 </View>
                 <View style={styles.mapPin2}>
-                  <View style={[styles.mapPinDot, { backgroundColor: '#dc2626' }]} />
+                  <View style={[styles.mapPinDot, { backgroundColor: '#ef4444' }]} />
                 </View>
                 <View style={styles.mapPin3}>
                   <View style={[styles.mapPinDot, { backgroundColor: '#22c55e' }]} />
@@ -190,7 +190,7 @@ export default function DashboardScreen({
               <View style={styles.mapCardContent}>
                 <View style={styles.mapCardLeft}>
                   <View style={styles.mapCardIcon}>
-                    <Ionicons name="map" size={20} color="#fff" />
+                    <Ionicons name="map" size={20} color="#fafafa" />
                   </View>
                   <View>
                     <Text style={styles.mapCardTitle}>Explore Map</Text>
@@ -226,8 +226,8 @@ export default function DashboardScreen({
               onPress={onDistress}
               activeOpacity={0.7}
             >
-              <View style={[styles.actionIcon, { backgroundColor: 'rgba(230, 168, 23, 0.12)' }]}>
-                <Ionicons name="warning" size={24} color="#e6a817" />
+              <View style={[styles.actionIcon, { backgroundColor: 'rgba(6, 182, 212, 0.12)' }]}>
+                <Ionicons name="warning" size={24} color="#06b6d4" />
               </View>
               <Text style={styles.actionLabel}>All Detections</Text>
               <Text style={styles.actionSub}>View all hazards</Text>
@@ -254,7 +254,7 @@ export default function DashboardScreen({
           {recentRecordings.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIcon}>
-                <Ionicons name="bicycle-outline" size={40} color="rgba(230, 168, 23, 0.4)" />
+                <Ionicons name="bicycle-outline" size={40} color="rgba(6, 182, 212, 0.4)" />
               </View>
                 <Text style={styles.emptyTitle}>No rides yet</Text>
                 <Text style={styles.emptySub}>
@@ -274,7 +274,7 @@ export default function DashboardScreen({
                 >
                   <View style={styles.rideLeft}>
                     <View style={styles.rideIconContainer}>
-                      <Ionicons name="bicycle" size={18} color="#e6a817" />
+                      <Ionicons name="bicycle" size={18} color="#06b6d4" />
                     </View>
                     <View style={styles.rideInfo}>
                       <Text style={styles.rideDate}>{formatDate(item.timestamp)}</Text>
@@ -348,8 +348,8 @@ export default function DashboardScreen({
       {/* Bottom Action Bar */}
       <View style={[styles.bottomBar, { bottom: insets.bottom + 16 }]}>
         <TouchableOpacity style={styles.fabBtn} onPress={onRecord} activeOpacity={0.8}>
-          <View style={[styles.fabGlow, { backgroundColor: 'rgba(222, 38, 38, 0.15)' }]} />
-          <View style={[styles.fabOuter, { backgroundColor: '#dc2626' }]}>
+          <View style={[styles.fabGlow, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]} />
+          <View style={[styles.fabOuter, { backgroundColor: '#ef4444' }]}>
             <Ionicons name="radio-button-on" size={26} color="#0c0c14" />
           </View>
           <Text style={styles.fabLabel}>Record</Text>
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -412,14 +412,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(230, 168, 23, 0.1)',
+    backgroundColor: 'rgba(6, 182, 212, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(230, 168, 23, 0.25)',
+    borderColor: 'rgba(6, 182, 212, 0.25)',
   },
   greeting: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 12,
     fontWeight: '500',
     letterSpacing: 0.3,
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#f0f0f0',
+    color: '#fafafa',
     letterSpacing: -0.5,
     marginTop: 1,
   },
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -455,9 +455,9 @@ const styles = StyleSheet.create({
   heroCard: {
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderWidth: 1,
-    borderColor: 'rgba(230, 168, 23, 0.1)',
+    borderColor: 'rgba(6, 182, 212, 0.1)',
   },
   heroGlow: {
     position: 'absolute',
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(230, 168, 23, 0.08)',
+    backgroundColor: 'rgba(6, 182, 212, 0.08)',
   },
   heroCardContent: {
     padding: 20,
@@ -481,18 +481,18 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: 'rgba(230, 168, 23, 0.1)',
+    backgroundColor: 'rgba(6, 182, 212, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   heroNumber: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 42,
     fontWeight: '800',
     letterSpacing: -1,
   },
   heroLabel: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 13,
     fontWeight: '500',
     marginTop: 2,
@@ -504,11 +504,11 @@ const styles = StyleSheet.create({
   },
   heroSmallCard: {
     flex: 1,
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   heroSmallIcon: {
     width: 32,
@@ -519,12 +519,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   heroSmallNumber: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 20,
     fontWeight: '700',
   },
   heroSmallLabel: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 11,
     fontWeight: '500',
     marginTop: 2,
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     height: 150,
     position: 'relative',
-    backgroundColor: '#0f1923',
+    backgroundColor: '#18181b',
     borderWidth: 1,
     borderColor: 'rgba(37, 99, 235, 0.2)',
   },
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(230, 168, 23, 0.2)',
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: 'rgba(220, 38, 38, 0.2)',
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#e6a817',
+    backgroundColor: '#06b6d4',
   },
   mapCardOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(37, 99, 235, 0.3)',
   },
   mapCardTitle: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -683,7 +683,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   sectionTitle: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: -0.3,
@@ -695,11 +695,11 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     flex: 1,
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   actionIcon: {
     width: 42,
@@ -710,13 +710,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   actionLabel: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 2,
   },
   actionSub: {
-    color: '#4b5563',
+    color: '#71717a',
     fontSize: 11,
     fontWeight: '400',
   },
@@ -744,12 +744,12 @@ const styles = StyleSheet.create({
 
   // Recent Activity
   rideCard: {
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 14,
     padding: 14,
     marginBottom: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: 'rgba(230, 168, 23, 0.1)',
+    backgroundColor: 'rgba(6, 182, 212, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -774,12 +774,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rideDate: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 14,
     fontWeight: '600',
   },
   rideTime: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 12,
     marginTop: 1,
   },
@@ -827,7 +827,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -836,10 +836,10 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     paddingVertical: 32,
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   emptyIcon: {
     width: 64,
@@ -851,12 +851,12 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   emptyTitle: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 16,
     fontWeight: '700',
   },
   emptySub: {
-    color: '#4b5563',
+    color: '#71717a',
     fontSize: 13,
     marginTop: 4,
     textAlign: 'center',

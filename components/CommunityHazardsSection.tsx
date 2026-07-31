@@ -5,10 +5,10 @@ import type { Hazard } from '../lib/useCommunityHazards'
 type Props = { hazards: Hazard[]; loading: boolean }
 
 const SEVERITY_COLORS: Record<string, string> = {
-  Severe: '#dc2626',
+  Severe: '#ef4444',
   Moderate: '#f59e0b',
   Minor: '#22c55e',
-  Unknown: '#6b7280',
+  Unknown: '#71717a',
 }
 
 const SEVERITY_RANK: Record<string, number> = { Minor: 1, Moderate: 2, Severe: 3, Unknown: 0 }
@@ -80,7 +80,7 @@ function StreetRow({ rank, name, count, worst }: { rank: number; name: string; c
   return (
     <View style={styles.rankRow}>
       <Text style={styles.rankNum}>{rank}</Text>
-      <View style={[styles.severityDot, { backgroundColor: SEVERITY_COLORS[worst] ?? '#6b7280' }]} />
+      <View style={[styles.severityDot, { backgroundColor: SEVERITY_COLORS[worst] ?? '#71717a' }]} />
       <View style={styles.rankInfo}>
         <Text style={styles.rankName} numberOfLines={1}>{name}</Text>
       </View>
@@ -107,7 +107,7 @@ export default function CommunityHazardsSection({ hazards, loading }: Props) {
   if (loading) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator size="small" color="#e6a817" />
+        <ActivityIndicator size="small" color="#06b6d4" />
       </View>
     )
   }
@@ -115,7 +115,7 @@ export default function CommunityHazardsSection({ hazards, loading }: Props) {
   if (hazards.length === 0) {
     return (
       <View style={styles.emptyWrap}>
-        <Ionicons name="location-outline" size={28} color="#3f3f46" />
+        <Ionicons name="location-outline" size={28} color="#71717a" />
         <Text style={styles.emptyText}>No address data yet</Text>
       </View>
     )
@@ -132,7 +132,7 @@ export default function CommunityHazardsSection({ hazards, loading }: Props) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Ionicons name="map" size={18} color="#e6a817" />
+        <Ionicons name="map" size={18} color="#06b6d4" />
         <Text style={styles.headerTitle}>Address Analytics</Text>
         <Text style={styles.headerCount}>{hazards.length} hazards</Text>
       </View>
@@ -186,12 +186,12 @@ const styles = StyleSheet.create({
   emptyWrap: {
     alignItems: 'center',
     paddingVertical: 32,
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
-  emptyText: { color: '#4b5563', fontSize: 13, marginTop: 8 },
+  emptyText: { color: '#71717a', fontSize: 13, marginTop: 8 },
 
   header: {
     flexDirection: 'row',
@@ -199,23 +199,23 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 4,
   },
-  headerTitle: { color: '#f0f0f0', fontSize: 16, fontWeight: '700', flex: 1 },
-  headerCount: { color: '#6b7280', fontSize: 12, fontWeight: '500' },
+  headerTitle: { color: '#fafafa', fontSize: 16, fontWeight: '700', flex: 1 },
+  headerCount: { color: '#71717a', fontSize: 12, fontWeight: '500' },
 
   card: {
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   cardTitle: { color: '#a1a1aa', fontSize: 12, fontWeight: '600', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   // Ranked list
   rankRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
-  rankNum: { color: '#52525b', fontSize: 12, fontWeight: '700', width: 16, textAlign: 'center' },
+  rankNum: { color: '#71717a', fontSize: 12, fontWeight: '700', width: 16, textAlign: 'center' },
   rankInfo: { flex: 1 },
-  rankName: { color: '#e4e4e7', fontSize: 13, fontWeight: '500', marginBottom: 3 },
+  rankName: { color: '#fafafa', fontSize: 13, fontWeight: '500', marginBottom: 3 },
   rankBarBg: { height: 4, backgroundColor: '#27272a', borderRadius: 2, overflow: 'hidden' },
   rankBarFill: { height: 4, backgroundColor: '#06b6d4', borderRadius: 2 },
   rankCount: { color: '#a1a1aa', fontSize: 12, fontWeight: '600', minWidth: 24, textAlign: 'right' },
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendLabel: { color: '#71717a', fontSize: 11, marginRight: 6 },
   stackedRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
-  stackedCity: { color: '#e4e4e7', fontSize: 12, fontWeight: '500', width: 80 },
+  stackedCity: { color: '#fafafa', fontSize: 12, fontWeight: '500', width: 80 },
   stackedBarBg: { flex: 1, height: 12, backgroundColor: '#27272a', borderRadius: 4, flexDirection: 'row', overflow: 'hidden' },
   stackedSeg: { minWidth: 2 },
   stackedCount: { color: '#a1a1aa', fontSize: 11, fontWeight: '600', minWidth: 20, textAlign: 'right' },

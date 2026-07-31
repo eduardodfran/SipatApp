@@ -22,7 +22,7 @@ type Props = {
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'Analyzing...', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
   processed: { label: 'Detected', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
-  no_detection: { label: 'No Distress', color: '#6b7280', bg: 'rgba(107, 114, 128, 0.1)' },
+  no_detection: { label: 'No Distress', color: '#71717a', bg: 'rgba(107, 114, 128, 0.1)' },
 }
 
 export default function PhotoFeedSection({ refreshKey, userId }: Props) {
@@ -94,7 +94,7 @@ export default function PhotoFeedSection({ refreshKey, userId }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="images" size={18} color="#e6a817" />
+        <Ionicons name="images" size={18} color="#06b6d4" />
         <Text style={styles.headerTitle}>Community Feed</Text>
       </View>
 
@@ -120,7 +120,7 @@ export default function PhotoFeedSection({ refreshKey, userId }: Props) {
                     <Text style={styles.uploadBtnText}>Upload</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(post.id)}>
-                    <Ionicons name="trash" size={16} color="#dc2626" />
+                    <Ionicons name="trash" size={16} color="#ef4444" />
                   </TouchableOpacity>
                 </>
               )}
@@ -174,16 +174,16 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4,
   },
-  headerTitle: { color: '#f0f0f0', fontSize: 16, fontWeight: '700', flex: 1 },
+  headerTitle: { color: '#fafafa', fontSize: 16, fontWeight: '700', flex: 1 },
   postCard: {
-    backgroundColor: '#141420', borderRadius: 16, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   postImage: { width: '100%', height: 180, resizeMode: 'cover' },
   postBody: { padding: 12 },
-  postCaption: { color: '#e4e4e7', fontSize: 14, lineHeight: 20, marginBottom: 4 },
-  postAddress: { color: '#52525b', fontSize: 11, marginBottom: 6 },
-  postTime: { color: '#52525b', fontSize: 11 },
+  postCaption: { color: '#fafafa', fontSize: 14, lineHeight: 20, marginBottom: 4 },
+  postAddress: { color: '#71717a', fontSize: 11, marginBottom: 6 },
+  postTime: { color: '#71717a', fontSize: 11 },
   postActions: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 12, paddingBottom: 12,

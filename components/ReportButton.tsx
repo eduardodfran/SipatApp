@@ -85,9 +85,9 @@ export default function ReportButton({ contentType, contentId, onReported }: Pro
       activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={reported ? '#ef4444' : '#6b7280'} />
+        <ActivityIndicator size="small" color={reported ? '#ef4444' : '#71717a'} />
       ) : (
-        <Ionicons name="flag" size={14} color={reported ? '#ef4444' : '#6b7280'} />
+        <Ionicons name="flag" size={14} color={reported ? '#ef4444' : '#71717a'} />
       )}
       <Text style={[styles.text, reported && styles.reportedText]}>
         {reported ? 'Reported' : 'Report'}
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#71717a',
   },
   reportedText: {
     color: '#ef4444',

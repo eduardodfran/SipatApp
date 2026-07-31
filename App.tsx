@@ -480,8 +480,8 @@ export default function App() {
       )}
       {screen === 'map' && Platform.OS === 'web' && (
         <View style={{ flex: 1, backgroundColor: '#0c0c14', justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: '#6b7280', fontSize: 16 }}>Map view is not available on web.</Text>
-          <TouchableOpacity onPress={() => setScreen('dashboard')} style={{ marginTop: 16, padding: 12, backgroundColor: '#e6a817', borderRadius: 10 }}>
+          <Text style={{ color: '#71717a', fontSize: 16 }}>Map view is not available on web.</Text>
+          <TouchableOpacity onPress={() => setScreen('dashboard')} style={{ marginTop: 16, padding: 12, backgroundColor: '#06b6d4', borderRadius: 10 }}>
             <Text style={{ color: '#0c0c14', fontWeight: '700' }}>Go Back</Text>
           </TouchableOpacity>
         </View>

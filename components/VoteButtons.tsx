@@ -71,12 +71,12 @@ export default function VoteButtons({
     [contentType, contentId, userVote, loading, onVoteChange],
   )
 
-  const scoreColor = score > 0 ? '#22c55e' : score < 0 ? '#ef4444' : '#6b7280'
+  const scoreColor = score > 0 ? '#22c55e' : score < 0 ? '#ef4444' : '#71717a'
 
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="small" color="#6b7280" />
+        <ActivityIndicator size="small" color="#71717a" />
       </View>
     )
   }
@@ -91,7 +91,7 @@ export default function VoteButtons({
         <Ionicons
           name="arrow-up"
           size={16}
-          color={userVote === 1 ? '#22c55e' : '#6b7280'}
+          color={userVote === 1 ? '#22c55e' : '#71717a'}
         />
       </TouchableOpacity>
 
@@ -105,7 +105,7 @@ export default function VoteButtons({
         <Ionicons
           name="arrow-down"
           size={16}
-          color={userVote === -1 ? '#ef4444' : '#6b7280'}
+          color={userVote === -1 ? '#ef4444' : '#71717a'}
         />
       </TouchableOpacity>
     </View>

@@ -58,10 +58,10 @@ const MAPTILER_KEY = process.env.EXPO_PUBLIC_MAPTILER_API_KEY
 
 function severityColor(severity: string): string {
   switch (severity?.toLowerCase()) {
-    case 'severe':   return '#dc2626'
+    case 'severe':   return '#ef4444'
     case 'moderate': return '#f59e0b'
     case 'minor':    return '#22c55e'
-    default:         return '#6b7280'
+    default:         return '#71717a'
   }
 }
 
@@ -124,10 +124,10 @@ function buildMapHtml(
         created_at: cp.created_at,
         color:
           cp.detection_status === 'pending'
-            ? '#6b7280'
+            ? '#71717a'
             : cp.detection_status === 'processed'
               ? '#06b6d4'
-              : '#3f3f46',
+              : '#71717a',
       }))
     : []
 
@@ -142,7 +142,7 @@ function buildMapHtml(
   #map { width: 100vw; height: 100vh; }
   .hazard-label { background: none; border: none; box-shadow: none; color: #fff; font-weight: bold; font-size: 11px; }
   .hazard-popup { font-family: system-ui, sans-serif; font-size: 13px; min-width: 200px; }
-  .leaflet-popup-content-wrapper { background: #0c0c14; color: #e4e4e7; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
+  .leaflet-popup-content-wrapper { background: #0c0c14; color: #fafafa; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
   .leaflet-popup-tip { background: #0c0c14; }
   .leaflet-popup-content { margin: 14px; }
 </style>
@@ -196,10 +196,10 @@ function buildMapHtml(
   }
 
   function videoPopupHtml(p, detectors, comments) {
-    var severityColors = { Severe: '#ef4444', Moderate: '#eab308', Minor: '#22c55e', Unknown: '#6b7280' };
+    var severityColors = { Severe: '#ef4444', Moderate: '#eab308', Minor: '#22c55e', Unknown: '#71717a' };
     var statusColors = { reported: '#3b82f6', confirmed: '#f59e0b', fixed: '#22c55e' };
     var statusLabels = { reported: 'Reported', confirmed: 'Confirmed', fixed: 'Fixed' };
-    var sevColor = severityColors[p.severity] || '#6b7280';
+    var sevColor = severityColors[p.severity] || '#71717a';
     var stColor = statusColors[p.status] || '#3b82f6';
     var stLabel = statusLabels[p.status] || 'Reported';
 
@@ -230,7 +230,7 @@ function buildMapHtml(
     html += '</div>';
 
     html += '<div style="font-size:12px;color:#a1a1aa;margin-bottom:8px;">';
-    html += 'Confirmed by <span style="color:#e4e4e7;font-weight:600;">' + (p.detectors_count || 0) + '</span> detector' + ((p.detectors_count || 0) !== 1 ? 's' : '');
+    html += 'Confirmed by <span style="color:#fafafa;font-weight:600;">' + (p.detectors_count || 0) + '</span> detector' + ((p.detectors_count || 0) !== 1 ? 's' : '');
     html += '</div>';
 
     html += '<div style="margin-bottom:10px;">';
@@ -243,30 +243,30 @@ function buildMapHtml(
     html += '</div></div>';
 
     if (addrLines.length > 0) {
-      html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+      html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
       for (var a = 0; a < addrLines.length; a++) {
-        html += '<div style="font-size:12px;color:#e4e4e7;line-height:1.5;">' + addrLines[a] + '</div>';
+        html += '<div style="font-size:12px;color:#fafafa;line-height:1.5;">' + addrLines[a] + '</div>';
       }
       html += '</div>';
     } else {
-      html += '<div style="font-size:11px;color:#6b7280;margin-bottom:8px;">' + p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) + '</div>';
+      html += '<div style="font-size:11px;color:#71717a;margin-bottom:8px;">' + p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) + '</div>';
     }
 
     html += '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">';
-    html += '<div><span style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">First reported</span><br/><span style="font-size:12px;color:#e4e4e7;">' + (p.citizen_first_reported_at ? new Date(p.citizen_first_reported_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—') + '</span></div>';
-    html += '<div style="text-align:right;"><span style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Last activity</span><br/><span style="font-size:12px;color:#e4e4e7;">' + (p.latest_activity_at ? new Date(p.latest_activity_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—') + '</span></div>';
+    html += '<div><span style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">First reported</span><br/><span style="font-size:12px;color:#fafafa;">' + (p.citizen_first_reported_at ? new Date(p.citizen_first_reported_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—') + '</span></div>';
+    html += '<div style="text-align:right;"><span style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;">Last activity</span><br/><span style="font-size:12px;color:#fafafa;">' + (p.latest_activity_at ? new Date(p.latest_activity_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—') + '</span></div>';
     html += '</div>';
 
     if (detectors && detectors.length > 0) {
-      html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+      html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
       html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Detected by (' + detectors.length + ')</div>';
       var maxDetectors = detectors.slice(0, 5);
       for (var d = 0; d < maxDetectors.length; d++) {
         var det = maxDetectors[d];
         var initial = (det.username || det.full_name || '?').charAt(0).toUpperCase();
         html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">';
-        html += '<div style="width:24px;height:24px;border-radius:12px;background:rgba(230,168,23,0.15);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#e6a817;flex-shrink:0;">' + initial + '</div>';
-        html += '<span style="font-size:12px;color:#e4e4e7;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (det.username || det.full_name || 'Unknown') + '</span>';
+        html += '<div style="width:24px;height:24px;border-radius:12px;background:rgba(6, 182, 212,0.15);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#06b6d4;flex-shrink:0;">' + initial + '</div>';
+        html += '<span style="font-size:12px;color:#fafafa;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (det.username || det.full_name || 'Unknown') + '</span>';
         html += '<span style="font-size:10px;color:#71717a;flex-shrink:0;">' + new Date(det.detected_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</span>';
         html += '</div>';
       }
@@ -277,14 +277,14 @@ function buildMapHtml(
     }
 
     if (comments && comments.length > 0) {
-      html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+      html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
       html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Detection comments (' + comments.length + ')</div>';
       var maxComments = comments.slice(0, 3);
       for (var c = 0; c < maxComments.length; c++) {
         var com = maxComments[c];
         html += '<div style="display:flex;gap:6px;padding:4px 0;">';
-        html += '<div style="width:22px;height:22px;border-radius:11px;background:rgba(230,168,23,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#e6a817;flex-shrink:0;margin-top:1px;">' + (com.username || '?').charAt(0).toUpperCase() + '</div>';
-        html += '<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#e4e4e7;">' + (com.username || 'Unknown') + '</div><div style="font-size:11px;color:#a1a1aa;margin-top:1px;">' + com.body + '</div></div>';
+        html += '<div style="width:22px;height:22px;border-radius:11px;background:rgba(6, 182, 212,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#06b6d4;flex-shrink:0;margin-top:1px;">' + (com.username || '?').charAt(0).toUpperCase() + '</div>';
+        html += '<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#fafafa;">' + (com.username || 'Unknown') + '</div><div style="font-size:11px;color:#a1a1aa;margin-top:1px;">' + com.body + '</div></div>';
         html += '</div>';
       }
       if (comments.length > 3) {
@@ -300,7 +300,7 @@ function buildMapHtml(
         if (comments[ci].body && comments[ci].body.indexOf('✅') !== -1) verifyCount++;
       }
     }
-    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
     html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Is this hazard still here?</div>';
     html += '<div style="display:flex;gap:6px;margin-bottom:4px;">';
     html += '<button id="verify-stillhere-' + p.id + '" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;border-radius:6px;border:1px solid rgba(34,197,94,0.2);background:rgba(34,197,94,0.05);color:#22c55e;font-size:11px;font-weight:600;cursor:pointer;outline:none;">Still here</button>';
@@ -309,32 +309,32 @@ function buildMapHtml(
     html += '<div style="font-size:10px;color:#71717a;text-align:center;">' + verifyCount + ' community verification' + (verifyCount !== 1 ? 's' : '') + '</div>';
     html += '</div>';
 
-    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
     html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Community</div>';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
     html += '<div style="display:flex;align-items:center;gap:4px;">';
     html += '<button id="vote-up-' + p.id + '" style="padding:4px;border-radius:4px;background:rgba(34,197,94,0.1);border:none;cursor:pointer;">';
-    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>';
+    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>';
     html += '<span id="vote-score-' + p.id + '" style="font-size:12px;font-weight:600;color:#a1a1aa;min-width:24px;text-align:center;">0</span>';
     html += '<button id="vote-down-' + p.id + '" style="padding:4px;border-radius:4px;background:rgba(239,68,68,0.1);border:none;cursor:pointer;">';
-    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>';
+    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>';
     html += '</div>';
-    html += '<button id="report-btn-' + p.id + '" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:4px;background:rgba(107,114,128,0.1);border:none;cursor:pointer;font-size:11px;color:#6b7280;">';
+    html += '<button id="report-btn-' + p.id + '" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:4px;background:rgba(107,114,128,0.1);border:none;cursor:pointer;font-size:11px;color:#71717a;">';
     html += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Report</button>';
     html += '</div>';
     html += '</div>';
 
     // Comment form
-    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
     html += '<div style="display:flex;gap:6px;">';
-    html += '<input id="comment-input-' + p.id + '" type="text" placeholder="Write a comment..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:#0c0c14;color:#e4e4e7;font-size:12px;outline:none;min-width:0;" />';
-    html += '<button id="comment-send-' + p.id + '" style="padding:6px 12px;border-radius:6px;background:rgba(230,168,23,0.15);color:#e6a817;font-size:11px;font-weight:700;border:none;cursor:pointer;outline:none;">Send</button>';
+    html += '<input id="comment-input-' + p.id + '" type="text" placeholder="Write a comment..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:#0c0c14;color:#fafafa;font-size:12px;outline:none;min-width:0;" />';
+    html += '<button id="comment-send-' + p.id + '" style="padding:6px 12px;border-radius:6px;background:rgba(6, 182, 212,0.15);color:#06b6d4;font-size:11px;font-weight:700;border:none;cursor:pointer;outline:none;">Send</button>';
     html += '</div>';
     html += '</div>';
 
     html += '<button id="feed-btn-' + p.id + '" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:8px;border:1px solid rgba(37,99,235,0.2);background:rgba(37,99,235,0.05);color:#60a5fa;font-size:12px;font-weight:600;cursor:pointer;outline:none;margin-bottom:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>View in Feed</button>';
 
-    html += '<div style="font-size:10px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:6px;text-align:center;">Video Distress #' + p.id + '</div>';
+    html += '<div style="font-size:10px;color:#71717a;border-top:1px solid rgba(255, 255, 255, 0.06);padding-top:6px;text-align:center;">Video Distress #' + p.id + '</div>';
     html += '</div>';
     return html;
   }
@@ -343,7 +343,7 @@ function buildMapHtml(
     var popup = marker.getPopup();
     if (!popup) return;
 
-    var loadingHtml = '<div style="min-width:220px;font-family:system-ui,sans-serif;padding:20px;text-align:center;color:#6b7280;">Loading video distress data...</div>';
+    var loadingHtml = '<div style="min-width:220px;font-family:system-ui,sans-serif;padding:20px;text-align:center;color:#71717a;">Loading video distress data...</div>';
     popup.setContent(loadingHtml);
 
     function loadAndRender() {
@@ -468,7 +468,7 @@ function buildMapHtml(
             }).then(function(r) { return r.json(); }).then(function() {
               isReported = false;
               reportBtn.textContent = 'Report';
-              reportBtn.style.color = '#6b7280';
+              reportBtn.style.color = '#71717a';
             });
           } else {
             fetch(SUPABASE_URL + '/rest/v1/rpc/report_content', {
@@ -542,10 +542,10 @@ function buildMapHtml(
   });
 
   function communityPhotoPopupHtml(cp, comments) {
-    var sevColors = { Severe: '#dc2626', Moderate: '#f59e0b', Minor: '#22c55e' };
-    var statusColors = { pending: '#6b7280', processed: '#06b6d4', no_detection: '#3f3f46' };
-    var sevColor = sevColors[cp.severity] || '#6b7280';
-    var sColor = statusColors[cp.status] || '#6b7280';
+    var sevColors = { Severe: '#ef4444', Moderate: '#f59e0b', Minor: '#22c55e' };
+    var statusColors = { pending: '#71717a', processed: '#06b6d4', no_detection: '#71717a' };
+    var sevColor = sevColors[cp.severity] || '#71717a';
+    var sColor = statusColors[cp.status] || '#71717a';
     var statusLabel = cp.status === 'pending' ? 'Analyzing...' : cp.status === 'processed' ? 'Detected' : 'No Distress';
 
     var addrLines = [];
@@ -569,31 +569,31 @@ function buildMapHtml(
     html += '</div>';
 
     if (cp.status === 'processed' && cp.class_name) {
-      html += '<div style="font-size:12px;color:#a1a1aa;margin-bottom:8px;"><span style="color:#e4e4e7;font-weight:600;">' + cp.class_name + '</span>' + (cp.confidence != null ? ' &middot; ' + (cp.confidence * 100).toFixed(0) + '% confidence' : '') + '</div>';
+      html += '<div style="font-size:12px;color:#a1a1aa;margin-bottom:8px;"><span style="color:#fafafa;font-weight:600;">' + cp.class_name + '</span>' + (cp.confidence != null ? ' &middot; ' + (cp.confidence * 100).toFixed(0) + '% confidence' : '') + '</div>';
     }
     if (cp.status === 'pending') {
-      html += '<div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Awaiting analysis...</div>';
+      html += '<div style="font-size:12px;color:#71717a;margin-bottom:8px;">Awaiting analysis...</div>';
     }
 
     if (addrLines.length > 0) {
-      html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+      html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
       for (var a = 0; a < addrLines.length; a++) {
-        html += '<div style="font-size:12px;color:#e4e4e7;line-height:1.5;">' + addrLines[a] + '</div>';
+        html += '<div style="font-size:12px;color:#fafafa;line-height:1.5;">' + addrLines[a] + '</div>';
       }
       html += '</div>';
     } else if (cp.formatted_address) {
-      html += '<div style="font-size:11px;color:#6b7280;margin-bottom:8px;">' + cp.formatted_address + '</div>';
+      html += '<div style="font-size:11px;color:#71717a;margin-bottom:8px;">' + cp.formatted_address + '</div>';
     }
 
     if (comments && comments.length > 0) {
-      html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+      html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
       html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Comments (' + comments.length + ')</div>';
       var maxComments = comments.slice(0, 3);
       for (var c = 0; c < maxComments.length; c++) {
         var com = maxComments[c];
         html += '<div style="display:flex;gap:6px;padding:4px 0;">';
-        html += '<div style="width:22px;height:22px;border-radius:11px;background:rgba(230,168,23,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#e6a817;flex-shrink:0;margin-top:1px;">' + (com.username || '?').charAt(0).toUpperCase() + '</div>';
-        html += '<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#e4e4e7;">' + (com.username || 'Unknown') + '</div><div style="font-size:11px;color:#a1a1aa;margin-top:1px;">' + com.body + '</div></div>';
+        html += '<div style="width:22px;height:22px;border-radius:11px;background:rgba(6, 182, 212,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#06b6d4;flex-shrink:0;margin-top:1px;">' + (com.username || '?').charAt(0).toUpperCase() + '</div>';
+        html += '<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#fafafa;">' + (com.username || 'Unknown') + '</div><div style="font-size:11px;color:#a1a1aa;margin-top:1px;">' + com.body + '</div></div>';
         html += '</div>';
       }
       if (comments.length > 3) {
@@ -601,7 +601,7 @@ function buildMapHtml(
       }
       html += '</div>';
     } else {
-      html += '<div style="font-size:11px;color:#6b7280;margin-bottom:8px;padding:4px 0;">No comments yet</div>';
+      html += '<div style="font-size:11px;color:#71717a;margin-bottom:8px;padding:4px 0;">No comments yet</div>';
     }
 
     // Verification + comment form
@@ -611,7 +611,7 @@ function buildMapHtml(
         if (comments[ci].body && comments[ci].body.indexOf('✅') !== -1) verifyCount++;
       }
     }
-    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
     html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Is this hazard still here?</div>';
     html += '<div style="display:flex;gap:6px;margin-bottom:4px;">';
     html += '<button id="cp-verify-stillhere-' + cp.id + '" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;border-radius:6px;border:1px solid rgba(34,197,94,0.2);background:rgba(34,197,94,0.05);color:#22c55e;font-size:11px;font-weight:600;cursor:pointer;outline:none;">Still here</button>';
@@ -620,31 +620,31 @@ function buildMapHtml(
     html += '<div style="font-size:10px;color:#71717a;text-align:center;">' + verifyCount + ' community verification' + (verifyCount !== 1 ? 's' : '') + '</div>';
     html += '</div>';
 
-    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
     html += '<div style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:6px;">Community</div>';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
     html += '<div style="display:flex;align-items:center;gap:4px;">';
     html += '<button id="cp-vote-up-' + cp.id + '" style="padding:4px;border-radius:4px;background:rgba(34,197,94,0.1);border:none;cursor:pointer;">';
-    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>';
+    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>';
     html += '<span id="cp-vote-score-' + cp.id + '" style="font-size:12px;font-weight:600;color:#a1a1aa;min-width:24px;text-align:center;">0</span>';
     html += '<button id="cp-vote-down-' + cp.id + '" style="padding:4px;border-radius:4px;background:rgba(239,68,68,0.1);border:none;cursor:pointer;">';
-    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>';
+    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>';
     html += '</div>';
-    html += '<button id="cp-report-btn-' + cp.id + '" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:4px;background:rgba(107,114,128,0.1);border:none;cursor:pointer;font-size:11px;color:#6b7280;">';
+    html += '<button id="cp-report-btn-' + cp.id + '" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:4px;background:rgba(107,114,128,0.1);border:none;cursor:pointer;font-size:11px;color:#71717a;">';
     html += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Report</button>';
     html += '</div>';
     html += '</div>';
 
-    html += '<div style="padding:8px;background:#141420;border-radius:8px;margin-bottom:8px;">';
+    html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
     html += '<div style="display:flex;gap:6px;">';
-    html += '<input id="cp-comment-input-' + cp.id + '" type="text" placeholder="Write a comment..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:#0c0c14;color:#e4e4e7;font-size:12px;outline:none;min-width:0;" />';
-    html += '<button id="cp-comment-send-' + cp.id + '" style="padding:6px 12px;border-radius:6px;background:rgba(230,168,23,0.15);color:#e6a817;font-size:11px;font-weight:700;border:none;cursor:pointer;outline:none;">Send</button>';
+    html += '<input id="cp-comment-input-' + cp.id + '" type="text" placeholder="Write a comment..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:#0c0c14;color:#fafafa;font-size:12px;outline:none;min-width:0;" />';
+    html += '<button id="cp-comment-send-' + cp.id + '" style="padding:6px 12px;border-radius:6px;background:rgba(6, 182, 212,0.15);color:#06b6d4;font-size:11px;font-weight:700;border:none;cursor:pointer;outline:none;">Send</button>';
     html += '</div>';
     html += '</div>';
 
     html += '<button id="cp-feed-btn-' + cp.id + '" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:8px;border:1px solid rgba(37,99,235,0.2);background:rgba(37,99,235,0.05);color:#60a5fa;font-size:12px;font-weight:600;cursor:pointer;outline:none;margin-bottom:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>View in Feed</button>';
 
-    html += '<div style="font-size:11px;color:#52525b;border-top:1px solid rgba(255,255,255,0.04);padding-top:6px;">';
+    html += '<div style="font-size:11px;color:#71717a;border-top:1px solid rgba(255, 255, 255, 0.06);padding-top:6px;">';
     html += 'Photo by <span style="color:#a1a1aa;">' + (cp.reporter_username || 'Anonymous') + '</span> &middot; ' + (cp.created_at ? new Date(cp.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
     html += '</div></div>';
     return html;
@@ -653,7 +653,7 @@ function buildMapHtml(
   communityPhotoData.forEach(function(cp) {
     var icon = L.divIcon({
       className: '',
-      html: '<div style="width:32px;height:32px;border-radius:8px;background:' + cp.color + ';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>',
+      html: '<div style="width:32px;height:32px;border-radius:8px;background:' + cp.color + ';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fafafa" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>',
       iconSize: [32, 32],
       iconAnchor: [16, 16],
     });
@@ -751,7 +751,7 @@ function buildMapHtml(
                   }).then(function(r) { return r.json(); }).then(function() {
                     cpIsReported = false;
                     cpReportBtn.textContent = 'Report';
-                    cpReportBtn.style.color = '#6b7280';
+                    cpReportBtn.style.color = '#71717a';
                   });
                 } else {
                   fetch(SUPABASE_URL + '/rest/v1/rpc/report_content', {
@@ -887,7 +887,7 @@ function buildMapHtml(
                   }).then(function(r) { return r.json(); }).then(function() {
                     cpIsReported = false;
                     cpReportBtn.textContent = 'Report';
-                    cpReportBtn.style.color = '#6b7280';
+                    cpReportBtn.style.color = '#71717a';
                   });
                 } else {
                   fetch(SUPABASE_URL + '/rest/v1/rpc/report_content', {
@@ -1096,11 +1096,11 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
 
       <View style={styles.topLeftRow}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={20} color="#f0f0f0" />
+          <Ionicons name="arrow-back" size={20} color="#fafafa" />
         </TouchableOpacity>
         {onMenuPress && (
           <TouchableOpacity style={styles.menuBtn} onPress={onMenuPress} activeOpacity={0.7}>
-            <Ionicons name="menu-outline" size={22} color="#f0f0f0" />
+            <Ionicons name="menu-outline" size={22} color="#fafafa" />
           </TouchableOpacity>
         )}
       </View>
@@ -1145,7 +1145,7 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
       {loading && (
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingCard}>
-            <ActivityIndicator size="large" color="#e6a817" />
+            <ActivityIndicator size="large" color="#06b6d4" />
             <Text style={styles.loadingText}>Loading data</Text>
           </View>
         </View>
@@ -1201,10 +1201,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   toggleBtnActive: {
-    backgroundColor: '#e6a817',
+    backgroundColor: '#06b6d4',
   },
   toggleText: {
-    color: '#aaa',
+    color: '#71717a',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -1216,7 +1216,7 @@ const styles = StyleSheet.create({
     bottom: 24,
     left: 16,
     right: 16,
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
@@ -1232,12 +1232,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryValue: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 20,
     fontWeight: '700',
   },
   summaryLabel: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 11,
     marginTop: 2,
     textTransform: 'uppercase',
@@ -1256,7 +1256,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   emptyText: {
-    color: '#4b5563',
+    color: '#71717a',
     fontSize: 14,
     marginTop: 8,
   },
@@ -1272,16 +1272,16 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   loadingCard: {
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 20,
     paddingVertical: 32,
     paddingHorizontal: 40,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(230, 168, 23, 0.1)',
+    borderColor: 'rgba(6, 182, 212, 0.1)',
   },
   loadingText: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 16,
     fontWeight: '600',
     marginTop: 16,

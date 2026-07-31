@@ -26,10 +26,10 @@ type Props = {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  queued: { label: 'Queued', color: '#7bb7ff', bg: 'rgba(37, 99, 235, 0.12)' },
+  queued: { label: 'Queued', color: '#60a5fa', bg: 'rgba(37, 99, 235, 0.12)' },
   processing: { label: 'Processing', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
   completed: { label: 'Completed', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
-  failed: { label: 'Failed', color: '#dc2626', bg: 'rgba(222, 38, 38, 0.1)' },
+  failed: { label: 'Failed', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
 }
 
 export default function RidesScreen({
@@ -86,15 +86,15 @@ export default function RidesScreen({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn} activeOpacity={0.7}>
-            <Ionicons name="menu" size={22} color="#e0e0e0" />
+            <Ionicons name="menu" size={22} color="#fafafa" />
           </TouchableOpacity>
           <Text style={styles.title}>Rides</Text>
         </View>
         <TouchableOpacity onPress={onRefresh} style={styles.iconBtn}>
           {refreshing ? (
-            <ActivityIndicator size="small" color="#e6a817" />
+            <ActivityIndicator size="small" color="#06b6d4" />
           ) : (
-            <Ionicons name="refresh" size={20} color="#e0e0e0" />
+            <Ionicons name="refresh" size={20} color="#fafafa" />
           )}
         </TouchableOpacity>
       </View>
@@ -129,7 +129,7 @@ export default function RidesScreen({
                       <Ionicons
                         name={isProcessing ? 'sync' : 'bicycle'}
                         size={18}
-                        color={isProcessing ? '#f59e0b' : '#e6a817'}
+                        color={isProcessing ? '#f59e0b' : '#06b6d4'}
                       />
                     </View>
                     <View style={styles.rideInfo}>
@@ -220,8 +220,8 @@ export default function RidesScreen({
                     onPress={() => confirmDelete(item)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="trash-outline" size={16} color="#dc2626" />
-                    <Text style={[styles.actionBtnText, { color: '#dc2626' }]}>Delete</Text>
+                    <Ionicons name="trash-outline" size={16} color="#ef4444" />
+                    <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>Delete</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -276,14 +276,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#f0f0f0',
+    color: '#fafafa',
     letterSpacing: -0.5,
   },
   iconBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -292,12 +292,12 @@ const styles = StyleSheet.create({
 
   // Ride Card
   rideCard: {
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 16,
     padding: 16,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   rideTopRow: {
     flexDirection: 'row',
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: 'rgba(230, 168, 23, 0.1)',
+    backgroundColor: 'rgba(6, 182, 212, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -322,12 +322,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rideDate: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 14,
     fontWeight: '600',
   },
   rideTime: {
-    color: '#6b7280',
+    color: '#71717a',
     fontSize: 12,
     marginTop: 1,
   },
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.04)',
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
   actionBtn: {
     flexDirection: 'row',
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   actionBtnText: {
     fontSize: 12,
@@ -416,10 +416,10 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     paddingVertical: 60,
-    backgroundColor: '#141420',
+    backgroundColor: '#18181b',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   emptyIcon: {
     width: 64,
@@ -431,12 +431,12 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   emptyTitle: {
-    color: '#f0f0f0',
+    color: '#fafafa',
     fontSize: 16,
     fontWeight: '700',
   },
   emptySub: {
-    color: '#4b5563',
+    color: '#71717a',
     fontSize: 13,
     marginTop: 4,
     textAlign: 'center',

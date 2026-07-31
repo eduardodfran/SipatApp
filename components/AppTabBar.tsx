@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderRadius: 10,
     padding: 3,
     gap: 3,
@@ -51,10 +51,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   tabActive: {
-    backgroundColor: '#e6a817',
+    backgroundColor: '#06b6d4',
   },
   tabText: {
-    color: '#52525b',
+    color: '#71717a',
     fontSize: 13,
     fontWeight: '600',
   },
