@@ -64,6 +64,7 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
   const [captionDraft, setCaptionDraft] = useState(item.type === 'pothole' ? (item.data.caption ?? '') : '')
   const [savingCaption, setSavingCaption] = useState(false)
   const [voteData, setVoteData] = useState({ upvotes: 0, downvotes: 0, userVote: 0 })
+  const [itemState, setItem] = useState(item)
 
   const loadComments = useCallback(async () => {
     if (item.type === 'photo') {
@@ -318,6 +319,12 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
             <ReportButton
               contentType={item.type}
               contentId={item.type === 'photo' ? String(item.data.id) : String(item.data.pothole_id)}
+              onReported={(count) => {
+                setItem(prev => ({
+                  ...prev,
+                  data: { ...prev.data, report_count: count }
+                }));
+              }}
             />
           </View>
         </View>

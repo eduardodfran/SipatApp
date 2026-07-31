@@ -334,7 +334,15 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                 setPhotoVotes((prev) => ({ ...prev, [String(post.id)]: { upvotes, downvotes, userVote } }))
               }
             />
-            <ReportButton contentType="photo" contentId={String(post.id)} />
+            <ReportButton
+              contentType="photo"
+              contentId={String(post.id)}
+              onReported={(count) => {
+                setUploadedPosts(prev => prev.map(p =>
+                  p.id === post.id ? { ...p, report_count: count } : p
+                ));
+              }}
+            />
           </View>
           <TouchableOpacity style={styles.commentsToggle} onPress={() => {
             if (commentCount > 0) {
@@ -451,7 +459,15 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
               setPotholeVotes((prev) => ({ ...prev, [String(p.pothole_id)]: { upvotes, downvotes, userVote } }))
             }
           />
-          <ReportButton contentType="pothole" contentId={String(p.pothole_id)} />
+          <ReportButton
+            contentType="pothole"
+            contentId={String(p.pothole_id)}
+            onReported={(count) => {
+              setPotholes(prev => prev.map(h =>
+                h.pothole_id === p.pothole_id ? { ...h, report_count: count } : h
+              ));
+            }}
+          />
         </View>
         <TouchableOpacity style={styles.commentsToggle} onPress={() => {
           if (pCommentCount > 0) {
