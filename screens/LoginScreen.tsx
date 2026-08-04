@@ -31,11 +31,26 @@ export default function LoginScreen() {
 
     setLoading(true)
     try {
-      const { error } =
-        mode === 'login'
-          ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-          : await supabase.auth.signUp({ email: email.trim(), password })
-      if (error) Alert.alert('Error', error.message)
+      if (mode === 'login') {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+        if (error) Alert.alert('Error', error.message)
+      } else {
+        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password })
+        if (error) {
+          Alert.alert('Error', error.message)
+          return
+        }
+        if (data.user?.identities?.length === 0) {
+          Alert.alert('Account exists', 'An account with this email already exists. Please sign in.')
+          setMode('login')
+          return
+        }
+        if (!data.session) {
+          Alert.alert('Check your email', `We sent a verification link to ${email.trim()}. Please verify before signing in.`)
+          setMode('login')
+          return
+        }
+      }
     } catch (err: any) {
       Alert.alert('Error', err?.message ?? 'Something went wrong')
     } finally {
