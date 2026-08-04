@@ -38,6 +38,7 @@ export default function App() {
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [feedRefreshKey, setFeedRefreshKey] = useState(0)
+  const [lastUploadResult, setLastUploadResult] = useState<{ status: 'success' | 'error'; processStarted?: boolean; message?: string } | null>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -299,12 +300,12 @@ export default function App() {
         )
 
         if (processStarted) {
-          Alert.alert('Upload Complete', 'Your ride is now being processed.')
+          setLastUploadResult({ status: 'success', processStarted: true })
         } else {
-          Alert.alert('Upload Complete', 'Your ride was uploaded. Tap "Play" to start processing.')
+          setLastUploadResult({ status: 'success', processStarted: false })
         }
       } catch (error: any) {
-        Alert.alert('Upload Failed', error?.message ?? 'Unknown error')
+        setLastUploadResult({ status: 'error', message: error?.message ?? 'Unknown error' })
       } finally {
         setUploadingIds((prev) => {
           const next = new Set(prev)
@@ -455,10 +456,13 @@ export default function App() {
         <CameraScreen
           onFinish={(rec) => {
             addRecording(rec)
+            setLastUploadResult(null)
             handleUploadRecording(rec)
           }}
           onCancel={() => setScreen('dashboard')}
+          onViewRides={() => setScreen('rides')}
           segmentCount={3}
+          uploadResult={lastUploadResult}
         />
       )}
       {screen === 'photo' && (

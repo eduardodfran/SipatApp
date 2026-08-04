@@ -26,6 +26,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [saving, setSaving] = useState(false)
   const [capturing, setCapturing] = useState(false)
+  const [saved, setSaved] = useState(false)
   const cameraRef = useRef<any>(null)
   const locationGranted = useRef(false)
 
@@ -80,7 +81,8 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
     }
     await savePendingPhoto(post)
     setSaving(false)
-    onDone(post.id)
+    setSaved(true)
+    setTimeout(() => onDone(post.id), 2500)
   }
 
   if (!permission) return <View />
@@ -103,6 +105,12 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
   if (photo) {
     return (
       <View style={styles.container}>
+        {saved && (
+          <View style={styles.successBanner}>
+            <Ionicons name="checkmark-circle" size={18} color="#fff" />
+            <Text style={styles.successBannerText}>Photo saved! Go to Feed to upload.</Text>
+          </View>
+        )}
         <View style={styles.previewHeader}>
           <TouchableOpacity style={styles.previewCloseBtn} onPress={() => { setPhoto(null); setCaption('') }}>
             <Ionicons name="close" size={22} color="#fafafa" />
@@ -218,6 +226,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center',
   },
   previewTitle: { color: '#fafafa', fontSize: 16, fontWeight: '600' },
+  successBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#22c55e', paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
+  },
+  successBannerText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   previewCaptionArea: { paddingHorizontal: 16, paddingBottom: 12 },
   captionInput: {
     padding: 14, backgroundColor: '#18181b', borderRadius: 12, color: '#fafafa',

@@ -19,18 +19,20 @@ import type { Recording } from '../lib/types'
 type Props = {
   onFinish: (recording: Recording) => void
   onCancel: () => void
+  onViewRides: () => void
   segmentCount: number
+  uploadResult?: { status: 'success' | 'error'; processStarted?: boolean; message?: string } | null
 }
 
 const SEGMENT_DURATION_MS = 300_000 // 5 minutes
 const GAP_DURATION_MS = 1_500 // 1.5s gap between segments
 
-export default function CameraScreen({ onFinish, onCancel, segmentCount }: Props) {
+export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentCount, uploadResult }: Props) {
   const [permission, requestPermission] = useCameraPermissions()
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [segment, setSegment] = useState(1)
-  const [status, setStatus] = useState<'idle' | 'recording' | 'waitingForNext' | 'waitingForGps' | 'done'>('idle')
+  const [status, setStatus] = useState<'idle' | 'recording' | 'waitingForNext' | 'waitingForGps' | 'uploading' | 'done' | 'error'>('idle')
   const [gpsActive, setGpsActive] = useState(false)
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
   const [gpsFresh, setGpsFresh] = useState(false)
@@ -338,7 +340,7 @@ export default function CameraScreen({ onFinish, onCancel, segmentCount }: Props
       cameraRef.current.stopRecording()
     }
     setRecording(false)
-    setStatus('idle')
+    setStatus('uploading')
   }
 
   const handleCancel = () => {
@@ -349,6 +351,14 @@ export default function CameraScreen({ onFinish, onCancel, segmentCount }: Props
     gpsSubRef.current?.remove()
     onCancel()
   }
+
+  // Transition to done/error when uploadResult arrives
+  useEffect(() => {
+    if (status !== 'uploading') return
+    if (uploadResult) {
+      setStatus(uploadResult.status === 'success' ? 'done' : 'error')
+    }
+  }, [uploadResult, status])
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
@@ -458,6 +468,75 @@ export default function CameraScreen({ onFinish, onCancel, segmentCount }: Props
             </View>
           ) : null}
         </View>
+
+        {/* Uploading overlay */}
+        {status === 'uploading' && (
+          <View style={styles.uploadOverlay}>
+            <View style={styles.uploadCard}>
+              <ActivityIndicator size="large" color="#06b6d4" />
+              <Text style={styles.uploadTitle}>Saving recording...</Text>
+              <Text style={styles.uploadSub}>Please wait</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Success card */}
+        {status === 'done' && uploadResult?.status === 'success' && (
+          <View style={styles.uploadOverlay}>
+            <View style={styles.resultCard}>
+              <View style={styles.successIcon}>
+                <Ionicons name="checkmark" size={32} color="#22c55e" />
+              </View>
+              <Text style={styles.resultTitle}>Recording saved!</Text>
+              <Text style={styles.resultSub}>
+                {uploadResult.processStarted
+                  ? 'Your ride is being processed.'
+                  : 'Your ride was uploaded successfully.'}
+              </Text>
+              <TouchableOpacity style={styles.resultBtnPrimary} onPress={onViewRides}>
+                <Ionicons name="car" size={18} color="#0c0c14" />
+                <Text style={styles.resultBtnPrimaryText}>View Rides</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.resultBtnSecondary}
+                onPress={() => {
+                  setStatus('idle')
+                  setElapsed(0)
+                  setSegment(1)
+                }}
+              >
+                <Text style={styles.resultBtnSecondaryText}>Record Again</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Error card */}
+        {status === 'error' && (
+          <View style={styles.uploadOverlay}>
+            <View style={styles.resultCard}>
+              <View style={styles.errorIcon}>
+                <Ionicons name="close" size={32} color="#ef4444" />
+              </View>
+              <Text style={styles.resultTitle}>Upload failed</Text>
+              <Text style={styles.resultSub}>{uploadResult?.message ?? 'Something went wrong.'}</Text>
+              <TouchableOpacity
+                style={styles.resultBtnPrimary}
+                onPress={() => {
+                  setStatus('idle')
+                  setElapsed(0)
+                  setSegment(1)
+                }}
+              >
+                <Ionicons name="refresh" size={18} color="#0c0c14" />
+                <Text style={styles.resultBtnPrimaryText}>Try Again</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.resultBtnSecondary} onPress={handleCancel}>
+                <Text style={styles.resultBtnSecondaryText}>Discard</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </CameraView>
     </View>
   )
@@ -639,5 +718,95 @@ const styles = StyleSheet.create({
   cancelLinkText: {
     color: '#71717a',
     fontSize: 14,
+  },
+  uploadOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadCard: {
+    backgroundColor: '#1c1c1e',
+    borderRadius: 20,
+    paddingHorizontal: 40,
+    paddingVertical: 36,
+    alignItems: 'center',
+    gap: 12,
+  },
+  uploadTitle: {
+    color: '#fafafa',
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 8,
+  },
+  uploadSub: {
+    color: '#71717a',
+    fontSize: 14,
+  },
+  resultCard: {
+    backgroundColor: '#1c1c1e',
+    borderRadius: 20,
+    paddingHorizontal: 32,
+    paddingVertical: 36,
+    alignItems: 'center',
+    gap: 8,
+    width: 280,
+  },
+  successIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(34,197,94,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  errorIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(239,68,68,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  resultTitle: {
+    color: '#fafafa',
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  resultSub: {
+    color: '#a1a1aa',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  resultBtnPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#06b6d4',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    width: '100%',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  resultBtnPrimaryText: {
+    color: '#0c0c14',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  resultBtnSecondary: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginTop: 4,
+  },
+  resultBtnSecondaryText: {
+    color: '#71717a',
+    fontSize: 14,
+    fontWeight: '600',
   },
 })

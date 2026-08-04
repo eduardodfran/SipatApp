@@ -9,8 +9,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Ionicons } from '@expo/vector-icons'
+import { supabase } from '../lib/supabase'
 import type { Recording } from '../lib/types'
 
 type Props = {
@@ -43,9 +44,32 @@ export default function RidesScreen({
   refreshing,
   onMenuPress,
 }: Props) {
+  const [detectionCounts, setDetectionCounts] = useState<Record<string, number>>({})
+
+  const fetchDetectionCounts = useCallback(async (rides: Recording[]) => {
+    const completedRides = rides.filter((r) => r.status === 'completed' && r.rideId)
+    if (completedRides.length === 0) return
+
+    const counts: Record<string, number> = {}
+    await Promise.all(
+      completedRides.map(async (r) => {
+        const { count } = await supabase
+          .from('raw_detections')
+          .select('id', { count: 'exact', head: true })
+          .eq('ride_id', r.rideId!)
+        counts[r.rideId!] = count ?? 0
+      })
+    )
+    setDetectionCounts(counts)
+  }, [])
+
   useEffect(() => {
     onRefresh()
   }, [])
+
+  useEffect(() => {
+    fetchDetectionCounts(recordings)
+  }, [recordings, fetchDetectionCounts])
 
   const lastPressRef = useRef<Record<string, number>>({})
   const debounce = (key: string) => {
@@ -119,6 +143,8 @@ export default function RidesScreen({
             const isProcessing = item.status === 'processing'
             const hasProgress = isProcessing && item.progressPct != null && item.progressPct >= 0
             const statusCfg = item.status ? STATUS_CONFIG[item.status] : null
+            const detCount = item.rideId ? detectionCounts[item.rideId] : undefined
+            const noDetections = item.status === 'completed' && detCount === 0
 
             return (
               <View key={item.id} style={styles.rideCard}>
@@ -138,6 +164,12 @@ export default function RidesScreen({
                     </View>
                   </View>
                   <View style={styles.rideRight}>
+                    {noDetections && (
+                      <View style={styles.noDetBadge}>
+                        <Ionicons name="eye-off" size={10} color="#f59e0b" />
+                        <Text style={styles.noDetText}>No Detections</Text>
+                      </View>
+                    )}
                     {statusCfg ? (
                       <View style={[styles.rideStatus, { backgroundColor: statusCfg.bg }]}>
                         <View style={[styles.statusDot, { backgroundColor: statusCfg.color }]} />
@@ -331,7 +363,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 1,
   },
-  rideRight: {},
+  rideRight: { alignItems: 'flex-end', gap: 4 },
+  noDetBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    paddingVertical: 3, paddingHorizontal: 8, borderRadius: 6,
+  },
+  noDetText: { color: '#f59e0b', fontSize: 10, fontWeight: '700' },
   rideStatus: {
     flexDirection: 'row',
     alignItems: 'center',
