@@ -109,6 +109,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
   const [potholePosting, setPotholePosting] = useState<Record<number, boolean>>({})
 
   const [filters, setFilters] = useState({ country: '', city: '', street: '' })
+  const [sortBy, setSortBy] = useState<'hot' | 'new' | 'old'>('hot')
   const [photoOffset, setPhotoOffset] = useState(0)
   const [potholeOffset, setPotholeOffset] = useState(0)
   const [hasMorePhotos, setHasMorePhotos] = useState(true)
@@ -265,9 +266,24 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     ...uploadedPosts.map((p) => ({ type: 'photo' as const, data: p })),
     ...potholes.map((p) => ({ type: 'pothole' as const, data: p })),
   ].sort((a: any, b: any) => {
-    const sa = a.data.hot_score ?? 0
-    const sb = b.data.hot_score ?? 0
-    return sb - sa
+    switch (sortBy) {
+      case 'new': {
+        const ta = a.type === 'photo' ? a.data.created_at : (a.data.latest_activity_at || a.data.citizen_first_reported_at)
+        const tb = b.type === 'photo' ? b.data.created_at : (b.data.latest_activity_at || b.data.citizen_first_reported_at)
+        return new Date(tb).getTime() - new Date(ta).getTime()
+      }
+      case 'old': {
+        const ta = a.type === 'photo' ? a.data.created_at : (a.data.latest_activity_at || a.data.citizen_first_reported_at)
+        const tb = b.type === 'photo' ? b.data.created_at : (b.data.latest_activity_at || b.data.citizen_first_reported_at)
+        return new Date(ta).getTime() - new Date(tb).getTime()
+      }
+      case 'hot':
+      default: {
+        const sa = a.data.hot_score ?? 0
+        const sb = b.data.hot_score ?? 0
+        return sb - sa
+      }
+    }
   })
 
   const filteredFeedItems = feedItems.filter((item) => {
@@ -570,6 +586,27 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
 
       <FilterBar filters={filters} onFiltersChange={setFilters} />
 
+      {/* Sort bar */}
+      <View style={styles.sortBar}>
+        {([
+          { key: 'hot' as const, label: 'Hot', icon: 'flame' },
+          { key: 'new' as const, label: 'New', icon: 'arrow-down' },
+          { key: 'old' as const, label: 'Old', icon: 'arrow-up' },
+        ]).map((opt) => (
+          <TouchableOpacity
+            key={opt.key}
+            style={[styles.sortBtn, sortBy === opt.key && styles.sortBtnActive]}
+            onPress={() => setSortBy(opt.key)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name={opt.icon as any} size={12} color={sortBy === opt.key ? '#0c0c14' : '#71717a'} />
+            <Text style={[styles.sortBtnText, sortBy === opt.key && styles.sortBtnTextActive]}>
+              {opt.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Ionicons name="people-outline" size={14} color="#a1a1aa" />
@@ -668,6 +705,12 @@ const styles = StyleSheet.create({
   },
   filterClear: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10, backgroundColor: 'rgba(6, 182, 212,0.1)' },
   filterClearText: { color: '#06b6d4', fontSize: 12, fontWeight: '600' },
+
+  sortBar: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 4, paddingVertical: 8 },
+  sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: 'rgba(255, 255, 255, 0.06)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)' },
+  sortBtnActive: { backgroundColor: '#06b6d4', borderColor: '#06b6d4' },
+  sortBtnText: { color: '#71717a', fontSize: 12, fontWeight: '600' },
+  sortBtnTextActive: { color: '#0c0c14' },
 
   postCard: { backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)', marginBottom: 12 },
   postImage: { width: '100%', height: 180, resizeMode: 'cover' },
