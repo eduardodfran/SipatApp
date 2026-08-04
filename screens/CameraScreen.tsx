@@ -12,6 +12,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Location from 'expo-location'
 import { Audio } from 'expo-av'
 import { File, Paths } from 'expo-file-system'
+import { Accelerometer, Gyroscope } from 'expo-sensors'
 import { Ionicons } from '@expo/vector-icons'
 import type { Recording } from '../lib/types'
 
@@ -39,10 +40,13 @@ export default function CameraScreen({ onFinish, onCancel, segmentCount }: Props
   const segmentStartTime = useRef(0)
   const gpsLocations = useRef<Array<{ lat: number; lng: number; ts: number }>>([])
   const gpsSubRef = useRef<Location.LocationSubscription | null>(null)
+  const accelSubRef = useRef<{ remove(): void } | null>(null)
+  const gyroSubRef = useRef<{ remove(): void } | null>(null)
+  const imuData = useRef<Array<{ ax: number; ay: number; az: number; gx: number; gy: number; gz: number; ts: number }>>([])
   const isCancelled = useRef(false)
   const stoppedManually = useRef(false)
 
-  // Start GPS tracking
+  // Start GPS + IMU tracking
   useEffect(() => {
     ;(async () => {
       const { status } = await Location.requestForegroundPermissionsAsync()
@@ -70,10 +74,41 @@ export default function CameraScreen({ onFinish, onCancel, segmentCount }: Props
       } catch {
         Alert.alert('GPS Error', 'Failed to start GPS tracking. Recording will continue without GPS.')
       }
+
+      // Start IMU sensors (accelerometer + gyroscope)
+      Accelerometer.setUpdateInterval(100) // 10 Hz
+      accelSubRef.current = Accelerometer.addListener((data) => {
+        imuData.current.push({
+          ax: data.x,
+          ay: data.y,
+          az: data.z,
+          gx: 0,
+          gy: 0,
+          gz: 0,
+          ts: Date.now(),
+        })
+      })
+
+      Gyroscope.setUpdateInterval(100) // 10 Hz
+      gyroSubRef.current = Gyroscope.addListener((data) => {
+        const now = Date.now()
+        const last = imuData.current[imuData.current.length - 1]
+        if (last && now - last.ts < 50) {
+          // Update gyro on existing entry (matched timestamp)
+          last.gx = data.x
+          last.gy = data.y
+          last.gz = data.z
+        } else {
+          // No matching accel sample yet, create new entry
+          imuData.current.push({ ax: 0, ay: 0, az: 0, gx: data.x, gy: data.y, gz: data.z, ts: now })
+        }
+      })
     })()
 
     return () => {
       gpsSubRef.current?.remove()
+      accelSubRef.current?.remove()
+      gyroSubRef.current?.remove()
     }
   }, [])
 
@@ -109,6 +144,7 @@ export default function CameraScreen({ onFinish, onCancel, segmentCount }: Props
 
   const saveGpsToFile = async (startTime: number, endTime: number, segmentNum: number) => {
     const points = gpsLocations.current.filter((p) => p.ts >= startTime && p.ts <= endTime)
+    const imuPoints = imuData.current.filter((p) => p.ts >= startTime && p.ts <= endTime)
 
     if (points.length === 0) {
       Alert.alert(
@@ -117,8 +153,27 @@ export default function CameraScreen({ onFinish, onCancel, segmentCount }: Props
       )
     }
 
-    const csvHeader = 'timestamp,latitude,longitude\n'
-    const csvRows = points.map((p) => `${p.ts},${p.lat},${p.lng}`).join('\n')
+    const csvHeader = 'timestamp,latitude,longitude,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z\n'
+    const csvRows = points.map((p) => {
+      // Find closest IMU sample by timestamp
+      let closest = imuPoints[0]
+      let minDiff = Infinity
+      for (const imu of imuPoints) {
+        const diff = Math.abs(imu.ts - p.ts)
+        if (diff < minDiff) {
+          minDiff = diff
+          closest = imu
+        }
+      }
+      const imu = minDiff < 500 ? closest : null // 500ms tolerance
+      const ax = imu ? imu.ax.toFixed(6) : '0'
+      const ay = imu ? imu.ay.toFixed(6) : '0'
+      const az = imu ? imu.az.toFixed(6) : '0'
+      const gx = imu ? imu.gx.toFixed(6) : '0'
+      const gy = imu ? imu.gy.toFixed(6) : '0'
+      const gz = imu ? imu.gz.toFixed(6) : '0'
+      return `${p.ts},${p.lat},${p.lng},${ax},${ay},${az},${gx},${gy},${gz}`
+    }).join('\n')
     const fileName = `gps_segment_${segmentNum}_${Date.now()}.csv`
     const file = new File(Paths.document, fileName)
     file.create({ intermediates: true })

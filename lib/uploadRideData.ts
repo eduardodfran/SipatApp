@@ -28,6 +28,12 @@ export type GpsTrackingPoint = {
   lat: number
   lng: number
   timestamp_seconds: number
+  accel_x?: number
+  accel_y?: number
+  accel_z?: number
+  gyro_x?: number
+  gyro_y?: number
+  gyro_z?: number
 }
 
 type RideUploadResult = {
@@ -72,6 +78,12 @@ async function csvUriToGpsTrackingArray(
   const timestampIndex = header.indexOf('timestamp')
   const latitudeIndex = header.indexOf('latitude')
   const longitudeIndex = header.indexOf('longitude')
+  const accelXIndex = header.indexOf('accel_x')
+  const accelYIndex = header.indexOf('accel_y')
+  const accelZIndex = header.indexOf('accel_z')
+  const gyroXIndex = header.indexOf('gyro_x')
+  const gyroYIndex = header.indexOf('gyro_y')
+  const gyroZIndex = header.indexOf('gyro_z')
 
   if (timestampIndex < 0 || latitudeIndex < 0 || longitudeIndex < 0) {
     throw new Error(
@@ -97,6 +109,12 @@ async function csvUriToGpsTrackingArray(
       timestamp_seconds: timestamp,
       lat: latitude,
       lng: longitude,
+      ...(accelXIndex >= 0 && { accel_x: Number(columns[accelXIndex]) || 0 }),
+      ...(accelYIndex >= 0 && { accel_y: Number(columns[accelYIndex]) || 0 }),
+      ...(accelZIndex >= 0 && { accel_z: Number(columns[accelZIndex]) || 0 }),
+      ...(gyroXIndex >= 0 && { gyro_x: Number(columns[gyroXIndex]) || 0 }),
+      ...(gyroYIndex >= 0 && { gyro_y: Number(columns[gyroYIndex]) || 0 }),
+      ...(gyroZIndex >= 0 && { gyro_z: Number(columns[gyroZIndex]) || 0 }),
     }
   })
 }
