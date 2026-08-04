@@ -231,19 +231,12 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
       } else {
         setRecording(false)
         setStatus('idle')
-        const continueAnyway = await new Promise<boolean>((resolve) => {
-          Alert.alert(
-            'No GPS Signal',
-            'Recording without GPS means hazards cannot be mapped. Continue anyway?',
-            [
-              { text: 'Cancel', onPress: () => resolve(false), style: 'cancel' },
-              { text: 'Continue Anyway', onPress: () => resolve(true) },
-            ],
-          )
-        })
-        if (!continueAnyway) return
-        setRecording(true)
-        setStatus('recording')
+        Alert.alert(
+          'No GPS Signal',
+          'GPS is required to record road hazards. Please move to an open area and try again.',
+          [{ text: 'OK' }],
+        )
+        return
       }
     } else {
       // Seed the last known fix so the segment never starts empty
@@ -293,6 +286,28 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
 
   const startNextSegment = async (segNum: number) => {
     if (isCancelled.current) return
+
+    // GPS gate: verify GPS is still available before starting next segment
+    const lastKnown = gpsLocations.current[gpsLocations.current.length - 1] ?? null
+    const hadFreshFix = !!lastKnown && Date.now() - lastKnown.ts < 15_000
+
+    if (!hadFreshFix) {
+      setStatus('waitingForGps')
+      const fix = await acquireGpsFix()
+      if (isCancelled.current) return
+      if (fix) {
+        gpsLocations.current.push({ ...fix, ts: Date.now() })
+        setGpsFresh(true)
+      } else {
+        setStatus('idle')
+        Alert.alert(
+          'GPS Signal Lost',
+          'GPS is required to continue recording. Segment recording stopped.',
+          [{ text: 'OK' }],
+        )
+        return
+      }
+    }
 
     setSegment(segNum)
     setElapsed(0)
