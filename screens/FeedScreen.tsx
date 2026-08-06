@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -17,6 +18,7 @@ import VoteButtons from '../components/VoteButtons'
 import { supabase } from '../lib/supabase'
 import { loadPendingPhotos, updatePhotoPost, deletePhotoPost } from '../lib/pendingPhotos'
 import { uploadCommunityPhoto } from '../lib/uploadCommunityPhoto'
+import { validateComment, MAX_COMMENT_LENGTH } from '../lib/spamDetection'
 import type { LocalPhotoPost } from '../lib/types'
 
 type Comment = {
@@ -221,6 +223,13 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     const key = String(postId)
     const text = commentDrafts[key]?.trim()
     if (!text || postingComment[key]) return
+
+    const validation = validateComment(text)
+    if (!validation.ok) {
+      Alert.alert('Comment blocked', validation.error!)
+      return
+    }
+
     setPostingComment((prev) => ({ ...prev, [key]: true }))
     await supabase.rpc('create_community_photo_comment', { p_photo_id: postId, p_body: text })
     const { data } = await supabase.rpc('get_community_photo_comments', { p_photo_id: postId })
@@ -249,6 +258,13 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
   const handlePotholeSendComment = useCallback(async (potholeId: number) => {
     const text = potholeDrafts[potholeId]?.trim()
     if (!text || potholePosting[potholeId]) return
+
+    const validation = validateComment(text)
+    if (!validation.ok) {
+      Alert.alert('Comment blocked', validation.error!)
+      return
+    }
+
     setPotholePosting((prev) => ({ ...prev, [potholeId]: true }))
     await supabase.rpc('create_detection_comment', { p_pothole_id: potholeId, p_body: text })
     await loadPotholeComments(potholeId)

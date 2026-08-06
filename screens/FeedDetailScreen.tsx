@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   Image,
@@ -18,6 +19,7 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { fetchFastApi } from '../lib/fastapi'
 import { supabase } from '../lib/supabase'
+import { validateComment } from '../lib/spamDetection'
 import ReportButton from '../components/ReportButton'
 import VoteButtons from '../components/VoteButtons'
 
@@ -110,6 +112,13 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
   const handleSend = useCallback(async () => {
     const text = draft.trim()
     if (!text || posting) return
+
+    const validation = validateComment(text)
+    if (!validation.ok) {
+      Alert.alert('Comment blocked', validation.error!)
+      return
+    }
+
     setPosting(true)
     if (item.type === 'photo') {
       await supabase.rpc('create_community_photo_comment', { p_photo_id: item.data.id, p_body: text })
