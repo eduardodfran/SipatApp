@@ -62,7 +62,7 @@ export default function LoginScreen() {
           })
         }
         if (!data.session) {
-          Alert.alert('Check your email', `We sent a verification link to ${email.trim()}. Please verify before signing in.`)
+          Alert.alert('Check your email', `We sent a verification link to ${email.trim()}. Open it on a browser to confirm your account, then come back to sign in.`)
           setMode('login')
           return
         }

@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import ReportButton from '../components/ReportButton'
 import VoteButtons from '../components/VoteButtons'
 import { supabase } from '../lib/supabase'
@@ -246,6 +247,44 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     setCommentsByPost((prev) => ({ ...prev, [key]: (data ?? []) as Comment[] }))
   }, [])
 
+  const handleDeletePhoto = useCallback(async (postId: number) => {
+    Alert.alert('Delete post', 'Are you sure you want to delete this photo? This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive', onPress: async () => {
+          const { error } = await supabase.from('community_photos').delete().eq('id', postId)
+          if (error) {
+            Alert.alert('Error', error.message)
+            return
+          }
+          setUploadedPosts((prev) => prev.filter((p) => p.id !== postId))
+        }
+      },
+    ])
+  }, [])
+
+  const handleDeletePothole = useCallback(async (pothole: any) => {
+    Alert.alert('Delete detection', 'Are you sure you want to delete this detection? This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive', onPress: async () => {
+          const { error } = await supabase.from('raw_detections')
+            .delete()
+            .eq('user_id', pothole.reporter_user_id)
+            .gte('latitude', pothole.consolidated_latitude - 0.0001)
+            .lte('latitude', pothole.consolidated_latitude + 0.0001)
+            .gte('longitude', pothole.consolidated_longitude - 0.0001)
+            .lte('longitude', pothole.consolidated_longitude + 0.0001)
+          if (error) {
+            Alert.alert('Error', error.message)
+            return
+          }
+          setPotholes((prev) => prev.filter((p) => p.pothole_id !== pothole.pothole_id))
+        }
+      },
+    ])
+  }, [])
+
   const loadPotholeComments = useCallback(async (potholeId: number) => {
     const { data } = await supabase.rpc('get_detection_comments', { p_pothole_id: potholeId })
     setPotholeComments((prev) => ({ ...prev, [potholeId]: data ?? [] }))
@@ -334,6 +373,11 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                 <Text style={styles.time}>
                   {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </Text>
+                {post.user_id === userId && (
+                  <TouchableOpacity onPress={() => handleDeletePhoto(post.id)} style={styles.mapBtn} activeOpacity={0.7}>
+                    <Ionicons name="trash-outline" size={15} color="#ef4444" />
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity onPress={() => onViewOnMap(item)} style={styles.mapBtn} activeOpacity={0.7}>
                   <Ionicons name="map-outline" size={15} color="#71717a" />
                 </TouchableOpacity>
@@ -456,6 +500,11 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
               <Text style={styles.time}>
                 {p.citizen_first_reported_at ? new Date(p.citizen_first_reported_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : null}
               </Text>
+              {p.reporter_user_id === userId && (
+                <TouchableOpacity onPress={() => handleDeletePothole(p)} style={styles.mapBtn} activeOpacity={0.7}>
+                  <Ionicons name="trash-outline" size={15} color="#ef4444" />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity onPress={() => onViewOnMap(item)} style={styles.mapBtn} activeOpacity={0.7}>
                 <Ionicons name="map-outline" size={15} color="#71717a" />
               </TouchableOpacity>

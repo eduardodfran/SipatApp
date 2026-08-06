@@ -10,9 +10,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { Recording } from '../lib/types'
 
 type Props = {
@@ -62,6 +63,19 @@ export default function DashboardScreen({
 
   const lastPressRef = useRef<Record<string, number>>({})
   const insets = useSafeAreaInsets()
+  const [showQuickStart, setShowQuickStart] = useState(false)
+
+  useEffect(() => {
+    AsyncStorage.getItem('@sipat_quickstart_seen').then((seen) => {
+      if (!seen) setShowQuickStart(true)
+    })
+  }, [])
+
+  const dismissQuickStart = () => {
+    setShowQuickStart(false)
+    AsyncStorage.setItem('@sipat_quickstart_seen', '1')
+  }
+
   const debounce = (key: string) => {
     const now = Date.now()
     if (now - (lastPressRef.current[key] ?? 0) < 500) return false
@@ -125,6 +139,29 @@ export default function DashboardScreen({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {showQuickStart && (
+          <View style={styles.quickStartCard}>
+            <View style={styles.quickStartHeader}>
+              <Text style={styles.quickStartTitle}>Welcome to Sipat!</Text>
+              <TouchableOpacity onPress={dismissQuickStart} activeOpacity={0.7}>
+                <Ionicons name="close" size={18} color="#71717a" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.quickStartStep}>
+              <Text style={styles.quickStartNum}>1</Text>
+              <Text style={styles.quickStartText}>Tap Record to start a ride — AI detects potholes automatically</Text>
+            </View>
+            <View style={styles.quickStartStep}>
+              <Text style={styles.quickStartNum}>2</Text>
+              <Text style={styles.quickStartText}>Use the menu ☰ to access Feed, Map, and Rides</Text>
+            </View>
+            <View style={styles.quickStartStep}>
+              <Text style={styles.quickStartNum}>3</Text>
+              <Text style={styles.quickStartText}>Tap Photo to capture road distress directly</Text>
+            </View>
+          </View>
+        )}
+
         {/* Hero Stats */}
         <View style={styles.heroSection}>
           <View style={styles.heroCard}>
@@ -377,6 +414,26 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20,
   },
+
+  // Quick-start guide
+  quickStartCard: {
+    marginHorizontal: 16, marginTop: 12,
+    backgroundColor: '#18181b', borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  },
+  quickStartHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12,
+  },
+  quickStartTitle: { color: '#fafafa', fontSize: 15, fontWeight: '700' },
+  quickStartStep: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 8,
+  },
+  quickStartNum: {
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: '#06b6d4', textAlign: 'center', lineHeight: 20,
+    color: '#0c0c14', fontSize: 11, fontWeight: '800', overflow: 'hidden',
+  },
+  quickStartText: { flex: 1, color: '#a1a1aa', fontSize: 13, lineHeight: 18 },
 
   // Header
   header: {

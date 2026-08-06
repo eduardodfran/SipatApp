@@ -10,11 +10,11 @@ type Props = {
 }
 
 const REPORT_REASONS = [
-  'Spam',
-  'Inappropriate content',
-  'Not a pothole',
-  'Duplicate',
-  'Other',
+  { label: 'Spam', value: 'spam' },
+  { label: 'Inappropriate content', value: 'inappropriate' },
+  { label: 'Not a pothole', value: 'not_pothole' },
+  { label: 'Duplicate', value: 'duplicate' },
+  { label: 'Other', value: 'other' },
 ] as const
 
 export default function ReportButton({ contentType, contentId, onReported }: Props) {
@@ -53,8 +53,8 @@ export default function ReportButton({ contentType, contentId, onReported }: Pro
 
     Alert.alert('Report Content', 'Why are you reporting this?', [
       ...REPORT_REASONS.map((reason) => ({
-        text: reason,
-        onPress: () => submitReport(reason),
+        text: reason.label,
+        onPress: () => submitReport(reason.value),
       })),
       { text: 'Cancel', style: 'cancel' },
     ])
@@ -68,12 +68,14 @@ export default function ReportButton({ contentType, contentId, onReported }: Pro
       p_reason: reason,
     })
     setLoading(false)
-    if (!error) {
-      setReported(true)
-      const row = Array.isArray(data) ? data[0] : data
-      if (row && typeof row === 'object' && 'report_count' in row) {
-        onReported?.((row as { report_count: number }).report_count)
-      }
+    if (error) {
+      Alert.alert('Error', error.message.includes('Not authenticated') ? 'You need to sign in to report content.' : 'Could not submit report. Please try again.')
+      return
+    }
+    setReported(true)
+    const row = Array.isArray(data) ? data[0] : data
+    if (row && typeof row === 'object' && 'report_count' in row) {
+      onReported?.((row as { report_count: number }).report_count)
     }
   }
 
