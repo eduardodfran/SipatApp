@@ -45,7 +45,7 @@ const SEVERITY = [
 
 const RESOURCES = [
   { title: 'GitHub Repository', description: 'github.com/topics/sipat', url: 'https://github.com/topics/sipat', icon: 'logo-github' as const },
-  { title: 'Live Web Dashboard', description: 'sipat.app', url: 'https://sipat.app', icon: 'globe-outline' as const },
+  { title: 'Live Web Dashboard', description: 'sipat-web.vercel.app', url: 'https://sipat-web.vercel.app', icon: 'globe-outline' as const },
 ]
 
 export default function AboutScreen({ onBack }: Props) {

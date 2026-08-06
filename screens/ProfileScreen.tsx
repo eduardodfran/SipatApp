@@ -40,6 +40,10 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
   const [cooldown, setCooldown] = useState(() =>
     getCooldownRemaining(user?.user_metadata?.username_edited_at ?? null),
   )
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
 
   useEffect(() => {
     setUsername(user?.user_metadata?.username ?? '')
@@ -103,6 +107,52 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
     await supabase.auth.signOut()
   }
 
+  const handleChangePassword = async () => {
+    if (!currentPassword) {
+      Alert.alert('Error', 'Please enter your current password')
+      return
+    }
+    if (!newPassword) {
+      Alert.alert('Error', 'Please enter a new password')
+      return
+    }
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'New password must be at least 6 characters')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'New passwords do not match')
+      return
+    }
+
+    setChangingPassword(true)
+    try {
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword,
+      })
+      if (verifyError) {
+        Alert.alert('Error', 'Current password is incorrect')
+        return
+      }
+
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) {
+        Alert.alert('Error', error.message)
+        return
+      }
+
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      Alert.alert('Success', 'Password updated successfully')
+    } catch (err: any) {
+      Alert.alert('Error', err?.message ?? 'Failed to update password')
+    } finally {
+      setChangingPassword(false)
+    }
+  }
+
   const displayName = username || email.split('@')[0]
   const initial = displayName.charAt(0).toUpperCase()
 
@@ -159,6 +209,58 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
               <ActivityIndicator color="#0c0c14" />
             ) : (
               <Text style={styles.saveBtnText}>Save Changes</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.changePasswordSection}>
+          <Text style={styles.sectionLabel}>CHANGE PASSWORD</Text>
+
+          <Text style={styles.label}>Current Password</Text>
+          <TextInput
+            style={styles.passwordInput}
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            placeholder="Enter current password"
+            placeholderTextColor="#71717a"
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          <Text style={styles.label}>New Password</Text>
+          <TextInput
+            style={styles.passwordInput}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            placeholder="Enter new password"
+            placeholderTextColor="#71717a"
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          <Text style={styles.label}>Confirm New Password</Text>
+          <TextInput
+            style={styles.passwordInput}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholder="Confirm new password"
+            placeholderTextColor="#71717a"
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          <TouchableOpacity
+            style={[styles.changePasswordBtn, changingPassword && styles.changePasswordBtnDisabled]}
+            onPress={handleChangePassword}
+            disabled={changingPassword}
+          >
+            {changingPassword ? (
+              <ActivityIndicator color="#0c0c14" />
+            ) : (
+              <Text style={styles.changePasswordBtnText}>Update Password</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -292,6 +394,43 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   saveBtnText: {
+    color: '#0c0c14',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  changePasswordSection: {
+    paddingHorizontal: 20,
+    marginTop: 32,
+  },
+  sectionLabel: {
+    color: '#f59e0b',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  passwordInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    color: '#fafafa',
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  changePasswordBtn: {
+    backgroundColor: '#f59e0b',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  changePasswordBtnDisabled: {
+    opacity: 0.4,
+  },
+  changePasswordBtnText: {
     color: '#0c0c14',
     fontSize: 16,
     fontWeight: '700',
