@@ -19,6 +19,7 @@ import { supabase } from '../lib/supabase'
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [username, setUsername] = useState('')
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [showPassword, setShowPassword] = useState(false)
@@ -26,6 +27,11 @@ export default function LoginScreen() {
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Please enter email and password')
+      return
+    }
+
+    if (mode === 'signup' && !username.trim()) {
+      Alert.alert('Error', 'Please enter a username')
       return
     }
 
@@ -44,6 +50,12 @@ export default function LoginScreen() {
           Alert.alert('Account exists', 'An account with this email already exists. Please sign in.')
           setMode('login')
           return
+        }
+        if (data.user) {
+          await supabase.from('profiles').insert({
+            id: data.user.id,
+            username: username.trim(),
+          })
         }
         if (!data.session) {
           Alert.alert('Check your email', `We sent a verification link to ${email.trim()}. Please verify before signing in.`)
@@ -87,6 +99,18 @@ export default function LoginScreen() {
               keyboardType="email-address"
               textContentType="emailAddress"
             />
+
+            {mode === 'signup' && (
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                placeholderTextColor="#71717a"
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+                textContentType="username"
+              />
+            )}
 
             <View style={styles.passwordContainer}>
               <TextInput
