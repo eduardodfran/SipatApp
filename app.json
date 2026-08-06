@@ -5,7 +5,7 @@
     "scheme": "sipat",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/sipat-logo-main.png",
+      "icon": "./assets/sipat-app.png",
     "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/sipat-logo-splash.png",
@@ -16,7 +16,7 @@
       "supportsTablet": true
     },
     "android": {
-      "icon": "./assets/sipat-logo-main.png",
+    "icon": "./assets/sipat-app.png",
       "package": "com.eduardofran.SipatApp"
     },
     "plugins": [
