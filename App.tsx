@@ -22,6 +22,7 @@ import RidesScreen from './screens/RidesScreen'
 import ProfileScreen from './screens/ProfileScreen'
 import PublicProfileScreen from './screens/PublicProfileScreen'
 import SearchScreen from './screens/SearchScreen'
+import AboutScreen from './screens/AboutScreen'
 import AppSidebar from './components/AppSidebar'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
@@ -29,7 +30,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'photo' | 'map' | 'distress' | 'rides' | 'profile' | 'publicprofile' | 'search'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'photo' | 'map' | 'distress' | 'rides' | 'profile' | 'publicprofile' | 'search' | 'about'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -497,7 +498,10 @@ export default function App() {
         <DistressListScreen onBack={() => setScreen('dashboard')} />
       )}
       {screen === 'profile' && user && (
-        <ProfileScreen user={user} onBack={() => setScreen('dashboard')} />
+        <ProfileScreen user={user} onBack={() => setScreen('dashboard')} onAbout={() => setScreen('about')} />
+      )}
+      {screen === 'about' && (
+        <AboutScreen onBack={() => setScreen('dashboard')} />
       )}
       {screen === 'publicprofile' && publicProfileUserId && (
         <PublicProfileScreen
@@ -524,6 +528,7 @@ export default function App() {
         onTabChange={(tab) => setScreen(tab)}
         onLogout={handleLogout}
         onProfilePress={() => setScreen('profile')}
+        onAbout={() => setScreen('about')}
       />
     </SafeAreaProvider>
   )

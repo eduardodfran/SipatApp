@@ -176,7 +176,13 @@ function buildMapHtml(
         }
         return;
       }
-      var reasons = ['Spam', 'Inappropriate content', 'Not a pothole', 'Duplicate', 'Other'];
+      var reasons = [
+        { label: 'Spam', value: 'spam' },
+        { label: 'Inappropriate content', value: 'inappropriate' },
+        { label: 'Not a pothole', value: 'not_pothole' },
+        { label: 'Duplicate', value: 'duplicate' },
+        { label: 'Other', value: 'other' }
+      ];
       var modal = document.createElement('div');
       modal.id = 'report-modal-' + contentId;
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;';
@@ -184,7 +190,7 @@ function buildMapHtml(
         '<div style="color:#fafafa;font-size:16px;font-weight:700;margin-bottom:4px;">Report Content</div>' +
         '<div style="color:#71717a;font-size:13px;margin-bottom:16px;">Why are you reporting this?</div>' +
         reasons.map(function(r) {
-          return '<button class="report-reason-btn" data-reason="' + r + '" style="display:block;width:100%;text-align:left;padding:12px;margin-bottom:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:8px;color:#fafafa;font-size:14px;cursor:pointer;">' + r + '</button>';
+          return '<button class="report-reason-btn" data-reason="' + r.value + '" style="display:block;width:100%;text-align:left;padding:12px;margin-bottom:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:8px;color:#fafafa;font-size:14px;cursor:pointer;">' + r.label + '</button>';
         }).join('') +
         '<button id="report-cancel-' + contentId + '" style="display:block;width:100%;padding:12px;margin-top:8px;background:transparent;border:1px solid rgba(255,255,255,0.06);border-radius:8px;color:#71717a;font-size:14px;cursor:pointer;">Cancel</button>' +
         '</div>';

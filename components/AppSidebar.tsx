@@ -23,6 +23,7 @@ type Props = {
   onTabChange: (tab: 'dashboard' | 'feed' | 'rides' | 'map') => void
   onLogout: () => void
   onProfilePress: () => void
+  onAbout: () => void
 }
 
 const NAV_ITEMS: { key: 'dashboard' | 'feed' | 'rides' | 'map'; label: string; icon: string }[] = [
@@ -32,7 +33,7 @@ const NAV_ITEMS: { key: 'dashboard' | 'feed' | 'rides' | 'map'; label: string; i
   { key: 'map', label: 'Map', icon: 'map-outline' },
 ]
 
-export default function AppSidebar({ visible, activeTab, user, onClose, onTabChange, onLogout, onProfilePress }: Props) {
+export default function AppSidebar({ visible, activeTab, user, onClose, onTabChange, onLogout, onProfilePress, onAbout }: Props) {
   const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current
   const fadeAnim = useRef(new Animated.Value(0)).current
 
@@ -144,6 +145,21 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
 
           {/* Spacer */}
           <View style={{ flex: 1 }} />
+
+          {/* About */}
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => {
+              onAbout()
+              onClose()
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.navIconWrap}>
+              <Ionicons name="information-circle-outline" size={20} color="#71717a" />
+            </View>
+            <Text style={styles.navLabel}>About</Text>
+          </TouchableOpacity>
 
           {/* Divider */}
           <View style={styles.divider} />

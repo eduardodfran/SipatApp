@@ -19,6 +19,7 @@ const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000
 type Props = {
   user: any
   onBack: () => void
+  onAbout: () => void
 }
 
 function getCooldownRemaining(editedAt: string | null): { locked: boolean; remaining: string } {
@@ -31,7 +32,7 @@ function getCooldownRemaining(editedAt: string | null): { locked: boolean; remai
   return { locked: true, remaining: `${days}d ${hours}h remaining` }
 }
 
-export default function ProfileScreen({ user, onBack }: Props) {
+export default function ProfileScreen({ user, onBack, onAbout }: Props) {
   const [username, setUsername] = useState(user?.user_metadata?.username ?? '')
   const [email] = useState(user?.email ?? '')
   const [saving, setSaving] = useState(false)
@@ -163,6 +164,10 @@ export default function ProfileScreen({ user, onBack }: Props) {
         </View>
 
         <View style={styles.dangerSection}>
+          <TouchableOpacity style={styles.aboutBtn} onPress={onAbout} activeOpacity={0.7}>
+            <Ionicons name="information-circle-outline" size={18} color="#06b6d4" />
+            <Text style={styles.aboutText}>About SIPAT</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
             <Ionicons name="log-out-outline" size={18} color="#ef4444" />
             <Text style={styles.logoutText}>Log Out</Text>
@@ -294,6 +299,23 @@ const styles = StyleSheet.create({
   dangerSection: {
     paddingHorizontal: 20,
     marginTop: 32,
+    gap: 10,
+  },
+  aboutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.15)',
+  },
+  aboutText: {
+    color: '#06b6d4',
+    fontSize: 15,
+    fontWeight: '600',
   },
   logoutBtn: {
     flexDirection: 'row',

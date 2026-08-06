@@ -119,6 +119,18 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
   const [hasMorePhotos, setHasMorePhotos] = useState(true)
   const [hasMorePotholes, setHasMorePotholes] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [showFeedGuide, setShowFeedGuide] = useState(false)
+
+  useEffect(() => {
+    AsyncStorage.getItem('@sipat_feed_guide_seen').then((seen) => {
+      if (!seen) setShowFeedGuide(true)
+    })
+  }, [])
+
+  const dismissFeedGuide = () => {
+    setShowFeedGuide(false)
+    AsyncStorage.setItem('@sipat_feed_guide_seen', '1')
+  }
 
   const loadPosts = useCallback(async (page = 0) => {
     if (page === 0) setLoading(true)
@@ -673,6 +685,38 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
         ))}
       </View>
 
+      {showFeedGuide && (
+        <View style={styles.guideCard}>
+          <View style={styles.guideHeader}>
+            <Text style={styles.guideTitle}>How the Feed Works</Text>
+            <TouchableOpacity onPress={dismissFeedGuide} activeOpacity={0.7}>
+              <Ionicons name="close" size={18} color="#71717a" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.guideRow}>
+            <View style={styles.guideIconWrap}><Ionicons name="thumbs-up-outline" size={16} color="#06b6d4" /></View>
+            <View style={styles.guideTextWrap}>
+              <Text style={styles.guideLabel}>Vote</Text>
+              <Text style={styles.guideDesc}>Upvote posts you agree with. Most-voted posts rise to the top.</Text>
+            </View>
+          </View>
+          <View style={styles.guideRow}>
+            <View style={styles.guideIconWrap}><Ionicons name="flag-outline" size={16} color="#ef4444" /></View>
+            <View style={styles.guideTextWrap}>
+              <Text style={styles.guideLabel}>Report</Text>
+              <Text style={styles.guideDesc}>Flag spam, duplicates, or wrong detections. 3 reports = auto-hidden.</Text>
+            </View>
+          </View>
+          <View style={styles.guideRow}>
+            <View style={styles.guideIconWrap}><Ionicons name="checkmark-circle-outline" size={16} color="#22c55e" /></View>
+            <View style={styles.guideTextWrap}>
+              <Text style={styles.guideLabel}>Verify</Text>
+              <Text style={styles.guideDesc}>Confirm if a pothole is still there or has been fixed.</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Ionicons name="people-outline" size={14} color="#a1a1aa" />
@@ -785,6 +829,27 @@ const styles = StyleSheet.create({
   sortBtnActive: { backgroundColor: '#06b6d4', borderColor: '#06b6d4' },
   sortBtnText: { color: '#71717a', fontSize: 12, fontWeight: '600' },
   sortBtnTextActive: { color: '#0c0c14' },
+
+  // Feed guide
+  guideCard: {
+    marginHorizontal: 16, marginTop: 12,
+    backgroundColor: '#18181b', borderRadius: 16, padding: 14,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  },
+  guideHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10,
+  },
+  guideTitle: { color: '#fafafa', fontSize: 14, fontWeight: '700' },
+  guideRow: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 8,
+  },
+  guideIconWrap: {
+    width: 28, height: 28, borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.04)', justifyContent: 'center', alignItems: 'center', marginTop: 1,
+  },
+  guideTextWrap: { flex: 1 },
+  guideLabel: { color: '#fafafa', fontSize: 13, fontWeight: '600', marginBottom: 1 },
+  guideDesc: { color: '#71717a', fontSize: 12, lineHeight: 16 },
 
   postCard: { backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)', marginBottom: 12 },
   postImage: { width: '100%', height: 180, resizeMode: 'cover' },
