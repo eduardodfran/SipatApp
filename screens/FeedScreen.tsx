@@ -35,6 +35,7 @@ type Props = {
   onTabChange: (tab: 'dashboard' | 'feed') => void
   onPhoto: () => void
   onMenuPress: () => void
+  onSearch: () => void
   onViewDetail: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
   onViewOnMap: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
   onViewProfile: (userId: string) => void
@@ -92,7 +93,7 @@ function FilterBar({ filters, onFiltersChange }: { filters: { country: string; c
   )
 }
 
-export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto, onMenuPress, onViewDetail, onViewOnMap, onViewProfile }: Props) {
+export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto, onMenuPress, onSearch, onViewDetail, onViewOnMap, onViewProfile }: Props) {
   const [pendingPosts, setPendingPosts] = useState<LocalPhotoPost[]>([])
   const [uploadedPosts, setUploadedPosts] = useState<any[]>([])
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set())
@@ -669,6 +670,9 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
           <Text style={styles.feedHeaderLabel}>Sipat</Text>
           <View style={styles.feedHeaderDot} />
         </View>
+        <TouchableOpacity onPress={onSearch} style={styles.searchBtn} activeOpacity={0.7}>
+          <Ionicons name="search-outline" size={20} color="#fafafa" />
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -695,6 +699,11 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 56 : 36, paddingBottom: 12, paddingHorizontal: 20,
   },
   menuBtn: {
+    width: 38, height: 38, borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  },
+  searchBtn: {
     width: 38, height: 38, borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.06)', justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',

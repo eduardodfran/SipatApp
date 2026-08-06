@@ -21,6 +21,7 @@ import OnboardingScreen from './screens/OnboardingScreen'
 import RidesScreen from './screens/RidesScreen'
 import ProfileScreen from './screens/ProfileScreen'
 import PublicProfileScreen from './screens/PublicProfileScreen'
+import SearchScreen from './screens/SearchScreen'
 import AppSidebar from './components/AppSidebar'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
@@ -28,7 +29,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'photo' | 'map' | 'distress' | 'rides' | 'profile' | 'publicprofile'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'photo' | 'map' | 'distress' | 'rides' | 'profile' | 'publicprofile' | 'search'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -39,6 +40,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false)
   const [feedRefreshKey, setFeedRefreshKey] = useState(0)
   const [lastUploadResult, setLastUploadResult] = useState<{ status: 'success' | 'error'; processStarted?: boolean; message?: string } | null>(null)
+  const [searchFrom, setSearchFrom] = useState<Screen>('feed')
 
   useEffect(() => {
     ;(async () => {
@@ -436,6 +438,7 @@ export default function App() {
           onTabChange={(tab) => setScreen(tab)}
           onPhoto={() => setScreen('photo')}
           onMenuPress={() => setSidebarVisible(true)}
+          onSearch={() => { setSearchFrom('feed'); setScreen('search') }}
           onViewDetail={(item) => {
             setDetailItem(item)
             setScreen('feeddetail')
@@ -500,6 +503,14 @@ export default function App() {
         <PublicProfileScreen
           userId={publicProfileUserId}
           onBack={() => setScreen('feed')}
+          onViewPhoto={(item) => { setDetailItem(item); setScreen('feeddetail') }}
+          onViewPothole={(item) => { setDetailItem(item); setScreen('feeddetail') }}
+        />
+      )}
+      {screen === 'search' && (
+        <SearchScreen
+          onBack={() => setScreen(searchFrom)}
+          onViewProfile={(uid) => { setPublicProfileUserId(uid); setScreen('publicprofile') }}
           onViewPhoto={(item) => { setDetailItem(item); setScreen('feeddetail') }}
           onViewPothole={(item) => { setDetailItem(item); setScreen('feeddetail') }}
         />
