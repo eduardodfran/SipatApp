@@ -43,7 +43,11 @@ export default function LoginScreen() {
       } else {
         const { data, error } = await supabase.auth.signUp({ email: email.trim(), password })
         if (error) {
-          Alert.alert('Error', error.message)
+          if (error.message.toLowerCase().includes('rate limit')) {
+            Alert.alert('Too many attempts', 'Email rate limit exceeded. Please wait about an hour and try again, or check your email for a previous verification link.')
+          } else {
+            Alert.alert('Error', error.message)
+          }
           return
         }
         if (data.user?.identities?.length === 0) {
