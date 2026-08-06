@@ -1,10 +1,9 @@
 import 'react-native-get-random-values'
 import 'react-native-url-polyfill/auto'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, AppState, BackHandler, Platform, Text, TouchableOpacity, View } from 'react-native'
+import { Alert, BackHandler, Platform, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { File, FileSystem } from 'expo-file-system'
-import * as LocalAuthentication from 'expo-local-authentication'
 import { User } from '@supabase/supabase-js'
 import * as SplashScreen from 'expo-splash-screen'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -74,38 +73,6 @@ export default function App() {
     )
     return () => listener?.subscription.unsubscribe()
   }, [])
-
-  // Biometric re-authentication on app foreground
-  const lastActiveRef = useRef(Date.now())
-
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', async (nextState) => {
-      if (nextState === 'active') {
-        const now = Date.now()
-        const awayMs = now - lastActiveRef.current
-        lastActiveRef.current = now
-
-        if (user && awayMs > 5 * 60 * 1000) {
-          const hasHardware = await LocalAuthentication.hasHardwareAsync()
-          const isEnrolled = await LocalAuthentication.isEnrolledAsync()
-          if (!hasHardware || !isEnrolled) return
-
-          const result = await LocalAuthentication.authenticateAsync({
-            promptMessage: 'Unlock SIPAT',
-            cancelLabel: 'Use password',
-            disableDeviceFallback: false,
-          })
-
-          if (!result.success) {
-            await supabase.auth.signOut()
-          }
-        }
-      } else {
-        lastActiveRef.current = Date.now()
-      }
-    })
-    return () => sub.remove()
-  }, [user])
 
   useEffect(() => {
     if (!user) return
