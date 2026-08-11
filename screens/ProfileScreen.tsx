@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -44,6 +45,9 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [changingPassword, setChangingPassword] = useState(false)
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [deleteInput, setDeleteInput] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     setUsername(user?.user_metadata?.username ?? '')
@@ -150,6 +154,59 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
       Alert.alert('Error', err?.message ?? 'Failed to update password')
     } finally {
       setChangingPassword(false)
+    }
+  }
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and all data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => setDeleteModalVisible(true),
+        },
+      ],
+    )
+  }
+
+  const confirmDeleteAccount = async () => {
+    if (deleteInput !== 'DELETE') {
+      Alert.alert('Error', 'You must type DELETE to confirm')
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        Alert.alert('Error', 'Not authenticated')
+        return
+      }
+
+      const res = await fetch('https://sipat-web.vercel.app/api/account/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ email }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error ?? 'Failed to delete account')
+      }
+
+      setDeleteModalVisible(false)
+      setDeleteInput('')
+      await supabase.auth.signOut()
+    } catch (err: any) {
+      Alert.alert('Error', err?.message ?? 'Failed to delete account')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -270,6 +327,10 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
             <Ionicons name="information-circle-outline" size={18} color="#06b6d4" />
             <Text style={styles.aboutText}>About SIPAT</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount} activeOpacity={0.7}>
+            <Ionicons name="trash-outline" size={18} color="#ef4444" />
+            <Text style={styles.deleteText}>Delete Account</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
             <Ionicons name="log-out-outline" size={18} color="#ef4444" />
             <Text style={styles.logoutText}>Log Out</Text>
@@ -278,6 +339,47 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      <Modal visible={deleteModalVisible} transparent animationType="fade" onRequestClose={() => { if (!deleting) setDeleteModalVisible(false) }}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Delete Account</Text>
+            <Text style={styles.modalDesc}>Type <Text style={{ fontWeight: '800', color: '#ef4444' }}>DELETE</Text> to confirm permanent account deletion.</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={deleteInput}
+              onChangeText={setDeleteInput}
+              placeholder="Type DELETE"
+              placeholderTextColor="#71717a"
+              autoCapitalize="characters"
+              autoCorrect={false}
+              editable={!deleting}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => { setDeleteModalVisible(false); setDeleteInput('') }}
+                disabled={deleting}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalDeleteBtn, (deleteInput !== 'DELETE' || deleting) && styles.modalDeleteBtnDisabled]}
+                onPress={confirmDeleteAccount}
+                disabled={deleteInput !== 'DELETE' || deleting}
+                activeOpacity={0.7}
+              >
+                {deleting ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalDeleteText}>Delete</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -456,6 +558,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.15)',
+  },
+  deleteText: {
+    color: '#ef4444',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -471,5 +589,78 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontSize: 15,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  modalContent: {
+    backgroundColor: '#1c1c22',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  modalTitle: {
+    color: '#fafafa',
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  modalDesc: {
+    color: '#a1a1aa',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  modalInput: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    color: '#ef4444',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.3)',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 20,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  modalCancelText: {
+    color: '#a1a1aa',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalDeleteBtn: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: '#ef4444',
+  },
+  modalDeleteBtnDisabled: {
+    opacity: 0.4,
+  },
+  modalDeleteText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
   },
 })
