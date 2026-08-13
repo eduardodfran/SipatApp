@@ -49,6 +49,7 @@ const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }>
   pending: { label: 'Analyzing...', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
   processed: { label: 'Detected', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
   no_detection: { label: 'No Distress', color: '#71717a', bg: 'rgba(107, 114, 128, 0.1)' },
+  manually_tagged: { label: 'Tagged by User', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)' },
 }
 
 const formatAddress = (p: any) => {
@@ -151,6 +152,29 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
     }
   }, [item, captionDraft, savingCaption])
 
+  const handleTagAsPothole = useCallback(async () => {
+    if (item.type !== 'photo') return
+    Alert.alert('Tag as Pothole', 'Manually mark this photo as a road pothole? This overrides the AI result.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Confirm', onPress: async () => {
+          const { error } = await supabase
+            .from('community_photos')
+            .update({ detection_status: 'manually_tagged', class_name: 'manually_tagged', confidence: 1.0 })
+            .eq('id', item.data.id)
+          if (error) {
+            Alert.alert('Error', error.message)
+            return
+          }
+          item.data.detection_status = 'manually_tagged'
+          item.data.class_name = 'manually_tagged'
+          item.data.confidence = 1.0
+          setItem({ ...item })
+        }
+      },
+    ])
+  }, [item])
+
   const verifyCount = comments ? comments.filter((c) => c.body.includes('✅')).length : 0
   const commentCount = comments ? comments.length : 0
 
@@ -186,11 +210,19 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
               </Text>
             </View>
             {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
-            <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
-              <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
-              <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
+            <View style={styles.statusRow}>
+              <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+                <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
+                <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
+              </View>
+              {post.detection_status === 'no_detection' && (
+                <TouchableOpacity style={styles.tagPotholeBtn} onPress={handleTagAsPothole} activeOpacity={0.7}>
+                  <Ionicons name="warning-outline" size={14} color="#f59e0b" />
+                  <Text style={styles.tagPotholeText}>This is a pothole</Text>
+                </TouchableOpacity>
+              )}
             </View>
-            {post.confidence != null && (
+            {post.confidence != null && post.detection_status !== 'manually_tagged' && (
               <Text style={styles.confidence}>Confidence: {(post.confidence * 100).toFixed(0)}%</Text>
             )}
           </View>
@@ -507,10 +539,18 @@ const styles = StyleSheet.create({
   caption: { color: '#fafafa', fontSize: 15, lineHeight: 22, marginBottom: 8 },
   statusBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
-    paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, marginTop: 4,
+    paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8,
   },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 4 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 12, fontWeight: '600' },
+  tagPotholeBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingVertical: 5, paddingHorizontal: 10, borderRadius: 8,
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.2)',
+  },
+  tagPotholeText: { color: '#f59e0b', fontSize: 11, fontWeight: '600' },
   confidence: { color: '#71717a', fontSize: 12, marginTop: 6 },
   address: { color: '#a1a1aa', fontSize: 13, lineHeight: 18, marginBottom: 8 },
   severityBadge: {

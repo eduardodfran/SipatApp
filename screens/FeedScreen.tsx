@@ -50,6 +50,7 @@ const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }>
   pending: { label: 'Analyzing...', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
   processed: { label: 'Detected', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
   no_detection: { label: 'No Distress', color: '#71717a', bg: 'rgba(107, 114, 128, 0.1)' },
+  manually_tagged: { label: 'Tagged by User', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)' },
 }
 
 const SEVERITY_COLORS: Record<string, { color: string; bg: string }> = {
@@ -275,6 +276,27 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
     ])
   }, [])
 
+  const handleTagAsPothole = useCallback(async (postId: number) => {
+    Alert.alert('Tag as Pothole', 'Manually mark this photo as a road pothole? This overrides the AI result.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Confirm', onPress: async () => {
+          const { error } = await supabase
+            .from('community_photos')
+            .update({ detection_status: 'manually_tagged', class_name: 'manually_tagged', confidence: 1.0 })
+            .eq('id', postId)
+          if (error) {
+            Alert.alert('Error', error.message)
+            return
+          }
+          setUploadedPosts((prev) => prev.map((p) =>
+            p.id === postId ? { ...p, detection_status: 'manually_tagged', class_name: 'manually_tagged', confidence: 1.0 } : p
+          ))
+        }
+      },
+    ])
+  }, [])
+
   const handleDeletePothole = useCallback(async (pothole: any) => {
     Alert.alert('Delete detection', 'Are you sure you want to delete this detection? This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
@@ -395,9 +417,17 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                 </TouchableOpacity>
               </View>
               {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
-              <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
-                <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
-                <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
+              <View style={styles.statusRow}>
+                <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+                  <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
+                  <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
+                </View>
+                {post.detection_status === 'no_detection' && userId && (
+                  <TouchableOpacity style={styles.tagPotholeBtn} onPress={() => handleTagAsPothole(post.id)} activeOpacity={0.7}>
+                    <Ionicons name="warning-outline" size={12} color="#f59e0b" />
+                    <Text style={styles.tagPotholeText}>This is a pothole</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </TouchableOpacity>
@@ -605,7 +635,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
         )}
       </View>
     )
-  }, [commentsByPost, expandedPostId, commentDrafts, postingComment, photoVotes, potholeVotes, potholeComments, potholeExpandedId, potholeDrafts, potholePosting, onViewDetail, toggleComments, handleVerify, handleSendComment, loadPotholeComments, handlePotholeVerify, handlePotholeSendComment])
+  }, [commentsByPost, expandedPostId, commentDrafts, postingComment, photoVotes, potholeVotes, potholeComments, potholeExpandedId, potholeDrafts, potholePosting, onViewDetail, toggleComments, handleVerify, handleSendComment, loadPotholeComments, handlePotholeVerify, handlePotholeSendComment, handleTagAsPothole])
 
   const hasNoContent = filteredFeedItems.length === 0 && filteredPending.length === 0
 
@@ -874,8 +904,16 @@ const styles = StyleSheet.create({
   analyzingText: { color: '#f59e0b', fontSize: 12, fontWeight: '600' },
 
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, marginTop: 4 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 4 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 12, fontWeight: '600' },
+  tagPotholeBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingVertical: 5, paddingHorizontal: 10, borderRadius: 8,
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.2)',
+  },
+  tagPotholeText: { color: '#f59e0b', fontSize: 11, fontWeight: '600' },
 
   potholePlaceholder: { width: '100%', height: 140, justifyContent: 'center', alignItems: 'center' },
   potholePlaceholderIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
