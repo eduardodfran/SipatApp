@@ -212,6 +212,8 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
       await deletePhotoPost(post.id)
       setPendingPosts((prev) => prev.filter((p) => p.id !== post.id))
     } catch (e: any) {
+      console.error('[FeedScreen] Upload failed:', e?.message ?? String(e))
+      Alert.alert('Upload Failed', e?.message ?? 'Unknown error')
       await updatePhotoPost(post.id, { status: 'pending' })
     } finally {
       setUploadingIds((prev) => { const n = new Set(prev); n.delete(post.id); return n })

@@ -1,15 +1,12 @@
-import { fetch } from 'expo/fetch'
 import { AZURE_URL, LOCAL_URL } from './env'
 
-const AZURE_TIMEOUT = 5_000
+const AZURE_TIMEOUT = 3_000
 const FALLBACK_TIMEOUT = 30_000
 
 let preferAzure: boolean | null = null
 
 function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number): Promise<Response> {
-  const headers = new Headers(options.headers)
-  headers.set('Connection', 'close')
-  const opts = { ...options, headers }
+  const opts = { ...options }
 
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`Timed out after ${timeout / 1000}s — ${url}`)), timeout)
@@ -17,11 +14,12 @@ function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: numbe
   })
 }
 
-async function tryUrl(url: string, path: string, options: RequestInit, timeout: number): Promise<Response | null> {
+async function probeUrl(url: string, timeout: number): Promise<boolean> {
   try {
-    return await fetchWithTimeout(`${url}${path}`, options, timeout)
+    await fetchWithTimeout(`${url}/health/ready`, { method: 'GET' }, timeout)
+    return true
   } catch {
-    return null
+    return false
   }
 }
 
@@ -31,50 +29,45 @@ function isNetworkError(err: unknown): boolean {
   return false
 }
 
-export async function fetchFastApi(path: string, options: RequestInit = {}): Promise<Response> {
-  // Probe phase — either first call or preference was reset
-  if (preferAzure === null) {
-    const azureResp = await tryUrl(AZURE_URL, path, options, AZURE_TIMEOUT)
-    if (azureResp) {
-      preferAzure = true
-      console.log('[fetchFastApi] using Azure')
-      return azureResp
-    }
-
-    // Azure unreachable — try local
-    const localResp = await tryUrl(LOCAL_URL, path, options, FALLBACK_TIMEOUT)
-    if (localResp) {
-      preferAzure = false
-      console.log('[fetchFastApi] using local fallback')
-      return localResp
-    }
-
-    throw new Error(
-      `Cannot reach FastAPI at ${AZURE_URL}. Local fallback ${LOCAL_URL} also unreachable.`,
-    )
+async function determinePreferredUrl(): Promise<'azure' | 'local'> {
+  // On first call, probe both URLs with a lightweight health check
+  const azureOk = await probeUrl(AZURE_URL, AZURE_TIMEOUT)
+  if (azureOk) {
+    console.log('[fetchFastApi] probed Azure — reachable')
+    return 'azure'
   }
 
-  // Cached phase — we already know which URL works
+  const localOk = await probeUrl(LOCAL_URL, FALLBACK_TIMEOUT)
+  if (localOk) {
+    console.log('[fetchFastApi] probed Azure — unreachable, local OK')
+    return 'local'
+  }
+
+  console.warn('[fetchFastApi] both Azure and local unreachable during probe')
+  return 'local'
+}
+
+export async function fetchFastApi(path: string, options: RequestInit = {}): Promise<Response> {
+  // Probe phase — determine which server to use (only on first call)
+  if (preferAzure === null) {
+    const preferred = await determinePreferredUrl()
+    preferAzure = preferred === 'azure'
+  }
+
   const primaryUrl = preferAzure ? AZURE_URL : LOCAL_URL
   const fallbackUrl = preferAzure ? LOCAL_URL : AZURE_URL
 
+  // Primary attempt
   try {
     return await fetchWithTimeout(`${primaryUrl}${path}`, options, FALLBACK_TIMEOUT)
   } catch (err) {
     if (!isNetworkError(err)) throw err
 
-    // Primary failed — try fallback and flip preference
     console.log(`[fetchFastApi] ${primaryUrl} failed, trying ${fallbackUrl}`)
-    const resp = await tryUrl(fallbackUrl, path, options, FALLBACK_TIMEOUT)
-    if (resp) {
-      preferAzure = !preferAzure
-      console.log(`[fetchFastApi] switched to ${preferAzure ? 'Azure' : 'local'}`)
-      return resp
-    }
-
-    throw new Error(
-      `Cannot reach FastAPI at ${AZURE_URL}. Local fallback ${LOCAL_URL} also unreachable.`,
-    )
+    const resp = await fetchWithTimeout(`${fallbackUrl}${path}`, options, FALLBACK_TIMEOUT)
+    preferAzure = !preferAzure
+    console.log(`[fetchFastApi] switched to ${preferAzure ? 'Azure' : 'local'}`)
+    return resp
   }
 }
 
