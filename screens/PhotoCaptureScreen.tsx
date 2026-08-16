@@ -168,7 +168,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
 
   return (
     <View style={styles.container}>
-      <CameraView ref={cameraRef} style={styles.camera} facing="back">
+      <CameraView ref={cameraRef} style={styles.camera} facing="back" zoom={0} enablePinchGesture={false}>
         <View style={styles.cameraOverlay}>
           <TouchableOpacity style={styles.closeBtn} onPress={onCancel}>
             <Ionicons name="close" size={28} color="#fafafa" />

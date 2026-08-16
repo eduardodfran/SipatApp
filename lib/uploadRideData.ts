@@ -159,6 +159,13 @@ async function initUpload(
   return response.json()
 }
 
+export type CameraMetadata = {
+  video_width?: number
+  video_height?: number
+  focal_length_35mm?: number
+  zoom_factor?: number
+}
+
 export type MyRide = {
   id: string
   user_id: string
@@ -272,19 +279,25 @@ async function completeUpload(
   rideId: string,
   videoPath: string,
   gpsPath: string,
+  cameraMetadata?: CameraMetadata,
 ) {
   const token = await getAccessToken()
+  const body: Record<string, unknown> = {
+    ride_id: rideId,
+    video_path: videoPath,
+    gps_path: gpsPath,
+  }
+  if (cameraMetadata?.video_width != null) body.video_width = cameraMetadata.video_width
+  if (cameraMetadata?.video_height != null) body.video_height = cameraMetadata.video_height
+  if (cameraMetadata?.focal_length_35mm != null) body.focal_length_35mm = cameraMetadata.focal_length_35mm
+  if (cameraMetadata?.zoom_factor != null) body.zoom_factor = cameraMetadata.zoom_factor
   const response = await fetchFastApi('/upload/complete', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({
-      ride_id: rideId,
-      video_path: videoPath,
-      gps_path: gpsPath,
-    }),
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {
@@ -318,6 +331,7 @@ export async function uploadRideData(
   userId: string,
   videoUri: string,
   csvUri: string,
+  cameraMetadata?: CameraMetadata,
 ): Promise<RideUploadResult> {
   if (!userId?.trim()) {
     throw new Error('userId is required')
@@ -389,7 +403,7 @@ export async function uploadRideData(
     await checkAndRefreshSas()
     await uploadBlobWithRetry(video_sas_url, videoFile.uri, 'video/mp4', refreshVideoSas)
 
-    await completeUpload(rideId, videoPath, gpsPath)
+    await completeUpload(rideId, videoPath, gpsPath, cameraMetadata)
 
     return {
       rideId,
