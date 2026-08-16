@@ -191,7 +191,11 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
   useEffect(() => {
     loadPosts(0)
     loadPendingPhotos().then((posts) => {
-      const stale = posts.filter((p) => p.status === 'uploaded')
+      const STALE_UPLOAD_MS = 5 * 60 * 1000 // 5 minutes
+      const stale = posts.filter((p) =>
+        p.status === 'uploaded' ||
+        (p.status === 'uploading' && Date.now() - p.createdAt > STALE_UPLOAD_MS)
+      )
       stale.forEach((p) => deletePhotoPost(p.id))
     })
   }, [feedRefreshKey])
@@ -676,9 +680,14 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                     </>
                   )}
                   {isUploading && (
-                    <View style={styles.uploadingBadge}>
-                      <ActivityIndicator size="small" color="#f59e0b" />
-                      <Text style={styles.uploadingText}>Uploading...</Text>
+                    <View style={styles.uploadingRow}>
+                      <View style={styles.uploadingBadge}>
+                        <ActivityIndicator size="small" color="#f59e0b" />
+                        <Text style={styles.uploadingText}>Uploading...</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => handleDelete(post.id)} style={styles.deleteBtn} activeOpacity={0.7}>
+                        <Ionicons name="close-circle-outline" size={18} color="#ef4444" />
+                      </TouchableOpacity>
                     </View>
                   )}
                   {post.status === 'uploaded' && !isUploading && (
@@ -900,6 +909,7 @@ const styles = StyleSheet.create({
   uploadBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(6,182,212,0.1)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
   uploadBtnText: { color: '#06b6d4', fontSize: 13, fontWeight: '600' },
   deleteBtn: { padding: 8, backgroundColor: 'rgba(239, 68, 68,0.08)', borderRadius: 10 },
+  uploadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   uploadingBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(245,158,11,0.1)', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10 },
   uploadingText: { color: '#f59e0b', fontSize: 12, fontWeight: '600' },
   analyzingBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(245,158,11,0.08)', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10 },
