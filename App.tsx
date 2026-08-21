@@ -214,9 +214,16 @@ export default function App() {
           storagePaths: { video: r.video_bucket_path, gps: r.gps_bucket_path },
         }))
 
-        // Deduplication: skip local recordings that already exist on server (by rideId)
+        // Deduplication: skip local recordings that already exist on server (by rideId or timestamp)
         const serverRideIds = new Set(serverRecordings.map((r) => r.rideId).filter(Boolean))
-        const deduplicatedLocal = validatedLocal.filter((r) => !serverRideIds.has(r.rideId))
+        const deduplicatedLocal = validatedLocal.filter((r) => {
+          if (serverRideIds.has(r.rideId)) return false
+          // Also skip if a server recording has a close timestamp (orphan recovery vs upload)
+          const isOnServer = serverRecordings.some(
+            (s) => Math.abs(s.timestamp - r.timestamp) < 10_000,
+          )
+          return !isOnServer
+        })
 
         setRecordings([...serverRecordings, ...deduplicatedLocal])
       } catch {
@@ -306,7 +313,11 @@ export default function App() {
       }))
       setRecordings((prev) => {
         const local = prev.filter((r) => !r.uploaded)
-        return [...serverRecordings, ...local]
+        // Deduplicate local against server by timestamp
+        const deduped = local.filter(
+          (r) => !serverRecordings.some((s) => Math.abs(s.timestamp - r.timestamp) < 10_000),
+        )
+        return [...serverRecordings, ...deduped]
       })
     } catch {
       // silently fail

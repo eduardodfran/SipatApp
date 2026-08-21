@@ -91,7 +91,7 @@ async function csvUriToGpsTrackingArray(
     )
   }
 
-  return lines.slice(1).map((line, index) => {
+  const rows = lines.slice(1).map((line, index) => {
     const columns = line.split(',')
     const timestamp = Number(columns[timestampIndex])
     const latitude = Number(columns[latitudeIndex])
@@ -106,7 +106,8 @@ async function csvUriToGpsTrackingArray(
     }
 
     return {
-      timestamp_seconds: timestamp,
+      _rawTimestamp: timestamp,
+      timestamp_seconds: 0,
       lat: latitude,
       lng: longitude,
       ...(accelXIndex >= 0 && { accel_x: Number(columns[accelXIndex]) || 0 }),
@@ -117,6 +118,13 @@ async function csvUriToGpsTrackingArray(
       ...(gyroZIndex >= 0 && { gyro_z: Number(columns[gyroZIndex]) || 0 }),
     }
   })
+
+  // Normalize timestamps: convert epoch ms to relative seconds from recording start
+  const firstTimestamp = rows[0]?._rawTimestamp ?? 0
+  return rows.map(({ _rawTimestamp, ...rest }) => ({
+    ...rest,
+    timestamp_seconds: (_rawTimestamp - firstTimestamp) / 1000,
+  }))
 }
 
 async function getAccessToken(): Promise<string> {
