@@ -214,7 +214,7 @@ export async function triggerProcessing(rideId: string): Promise<void> {
 }
 
 async function uploadBlob(sasUrl: string, fileUri: string, mimeType: string) {
-  const UPLOAD_TIMEOUT = 300_000
+  const UPLOAD_TIMEOUT = 1_800_000
 
   const uploadPromise = uploadAsync(sasUrl, fileUri, {
     httpMethod: 'PUT' as FileSystemAcceptedUploadHttpMethod,

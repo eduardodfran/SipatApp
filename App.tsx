@@ -3,7 +3,8 @@ import 'react-native-url-polyfill/auto'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, BackHandler, Platform, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { File, FileSystem } from 'expo-file-system'
+// @ts-ignore - FileSystem is a legacy export that works at runtime
+import { File, FileSystem, Directory, Paths } from 'expo-file-system'
 import { User } from '@supabase/supabase-js'
 import * as SplashScreen from 'expo-splash-screen'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -91,14 +92,75 @@ export default function App() {
 
         // Cache validation: check if videoUri and csvUri files still exist
         const validatedLocal: Recording[] = []
+        const validCsvPaths = new Set<string>()
         for (const r of localRecordings) {
           const videoInfo = await FileSystem.getInfoAsync(r.videoUri)
           const csvInfo = await FileSystem.getInfoAsync(r.csvUri)
           if (videoInfo.exists && csvInfo.exists) {
             validatedLocal.push(r)
+            validCsvPaths.add(r.csvUri)
           } else {
             console.log(`[restore] Skipping recording ${r.id} — missing cache files`)
           }
+        }
+
+        // Orphan recovery: find CSV+video pairs on disk that have no Recording entry
+        try {
+          const knownVideoUris = new Set(validatedLocal.map((r) => r.videoUri))
+
+          // Scan document dir for orphaned CSVs (gps_segment_N_TIMESTAMP.csv)
+          const docDir = new Directory(Paths.document)
+          const csvFiles: { uri: string; timestamp: number; segNum: number }[] = []
+          if (docDir.exists) {
+            for (const entry of docDir.list()) {
+              if (entry instanceof File) {
+                const match = entry.name.match(/^gps_segment_(\d+)_(\d+)\.csv$/)
+                if (match) {
+                  if (!validCsvPaths.has(entry.uri)) {
+                    csvFiles.push({ uri: entry.uri, timestamp: parseInt(match[2], 10), segNum: parseInt(match[1], 10) })
+                  }
+                }
+              }
+            }
+          }
+
+          if (csvFiles.length > 0) {
+            // Recursively scan cache dir for .mp4 files
+            const mp4Files: { uri: string; modificationTime: number }[] = []
+            const scanDir = (dir: Directory) => {
+              if (!dir.exists) return
+              for (const entry of dir.list()) {
+                if (entry instanceof Directory) {
+                  scanDir(entry)
+                } else if (entry instanceof File && entry.name.endsWith('.mp4') && !knownVideoUris.has(entry.uri)) {
+                  const info = entry.info()
+                  mp4Files.push({ uri: entry.uri, modificationTime: info.modificationTime ?? 0 })
+                }
+              }
+            }
+            scanDir(new Directory(Paths.cache))
+
+            // Match CSVs to videos by timestamp proximity (within 5 seconds)
+            for (const csv of csvFiles) {
+              const matched = mp4Files.find(
+                (v) => Math.abs(v.modificationTime * 1000 - csv.timestamp) < 5_000,
+              )
+              if (matched) {
+                const rec: Recording = {
+                  id: `recovered_${csv.timestamp}_${csv.segNum}`,
+                  videoUri: matched.uri,
+                  csvUri: csv.uri,
+                  timestamp: csv.timestamp,
+                  uploaded: false,
+                  recovered: true,
+                }
+                validatedLocal.push(rec)
+                console.log(`[recover] Found orphaned recording: ${matched.uri} + ${csv.uri}`)
+              }
+            }
+          }
+        } catch (e) {
+          console.log(`[recover] Orphan scan failed: ${e}`)
         }
 
         const rides = await fetchMyRides()
@@ -180,7 +242,7 @@ export default function App() {
         const toStore = recordings
           .filter((r) => !r.uploaded)
           .sort((a, b) => b.timestamp - a.timestamp)
-          .slice(0, 20)
+          .slice(0, 50)
         const json = JSON.stringify(toStore)
         await AsyncStorage.setItem('@sipat_recordings', json)
       } catch {
