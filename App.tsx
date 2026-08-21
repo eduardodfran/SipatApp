@@ -99,69 +99,104 @@ export default function App() {
           if (videoInfo.exists && csvInfo.exists) {
             validatedLocal.push(r)
             validCsvPaths.add(r.csvUri)
+            console.log(`[restore] Validated recording ${r.id} — video=${r.videoUri}`)
           } else {
-            console.log(`[restore] Skipping recording ${r.id} — missing cache files`)
+            console.log(`[restore] Skipping recording ${r.id} — missing cache files (video=${r.videoUri} exists=${videoInfo.exists}, csv=${r.csvUri} exists=${csvInfo.exists})`)
           }
         }
 
         // Orphan recovery: find CSV+video pairs on disk that have no Recording entry
+        console.log(`[recover] Starting orphan scan...`)
         try {
           const knownVideoUris = new Set(validatedLocal.map((r) => r.videoUri))
 
           // Scan document dir for orphaned CSVs (gps_segment_N_TIMESTAMP.csv)
-          const docDir = new Directory(Paths.document)
-          const csvFiles: { uri: string; timestamp: number; segNum: number }[] = []
-          if (docDir.exists) {
-            for (const entry of docDir.list()) {
-              if (entry instanceof File) {
-                const match = entry.name.match(/^gps_segment_(\d+)_(\d+)\.csv$/)
-                if (match) {
-                  if (!validCsvPaths.has(entry.uri)) {
-                    csvFiles.push({ uri: entry.uri, timestamp: parseInt(match[2], 10), segNum: parseInt(match[1], 10) })
+          let csvFiles: { uri: string; timestamp: number; segNum: number }[] = []
+          try {
+            const docDir = new Directory(Paths.document)
+            console.log(`[recover] Document dir: ${Paths.document}, exists=${docDir.exists}`)
+            if (docDir.exists) {
+              const docEntries = docDir.list()
+              console.log(`[recover] Document dir has ${docEntries.length} entries`)
+              for (const entry of docEntries) {
+                try {
+                  if (entry instanceof File) {
+                    const match = entry.name.match(/^gps_segment_(\d+)_(\d+)\.csv$/)
+                    if (match) {
+                      if (!validCsvPaths.has(entry.uri)) {
+                        csvFiles.push({ uri: entry.uri, timestamp: parseInt(match[2], 10), segNum: parseInt(match[1], 10) })
+                      }
+                    }
                   }
+                } catch (entryErr) {
+                  console.log(`[recover] Error reading doc entry: ${entryErr}`)
                 }
               }
             }
+          } catch (docErr) {
+            console.log(`[recover] Document scan failed: ${docErr}`)
           }
+          console.log(`[recover] Found ${csvFiles.length} orphaned CSVs`)
 
-          if (csvFiles.length > 0) {
-            // Recursively scan cache dir for .mp4 files
-            const mp4Files: { uri: string; modificationTime: number }[] = []
-            const scanDir = (dir: Directory) => {
-              if (!dir.exists) return
-              for (const entry of dir.list()) {
-                if (entry instanceof Directory) {
-                  scanDir(entry)
-                } else if (entry instanceof File && entry.name.endsWith('.mp4') && !knownVideoUris.has(entry.uri)) {
-                  const info = entry.info()
-                  mp4Files.push({ uri: entry.uri, modificationTime: info.modificationTime ?? 0 })
+          // Recursively scan cache dir for video files (.mp4 and .mov)
+          let mp4Files: { uri: string; modificationTime: number }[] = []
+          try {
+            const isVideoFile = (name: string) => /\.(mp4|mov)$/i.test(name)
+            const scanDir = (dir: Directory, depth: number = 0) => {
+              try {
+                if (!dir.exists) return
+                const entries = dir.list()
+                if (depth === 0) console.log(`[recover] Cache dir: ${Paths.cache}, exists=${dir.exists}, has ${entries.length} entries`)
+                for (const entry of entries) {
+                  try {
+                    if (entry instanceof Directory) {
+                      scanDir(entry, depth + 1)
+                    } else if (entry instanceof File && isVideoFile(entry.name) && !knownVideoUris.has(entry.uri)) {
+                      const info = entry.info()
+                      mp4Files.push({ uri: entry.uri, modificationTime: info.modificationTime ?? 0 })
+                    }
+                  } catch (entryErr) {
+                    console.log(`[recover] Error reading cache entry: ${entryErr}`)
+                  }
                 }
+              } catch (dirErr) {
+                console.log(`[recover] scanDir failed for ${dir.uri}: ${dirErr}`)
               }
             }
             scanDir(new Directory(Paths.cache))
+          } catch (cacheErr) {
+            console.log(`[recover] Cache scan failed: ${cacheErr}`)
+          }
+          console.log(`[recover] Found ${mp4Files.length} unmatched video files`)
+          for (const v of mp4Files) {
+            console.log(`[recover]   video: ${v.uri} modTime=${v.modificationTime}`)
+          }
 
-            // Match CSVs to videos by timestamp proximity (within 5 seconds)
-            for (const csv of csvFiles) {
-              const matched = mp4Files.find(
-                (v) => Math.abs(v.modificationTime * 1000 - csv.timestamp) < 5_000,
-              )
-              if (matched) {
-                const rec: Recording = {
-                  id: `recovered_${csv.timestamp}_${csv.segNum}`,
-                  videoUri: matched.uri,
-                  csvUri: csv.uri,
-                  timestamp: csv.timestamp,
-                  uploaded: false,
-                  recovered: true,
-                }
-                validatedLocal.push(rec)
-                console.log(`[recover] Found orphaned recording: ${matched.uri} + ${csv.uri}`)
+          // Match CSVs to videos by timestamp proximity (within 5 seconds)
+          for (const csv of csvFiles) {
+            console.log(`[recover] Looking for video match for CSV ts=${csv.timestamp} seg=${csv.segNum}`)
+            const matched = mp4Files.find(
+              (v) => Math.abs(v.modificationTime - csv.timestamp) < 5_000,
+            )
+            if (matched) {
+              const rec: Recording = {
+                id: `recovered_${csv.timestamp}_${csv.segNum}`,
+                videoUri: matched.uri,
+                csvUri: csv.uri,
+                timestamp: csv.timestamp,
+                uploaded: false,
+                recovered: true,
               }
+              validatedLocal.push(rec)
+              console.log(`[recover] MATCHED: ${matched.uri} + ${csv.uri}`)
+            } else {
+              console.log(`[recover] No video match for CSV ts=${csv.timestamp}`)
             }
           }
         } catch (e) {
           console.log(`[recover] Orphan scan failed: ${e}`)
         }
+        console.log(`[recover] Scan complete — total validated recordings: ${validatedLocal.length}`)
 
         const rides = await fetchMyRides()
         const serverRecordings: Recording[] = rides.map((r) => ({
