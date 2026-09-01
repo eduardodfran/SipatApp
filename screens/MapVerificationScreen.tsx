@@ -201,7 +201,8 @@ function buildMapHtml(
       var modal = document.createElement('div');
       modal.id = 'report-modal-' + contentId;
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;';
-      modal.innerHTML = '<div style="background:#1c1c22;border-radius:12px;padding:20px;width:280px;border:1px solid rgba(255,255,255,0.06);">' +
+      modal.innerHTML = '<div style="background:#1c1c22;border-radius:12px;padding:20px;width:280px;border:1px solid rgba(255,255,255,0.06);position:relative;">' +
+        '<button id="report-close-x" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,0.06);border:none;color:#71717a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>' +
         '<div style="color:#fafafa;font-size:16px;font-weight:700;margin-bottom:4px;">Report Content</div>' +
         '<div style="color:#71717a;font-size:13px;margin-bottom:16px;">Why are you reporting this?</div>' +
         reasons.map(function(r) {
@@ -210,6 +211,9 @@ function buildMapHtml(
         '<button id="report-cancel-' + contentId + '" style="display:block;width:100%;padding:12px;margin-top:8px;background:transparent;border:1px solid rgba(255,255,255,0.06);border-radius:8px;color:#71717a;font-size:14px;cursor:pointer;">Cancel</button>' +
         '</div>';
       document.body.appendChild(modal);
+      var closeX = document.getElementById('report-close-x');
+      if (closeX) closeX.addEventListener('click', function(){ modal.remove(); });
+      modal.addEventListener('click', function(e){ if (e.target === modal) modal.remove(); });
       modal.querySelectorAll('.report-reason-btn').forEach(function(btn) {
         btn.addEventListener('click', async function() {
           var reason = btn.dataset.reason;
