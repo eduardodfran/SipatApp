@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +14,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native'
+import * as Linking from 'expo-linking'
 import { supabase } from '../lib/supabase'
 
 export default function LoginScreen() {
@@ -23,8 +24,47 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [showPassword, setShowPassword] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
+  const lastAuthRef = useRef(0)
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [cooldown])
+
+  const handleResend = async () => {
+    if (cooldown > 0) {
+      Alert.alert('Please wait', `Wait ${cooldown}s before resending. Check inbox/spam.`)
+      return
+    }
+    try {
+      const redirectTo = Linking.createURL('auth/confirm')
+      const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim(), options: { emailRedirectTo: redirectTo } })
+      if (error) {
+        if (error.message.toLowerCase().includes('rate limit')) {
+          setCooldown(60)
+          Alert.alert('Still rate limited', 'Project limit 30/hour shared by all testers. Wait 60s, check inbox/spam, or try a different email. Admin: add custom SMTP in Supabase Dashboard → Auth → Email.')
+        } else {
+          Alert.alert('Resend failed', error.message)
+        }
+      } else {
+        Alert.alert('Email resent', `We resent the verification link to ${email.trim()}. Tap the link on this phone to auto-login. Check inbox and spam.`)
+      }
+    } catch (err: any) {
+      Alert.alert('Resend failed', err?.message ?? 'Something went wrong')
+    }
+  }
 
   const handleAuth = async () => {
+    const now = Date.now()
+    if (now - lastAuthRef.current < 2000) return
+    lastAuthRef.current = now
+    if (cooldown > 0) {
+      Alert.alert('Please wait', `Wait ${cooldown}s before trying again. Check inbox/spam or use Resend.`)
+      return
+    }
+
     if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Please enter email and password')
       return
@@ -41,10 +81,15 @@ export default function LoginScreen() {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
         if (error) Alert.alert('Error', error.message)
       } else {
-        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password })
+        const redirectTo = Linking.createURL('auth/confirm')
+        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: redirectTo, data: { username: username.trim() } } })
         if (error) {
           if (error.message.toLowerCase().includes('rate limit')) {
-            Alert.alert('Too many attempts', 'Email rate limit exceeded. Please wait about an hour and try again, or check your email for a previous verification link.')
+            setCooldown(60)
+            Alert.alert('Too many attempts', 'Email rate limit exceeded. This can happen if this email or your network was used recently (project limit 30/hour, per-email 2-4/hour). Please check your email for a previous verification link, or tap Resend in a minute.', [
+              { text: 'OK', style: 'cancel' },
+              { text: 'Resend email', onPress: handleResend },
+            ])
           } else {
             Alert.alert('Error', error.message)
           }
@@ -56,14 +101,17 @@ export default function LoginScreen() {
           return
         }
         if (data.user) {
-          await supabase.from('profiles').insert({
+          const { error: profileError } = await supabase.from('profiles').insert({
             id: data.user.id,
             username: username.trim(),
           })
+          if (profileError) console.warn('[LoginScreen] profile insert deferred (will be created after email confirmation):', profileError.message)
         }
         if (!data.session) {
-          Alert.alert('Check your email', `We sent a verification link to ${email.trim()}. Open it on a browser to confirm your account, then come back to sign in.`)
-          setMode('login')
+          Alert.alert('Check your email', `We sent a verification link to ${email.trim()}. Tap the link on this phone and you'll be logged in automatically.`, [
+            { text: 'OK', onPress: () => setMode('login') },
+            { text: 'Resend', onPress: handleResend },
+          ])
           return
         }
       }
@@ -140,12 +188,14 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
+              style={[styles.primaryBtn, (loading || cooldown > 0) && styles.primaryBtnDisabled]}
               onPress={handleAuth}
-              disabled={loading}
+              disabled={loading || cooldown > 0}
             >
               {loading ? (
                 <ActivityIndicator color="#0c0c14" />
+              ) : cooldown > 0 ? (
+                <Text style={styles.primaryBtnText}>Wait {cooldown}s</Text>
               ) : (
                 <Text style={styles.primaryBtnText}>
                   {mode === 'login' ? 'Sign In' : 'Sign Up'}

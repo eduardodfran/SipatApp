@@ -8,8 +8,9 @@ import { File, FileSystem, Directory, Paths } from 'expo-file-system'
 import { User } from '@supabase/supabase-js'
 import * as SplashScreen from 'expo-splash-screen'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as Linking from 'expo-linking'
 import { supabase } from './lib/supabase'
-import { fetchFastApi } from './lib/fastapi'
+import { fetchFastApi, resetFastApiPreference } from './lib/fastapi'
 import LoginScreen from './screens/LoginScreen'
 import DashboardScreen from './screens/DashboardScreen'
 import CameraScreen from './screens/CameraScreen'
@@ -76,6 +77,36 @@ export default function App() {
       },
     )
     return () => listener?.subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    const handleDeepLink = async (url: string) => {
+      try {
+        const parsed = Linking.parse(url)
+        const params = parsed.queryParams as Record<string, string> | null
+        if (!params) return
+        const code = params.code as string | undefined
+        const token_hash = params.token_hash as string | undefined
+        const type = params.type as string | undefined
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          if (!error) console.log('[auth] deep link PKCE code exchanged — autologin')
+          else console.warn('[auth] exchangeCodeForSession failed:', error.message)
+        } else if (token_hash && type) {
+          const { error } = await supabase.auth.verifyOtp({ token_hash, type: type as never })
+          if (!error) console.log('[auth] deep link OTP verified — autologin')
+          else console.warn('[auth] verifyOtp failed:', error.message)
+        }
+      } catch (e) {
+        console.warn('[auth] deep link handling failed:', e)
+      }
+    }
+
+    Linking.getInitialURL().then((url) => {
+      if (url) handleDeepLink(url)
+    })
+    const sub = Linking.addEventListener('url', ({ url }) => handleDeepLink(url))
+    return () => sub.remove()
   }, [])
 
   useEffect(() => {
@@ -294,6 +325,7 @@ export default function App() {
   }, [recordings])
 
   const handleRefresh = useCallback(async () => {
+    resetFastApiPreference()
     setRefreshing(true)
     try {
       const rides = await fetchMyRides()

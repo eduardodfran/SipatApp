@@ -1,9 +1,13 @@
 import { AZURE_URL, LOCAL_URL } from './env'
 
 const AZURE_TIMEOUT = 3_000
+const LOCAL_PROBE_TIMEOUT = 5_000
 const FALLBACK_TIMEOUT = 30_000
+const PHOTO_UPLOAD_TIMEOUT = 120_000
 
 let preferAzure: boolean | null = null
+let lastProbeMs = 0
+const PROBE_TTL_MS = 60_000
 
 function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number): Promise<Response> {
   const opts = { ...options }
@@ -29,43 +33,51 @@ function isNetworkError(err: unknown): boolean {
   return false
 }
 
+function getTimeoutForPath(path: string): number {
+  if (path.includes('/community-photo')) return PHOTO_UPLOAD_TIMEOUT
+  return FALLBACK_TIMEOUT
+}
+
 async function determinePreferredUrl(): Promise<'azure' | 'local'> {
-  // On first call, probe both URLs with a lightweight health check
-  const azureOk = await probeUrl(AZURE_URL, AZURE_TIMEOUT)
+  const [azureOk, localOk] = await Promise.all([
+    probeUrl(AZURE_URL, AZURE_TIMEOUT),
+    probeUrl(LOCAL_URL, LOCAL_PROBE_TIMEOUT),
+  ])
   if (azureOk) {
     console.log('[fetchFastApi] probed Azure — reachable')
     return 'azure'
   }
-
-  const localOk = await probeUrl(LOCAL_URL, FALLBACK_TIMEOUT)
   if (localOk) {
     console.log('[fetchFastApi] probed Azure — unreachable, local OK')
     return 'local'
   }
-
   console.warn('[fetchFastApi] both Azure and local unreachable during probe')
   return 'local'
 }
 
-export async function fetchFastApi(path: string, options: RequestInit = {}): Promise<Response> {
-  // Probe phase — determine which server to use (only on first call)
-  if (preferAzure === null) {
+export async function fetchFastApi(path: string, options: RequestInit & { timeout?: number } = {}): Promise<Response> {
+  const timeout = options.timeout ?? getTimeoutForPath(path)
+  const { timeout: _ignored, ...rest } = options as RequestInit & { timeout?: number }
+
+  const now = Date.now()
+  if (preferAzure === null || now - lastProbeMs > PROBE_TTL_MS) {
     const preferred = await determinePreferredUrl()
     preferAzure = preferred === 'azure'
+    lastProbeMs = now
   }
 
   const primaryUrl = preferAzure ? AZURE_URL : LOCAL_URL
   const fallbackUrl = preferAzure ? LOCAL_URL : AZURE_URL
 
-  // Primary attempt
   try {
-    return await fetchWithTimeout(`${primaryUrl}${path}`, options, FALLBACK_TIMEOUT)
+    return await fetchWithTimeout(`${primaryUrl}${path}`, rest, timeout)
   } catch (err) {
     if (!isNetworkError(err)) throw err
 
-    console.log(`[fetchFastApi] ${primaryUrl} failed, trying ${fallbackUrl}`)
-    const resp = await fetchWithTimeout(`${fallbackUrl}${path}`, options, FALLBACK_TIMEOUT)
+    console.log(`[fetchFastApi] ${primaryUrl} failed (${(err as Error).message}), trying ${fallbackUrl}`)
+    const resp = await fetchWithTimeout(`${fallbackUrl}${path}`, rest, timeout)
     preferAzure = !preferAzure
+    lastProbeMs = now
     console.log(`[fetchFastApi] switched to ${preferAzure ? 'Azure' : 'local'}`)
     return resp
   }

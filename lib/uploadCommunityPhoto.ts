@@ -26,12 +26,13 @@ export async function uploadCommunityPhoto(
   formData.append('longitude', String(longitude))
   if (caption) formData.append('caption', caption)
 
-   try {
-     const resp = await fetchFastApi('/community-photo/upload', {
-       method: 'POST',
-       headers: { Authorization: `Bearer ${session.access_token}` },
-       body: formData,
-     })
+    try {
+      const resp = await fetchFastApi('/community-photo/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: formData,
+        timeout: 120_000,
+      } as RequestInit & { timeout?: number })
 
      if (!resp.ok) {
        const err = await resp.text()
@@ -41,8 +42,11 @@ export async function uploadCommunityPhoto(
 
      const data = await resp.json()
      return { photoId: data.photo_id, imageUrl: data.image_url }
-   } catch (e: any) {
-     console.error('[uploadCommunityPhoto] Upload error:', e?.message ?? String(e))
-     throw e
-   }
+  } catch (e: any) {
+      console.error('[uploadCommunityPhoto] Upload error:', e?.message ?? String(e))
+      if (e?.message?.includes('Timed out')) {
+        throw new Error('Upload timed out — server cold-start (YOLO model loading) may take up to 60s. If Azure unreachable, will retry on local backup http://' + (process.env.EXPO_PUBLIC_LOCAL_URL || 'local') + '. Please retry.')
+      }
+      throw e
+    }
 }

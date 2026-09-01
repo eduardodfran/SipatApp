@@ -16,8 +16,16 @@
       "supportsTablet": true
     },
     "android": {
-    "icon": "./assets/sipat-app.png",
-      "package": "com.eduardofran.SipatApp"
+      "icon": "./assets/sipat-app.png",
+      "package": "com.eduardofran.SipatApp",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "sipat" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "plugins": [
       [
