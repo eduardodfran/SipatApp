@@ -26,6 +26,8 @@ type Props = {
 
 const SEGMENT_DURATION_MS = 300_000 // 5 minutes
 const GAP_DURATION_MS = 1_500 // 1.5s gap between segments
+const MIN_GPS_POINTS = 10
+const GPS_WATCH_OPTIONS: Location.LocationOptions = { accuracy: Location.Accuracy.High, timeInterval: 2000 }
 
 export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentCount, uploadResult }: Props) {
   const [permission, requestPermission] = useCameraPermissions()
@@ -48,6 +50,27 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
   const isCancelled = useRef(false)
   const stoppedManually = useRef(false)
 
+  const ensureGpsWatch = async () => {
+    if (gpsSubRef.current) return
+    try {
+      gpsSubRef.current = await Location.watchPositionAsync(
+        GPS_WATCH_OPTIONS,
+        (loc) => {
+          setGpsAccuracy(loc.coords.accuracy)
+          setGpsFresh(true)
+          gpsLocations.current.push({
+            lat: loc.coords.latitude,
+            lng: loc.coords.longitude,
+            ts: Date.now(),
+          })
+        }
+      )
+      setGpsActive(true)
+    } catch {
+      setGpsActive(false)
+    }
+  }
+
   // Start GPS + IMU tracking
   useEffect(() => {
     ;(async () => {
@@ -62,7 +85,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
       setGpsActive(true)
       try {
         gpsSubRef.current = await Location.watchPositionAsync(
-          { accuracy: Location.Accuracy.High, timeInterval: 2000 },
+          GPS_WATCH_OPTIONS,
           (loc) => {
             setGpsAccuracy(loc.coords.accuracy)
             setGpsFresh(true)
@@ -145,14 +168,22 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
   }, [status])
 
   const saveGpsToFile = async (startTime: number, endTime: number, segmentNum: number) => {
-    const points = gpsLocations.current.filter((p) => p.ts >= startTime && p.ts <= endTime)
-    const imuPoints = imuData.current.filter((p) => p.ts >= startTime && p.ts <= endTime)
+    const actualEnd = Math.min(endTime, Date.now())
+    const points = gpsLocations.current.filter((p) => p.ts >= startTime && p.ts <= actualEnd)
+    const imuPoints = imuData.current.filter((p) => p.ts >= startTime && p.ts <= actualEnd)
 
     if (points.length === 0) {
       Alert.alert(
         'No GPS Data',
         `Segment ${segmentNum} recorded without GPS signal. It will still upload, but hazards in this segment cannot be mapped.`,
       )
+      console.warn(`[CameraScreen] segment ${segmentNum}: 0 GPS points in window ${actualEnd - startTime}ms (expected ~${Math.floor((actualEnd - startTime)/2000)}). Locations buffered: ${gpsLocations.current.length}`)
+    } else if (points.length < MIN_GPS_POINTS) {
+      Alert.alert(
+        'Weak GPS Signal',
+        `Segment ${segmentNum} has only ${points.length} GPS points (expected >${MIN_GPS_POINTS}). Road may appear truncated. Try recording in open area. Segment will still upload.`,
+      )
+      console.warn(`[CameraScreen] segment ${segmentNum}: only ${points.length} GPS points in window ${actualEnd - startTime}ms - below threshold ${MIN_GPS_POINTS}`)
     }
 
     const csvHeader = 'timestamp,latitude,longitude,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z\n'
@@ -248,9 +279,8 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
       const video = await cameraRef.current.recordAsync({ maxDuration: SEGMENT_DURATION_MS / 1000 })
       if (isCancelled.current) return
 
-      // Segment finished, save GPS
-      const segEnd = segmentStartTime.current + SEGMENT_DURATION_MS
-      const csvPath = await saveGpsToFile(segmentStartTime.current, segEnd, 1)
+      const actualSegEnd = Date.now()
+      const csvPath = await saveGpsToFile(segmentStartTime.current, actualSegEnd, 1)
 
       const recording: Recording = {
         id: `rec_${Date.now()}`,
@@ -264,12 +294,12 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
       onFinish(recording)
 
       if (segmentCount > 1 && !stoppedManually.current) {
-        // Gap before next segment
         setStatus('waitingForNext')
         setElapsed(SEGMENT_DURATION_MS / 1000)
 
         await new Promise((r) => setTimeout(r, GAP_DURATION_MS))
         if (stoppedManually.current) return
+        await ensureGpsWatch()
 
         startNextSegment(2)
       } else {
@@ -286,8 +316,8 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
 
   const startNextSegment = async (segNum: number) => {
     if (isCancelled.current) return
+    await ensureGpsWatch()
 
-    // GPS gate: verify GPS is still available before starting next segment
     const lastKnown = gpsLocations.current[gpsLocations.current.length - 1] ?? null
     const hadFreshFix = !!lastKnown && Date.now() - lastKnown.ts < 15_000
 
@@ -318,8 +348,8 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
       const video = await cameraRef.current.recordAsync({ maxDuration: SEGMENT_DURATION_MS / 1000 })
       if (isCancelled.current) return
 
-      const segEnd = segmentStartTime.current + SEGMENT_DURATION_MS
-      const csvPath = await saveGpsToFile(segmentStartTime.current, segEnd, segNum)
+      const actualSegEnd = Date.now()
+      const csvPath = await saveGpsToFile(segmentStartTime.current, actualSegEnd, segNum)
 
       const recording: Recording = {
         id: `rec_${Date.now()}`,
@@ -337,6 +367,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
         setElapsed(SEGMENT_DURATION_MS / 1000)
         await new Promise((r) => setTimeout(r, GAP_DURATION_MS))
         if (stoppedManually.current) return
+        await ensureGpsWatch()
         startNextSegment(segNum + 1)
       } else {
         setStatus('done')
