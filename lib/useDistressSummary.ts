@@ -15,9 +15,9 @@ export function friendlyClassName(name: string): string {
   switch (name) {
     case 'D00': return 'Longitudinal Crack'
     case 'D01': return 'Transverse Crack'
-    case 'D10': return 'Alligator Crack'
-    case 'D11': return 'Alligator Crack'
-    case 'D20': return 'Complex Crack'
+    case 'D10': return 'Transverse Crack'
+    case 'D11': return 'Transverse Crack'
+    case 'D20': return 'Patching'
     case 'D40': return 'Pothole'
     case 'D50': return 'Repair'
     default: return name
