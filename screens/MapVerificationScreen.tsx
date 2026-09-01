@@ -154,26 +154,41 @@ function buildMapHtml(
   var SUPABASE_KEY = '${supabaseAnonKey}';
   var SUPABASE_TOKEN = '${sessionToken}';
 
+  function showToast(msg) {
+    var t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1c1c22;color:#fafafa;padding:10px 16px;border-radius:8px;font-size:13px;z-index:9999;border:1px solid rgba(255,255,255,0.08);box-shadow:0 4px 12px rgba(0,0,0,0.5);';
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 2500);
+  }
+
   function createReportHandler(contentType, contentId, reportBtnEl, setReportedState) {
     return async function() {
       var currentReported = reportBtnEl.dataset.reported === 'true';
       if (currentReported) {
-        if (!confirm('Remove your report for this content?')) return;
-        try {
-          var res = await fetch(SUPABASE_URL + '/rest/v1/rpc/unreport_content', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN },
-            body: JSON.stringify({ p_content_type: contentType, p_content_id: contentId })
-          });
-          if (!res.ok) throw new Error('Unreport failed');
-          reportBtnEl.dataset.reported = 'false';
-          reportBtnEl.innerHTML = '<span style="font-size:13px">🚩 Report</span>';
-          reportBtnEl.style.background = 'rgba(107,114,128,0.1)';
-          reportBtnEl.style.color = '#71717a';
-          setReportedState(false);
-        } catch (e) {
-          alert('Failed to remove report. Please try again.');
-        }
+        var confirmRemove = document.createElement('div');
+        confirmRemove.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10001;display:flex;align-items:center;justify-content:center;';
+        confirmRemove.innerHTML = '<div style="background:#1c1c22;border-radius:12px;padding:20px;width:260px;border:1px solid rgba(255,255,255,0.06);text-align:center;"><div style="color:#fafafa;font-size:14px;font-weight:600;margin-bottom:12px;">Remove your report?</div><div style="display:flex;gap:8px;"><button id="confirm-no" style="flex:1;padding:10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:#71717a;font-size:13px;cursor:pointer;">Cancel</button><button id="confirm-yes" style="flex:1;padding:10px;border-radius:8px;background:rgba(239,68,68,0.15);border:none;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;">Remove</button></div></div>';
+        document.body.appendChild(confirmRemove);
+        confirmRemove.querySelector('#confirm-no').onclick = function(){ confirmRemove.remove(); };
+        confirmRemove.querySelector('#confirm-yes').onclick = async function(){
+          confirmRemove.remove();
+          try {
+            var res = await fetch(SUPABASE_URL + '/rest/v1/rpc/unreport_content', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN },
+              body: JSON.stringify({ p_content_type: contentType, p_content_id: contentId })
+            });
+            if (!res.ok) throw new Error('Unreport failed');
+            reportBtnEl.dataset.reported = 'false';
+            reportBtnEl.innerHTML = '<span style="font-size:13px">🚩 Report</span>';
+            reportBtnEl.style.background = 'rgba(107,114,128,0.1)';
+            reportBtnEl.style.color = '#71717a';
+            setReportedState(false);
+          } catch (e) {
+            showToast('Failed to remove report. Please try again.');
+          }
+        };
         return;
       }
       var reasons = [
@@ -199,7 +214,6 @@ function buildMapHtml(
         btn.addEventListener('click', async function() {
           var reason = btn.dataset.reason;
           modal.remove();
-          if (!confirm('Are you sure you want to report this content?')) return;
           try {
             reportBtnEl.innerHTML = '<span style="font-size:13px">⏳ Reporting...</span>';
             reportBtnEl.style.pointerEvents = 'none';
@@ -215,12 +229,13 @@ function buildMapHtml(
             reportBtnEl.style.color = '#ef4444';
             reportBtnEl.style.pointerEvents = 'auto';
             setReportedState(true);
+            showToast('Report submitted. Thanks for flagging.');
           } catch (e) {
             reportBtnEl.innerHTML = '<span style="font-size:13px">🚩 Report</span>';
             reportBtnEl.style.background = 'rgba(107,114,128,0.1)';
             reportBtnEl.style.color = '#71717a';
             reportBtnEl.style.pointerEvents = 'auto';
-            alert('Failed to report. Please try again.');
+            showToast('Failed to report. Please try again.');
           }
         });
       });
