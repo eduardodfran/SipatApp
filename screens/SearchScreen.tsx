@@ -98,6 +98,7 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
             .from('v_unified_potholes')
             .select('pothole_id, image_url, caption, formatted_address, worst_severity, citizen_first_reported_at, reporter_username')
             .or(`caption.ilike.${pattern},formatted_address.ilike.${pattern},reporter_username.ilike.${pattern}`)
+            .eq('activity_status', 'active')
             .order('citizen_first_reported_at', { ascending: false, nullsFirst: false })
             .limit(15),
         ])

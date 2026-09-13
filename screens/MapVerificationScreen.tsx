@@ -1049,6 +1049,7 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
           .from('v_unified_potholes')
           .select('*')
           .not('caption', 'like', '[HIDDEN]%')
+          .eq('activity_status', 'active')
           .order('total_detection_hits', { ascending: false })
           .limit(500)
 
@@ -1090,6 +1091,7 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
           .from('v_community_photos')
           .select('id, latitude, longitude, detection_status, worst_severity, image_url, formatted_address, street, barangay, city, province, region, country, confidence, class_name, reporter_username, created_at')
           .neq('detection_status', 'hidden')
+          .eq('activity_status', 'active')
           .order('created_at', { ascending: false })
           .limit(100)
 

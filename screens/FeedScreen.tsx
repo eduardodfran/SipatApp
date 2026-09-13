@@ -260,6 +260,14 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
   }, [commentDrafts, postingComment])
 
   const handleVerify = useCallback(async (postId: number, body: string) => {
+    const signal = body === '✅ Fixed' ? 'fixed' : 'still'
+    try {
+      await supabase.rpc('mark_hazard_signal', {
+        p_content_type: 'photo',
+        p_content_id: String(postId),
+        p_signal: signal,
+      })
+    } catch {}
     await supabase.rpc('create_community_photo_comment', { p_photo_id: postId, p_body: body })
     const { data } = await supabase.rpc('get_community_photo_comments', { p_photo_id: postId })
     const key = String(postId)
@@ -331,6 +339,14 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
   }, [])
 
   const handlePotholeVerify = useCallback(async (potholeId: number, body: string) => {
+    const signal = body === '✅ Fixed' ? 'fixed' : 'still'
+    try {
+      await supabase.rpc('mark_hazard_signal', {
+        p_content_type: 'pothole',
+        p_content_id: String(potholeId),
+        p_signal: signal,
+      })
+    } catch {}
     await supabase.rpc('create_detection_comment', { p_pothole_id: potholeId, p_body: body })
     loadPotholeComments(potholeId)
   }, [loadPotholeComments])
