@@ -45,6 +45,7 @@ export function useProximityAlerts({ enabled, muted = false, externalGps = false
   const [banner, setBanner] = useState<ProximityBanner>(null)
   const [nextHazard, setNextHazard] = useState<(HazardPoint & { distM: number }) | null>(null)
   const [speedMps, setSpeedMps] = useState<number | null>(null)
+  const [position, setPosition] = useState<DriverPosition | null>(null)
 
   const hazardsRef = useRef<HazardPoint[]>([])
   const alertedRef = useRef<Set<string>>(new Set())
@@ -149,6 +150,7 @@ export function useProximityAlerts({ enabled, muted = false, externalGps = false
   const handleFix = useCallback(
     async (pos: DriverPosition) => {
       setSpeedMps(pos.speed)
+      setPosition(pos)
       await ensureHazards(pos.lat, pos.lng)
 
       // Nearest-hazard card (radial, for display regardless of cone).
@@ -186,6 +188,7 @@ export function useProximityAlerts({ enabled, muted = false, externalGps = false
         lastLoadPosRef.current = null
         setNextHazard(null)
         setSpeedMps(null)
+        setPosition(null)
         dismissBanner()
       }
       return
@@ -224,5 +227,5 @@ export function useProximityAlerts({ enabled, muted = false, externalGps = false
     dismissBanner()
   }, [dismissBanner])
 
-  return { banner, dismissBanner, nextHazard, speedMps, resetSession, pushPosition }
+  return { banner, dismissBanner, nextHazard, speedMps, position, resetSession, pushPosition }
 }

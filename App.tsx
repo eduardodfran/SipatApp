@@ -13,6 +13,7 @@ import { supabase } from './lib/supabase'
 import { fetchFastApi, resetFastApiPreference } from './lib/fastapi'
 import LoginScreen from './screens/LoginScreen'
 import DashboardScreen from './screens/DashboardScreen'
+import DriveScreen from './screens/DriveScreen'
 import CameraScreen from './screens/CameraScreen'
 import MapVerificationScreen from './screens/MapVerificationScreen'
 import DistressListScreen from './screens/DistressListScreen'
@@ -32,7 +33,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'photo' | 'map' | 'distress' | 'rides' | 'profile' | 'publicprofile' | 'search' | 'about'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'drive' | 'photo' | 'map' | 'distress' | 'rides' | 'profile' | 'publicprofile' | 'search' | 'about'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -547,6 +548,7 @@ export default function App() {
           onRefresh={handleRefresh}
           refreshing={refreshing}
           onRecord={() => setScreen('camera')}
+          onDrive={() => setScreen('drive')}
           onPhoto={() => setScreen('photo')}
           onMap={() => setScreen('map')}
           onDistress={() => setScreen('distress')}
@@ -595,6 +597,9 @@ export default function App() {
           onViewOnMap={handleViewOnMap}
           onViewProfile={(uid) => { setPublicProfileUserId(uid); setScreen('publicprofile') }}
         />
+      )}
+      {screen === 'drive' && (
+        <DriveScreen onBack={() => setScreen('dashboard')} />
       )}
       {screen === 'camera' && (
         <CameraScreen

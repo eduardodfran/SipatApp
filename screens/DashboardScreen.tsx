@@ -21,6 +21,7 @@ type Props = {
   uploadingIds: Set<string>
   processingId: string | null
   onRecord: () => void
+  onDrive: () => void
   onPhoto: () => void
   onMap: () => void
   onDistress: () => void
@@ -47,6 +48,7 @@ export default function DashboardScreen({
   uploadingIds,
   processingId,
   onRecord,
+  onDrive,
   onPhoto,
   onMap,
   onDistress,
@@ -247,6 +249,17 @@ export default function DashboardScreen({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={onDrive}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
+                <Ionicons name="navigate" size={24} color="#f59e0b" />
+              </View>
+              <Text style={styles.actionLabel}>Drive Mode</Text>
+              <Text style={styles.actionSub}>Pothole alerts</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionCard}
               onPress={onRefresh}
