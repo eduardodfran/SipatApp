@@ -25,6 +25,12 @@ type UseProximityAlertsOptions = {
   enabled: boolean
   /** When false, banner+vibration+sound are suppressed. */
   muted?: boolean
+  /**
+   * When true, the hook does NOT create its own GPS watch.
+   * The caller feeds fixes via `pushPosition` (e.g. CameraScreen's
+   * existing watch) to avoid duplicate location subscriptions.
+   */
+  externalGps?: boolean
 }
 
 const WARN_PATTERN = [0, 150, 100, 150]
@@ -35,7 +41,7 @@ const URGENT_PATTERN = [0, 300, 100, 300, 100, 300]
  * Owns its GPS watch, hazard cache, cooldowns, banner state, vibration + beep.
  * Caller renders `banner` and wires `muted` to a toggle.
  */
-export function useProximityAlerts({ enabled, muted = false }: UseProximityAlertsOptions) {
+export function useProximityAlerts({ enabled, muted = false, externalGps = false }: UseProximityAlertsOptions) {
   const [banner, setBanner] = useState<ProximityBanner>(null)
   const [nextHazard, setNextHazard] = useState<(HazardPoint & { distM: number }) | null>(null)
   const [speedMps, setSpeedMps] = useState<number | null>(null)
@@ -51,6 +57,8 @@ export function useProximityAlerts({ enabled, muted = false }: UseProximityAlert
   const urgentSoundRef = useRef<Audio.Sound | null>(null)
   const mutedRef = useRef(muted)
   mutedRef.current = muted
+  const enabledRef = useRef(enabled)
+  enabledRef.current = enabled
 
   const dismissBanner = useCallback(() => {
     if (bannerTimerRef.current) {
@@ -122,17 +130,64 @@ export function useProximityAlerts({ enabled, muted = false }: UseProximityAlert
     }
   }, [])
 
-  // GPS watch lifecycle follows `enabled`.
+  const ensureHazards = useCallback(async (lat: number, lng: number) => {
+    const now = Date.now()
+    const moved = lastLoadPosRef.current
+      ? haversineMeters(lastLoadPosRef.current.lat, lastLoadPosRef.current.lng, lat, lng)
+      : Infinity
+    if (moved > HAZARD_REFRESH_MOVE_M || now - lastLoadAtRef.current > HAZARD_REFRESH_MS) {
+      lastLoadAtRef.current = now
+      lastLoadPosRef.current = { lat, lng }
+      try {
+        hazardsRef.current = await loadNearbyHazards(lat, lng)
+      } catch {
+        // Keep stale cache on transient failure.
+      }
+    }
+  }, [])
+
+  const handleFix = useCallback(
+    async (pos: DriverPosition) => {
+      setSpeedMps(pos.speed)
+      await ensureHazards(pos.lat, pos.lng)
+
+      // Nearest-hazard card (radial, for display regardless of cone).
+      let nearest: (HazardPoint & { distM: number }) | null = null
+      for (const h of hazardsRef.current) {
+        const distM = haversineMeters(pos.lat, pos.lng, h.lat, h.lng)
+        if (!nearest || distM < nearest.distM) nearest = { ...h, distM }
+      }
+      setNextHazard(nearest && nearest.distM <= 500 ? nearest : null)
+
+      if (Date.now() - lastAlertAtRef.current < ALERT_COOLDOWN_MS) return
+      const alert = evaluateProximity(pos, hazardsRef.current, alertedRef.current)
+      if (alert) await fireAlert(alert)
+    },
+    [ensureHazards, fireAlert],
+  )
+
+  /** Feed an externally-tracked GPS fix (externalGps mode). No-op when disabled. */
+  const pushPosition = useCallback(
+    (pos: DriverPosition) => {
+      if (!enabledRef.current) return
+      void handleFix(pos)
+    },
+    [handleFix],
+  )
+
+  // GPS watch lifecycle follows `enabled` (internal watch only).
   useEffect(() => {
-    if (!enabled) {
-      subRef.current?.remove()
-      subRef.current = null
-      hazardsRef.current = []
-      alertedRef.current = new Set()
-      lastLoadPosRef.current = null
-      setNextHazard(null)
-      setSpeedMps(null)
-      dismissBanner()
+    if (!enabled || externalGps) {
+      if (!enabled) {
+        subRef.current?.remove()
+        subRef.current = null
+        hazardsRef.current = []
+        alertedRef.current = new Set()
+        lastLoadPosRef.current = null
+        setNextHazard(null)
+        setSpeedMps(null)
+        dismissBanner()
+      }
       return
     }
 
@@ -141,46 +196,16 @@ export function useProximityAlerts({ enabled, muted = false }: UseProximityAlert
       const { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== 'granted' || cancelled) return
 
-      const ensureHazards = async (lat: number, lng: number) => {
-        const now = Date.now()
-        const moved = lastLoadPosRef.current
-          ? haversineMeters(lastLoadPosRef.current.lat, lastLoadPosRef.current.lng, lat, lng)
-          : Infinity
-        if (moved > HAZARD_REFRESH_MOVE_M || now - lastLoadAtRef.current > HAZARD_REFRESH_MS) {
-          lastLoadAtRef.current = now
-          lastLoadPosRef.current = { lat, lng }
-          try {
-            hazardsRef.current = await loadNearbyHazards(lat, lng)
-          } catch {
-            // Keep stale cache on transient failure.
-          }
-        }
-      }
-
       subRef.current = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.High, timeInterval: 2000 },
-        async (loc) => {
+        (loc) => {
           if (cancelled) return
-          const pos: DriverPosition = {
+          void handleFix({
             lat: loc.coords.latitude,
             lng: loc.coords.longitude,
             heading: loc.coords.heading ?? null,
             speed: loc.coords.speed ?? null,
-          }
-          setSpeedMps(pos.speed)
-          await ensureHazards(pos.lat, pos.lng)
-
-          // Nearest-hazard card (radial, for display regardless of cone).
-          let nearest: (HazardPoint & { distM: number }) | null = null
-          for (const h of hazardsRef.current) {
-            const distM = haversineMeters(pos.lat, pos.lng, h.lat, h.lng)
-            if (!nearest || distM < nearest.distM) nearest = { ...h, distM }
-          }
-          setNextHazard(nearest && nearest.distM <= 500 ? nearest : null)
-
-          if (Date.now() - lastAlertAtRef.current < ALERT_COOLDOWN_MS) return
-          const alert = evaluateProximity(pos, hazardsRef.current, alertedRef.current)
-          if (alert) await fireAlert(alert)
+          })
         },
       )
     })()
@@ -191,7 +216,7 @@ export function useProximityAlerts({ enabled, muted = false }: UseProximityAlert
       subRef.current = null
       dismissBanner()
     }
-  }, [enabled, dismissBanner, fireAlert])
+  }, [enabled, externalGps, dismissBanner, handleFix])
 
   const resetSession = useCallback(() => {
     alertedRef.current = new Set()
@@ -199,5 +224,5 @@ export function useProximityAlerts({ enabled, muted = false }: UseProximityAlert
     dismissBanner()
   }, [dismissBanner])
 
-  return { banner, dismissBanner, nextHazard, speedMps, resetSession }
+  return { banner, dismissBanner, nextHazard, speedMps, resetSession, pushPosition }
 }

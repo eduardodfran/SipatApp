@@ -15,6 +15,7 @@ import { File, Paths } from 'expo-file-system'
 import { Accelerometer, Gyroscope } from 'expo-sensors'
 import { Ionicons } from '@expo/vector-icons'
 import type { Recording } from '../lib/types'
+import { useProximityAlerts } from '../lib/useProximityAlerts'
 
 type Props = {
   onFinish: (recording: Recording) => void
@@ -38,6 +39,13 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
   const [gpsActive, setGpsActive] = useState(false)
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
   const [gpsFresh, setGpsFresh] = useState(false)
+  const [alertsOn, setAlertsOn] = useState(true)
+
+  // Driving Mode proximity alerts — fed by this screen's existing GPS watch
+  // (no second subscription). Fresh alert state per recording session.
+  const proximity = useProximityAlerts({ enabled: alertsOn, externalGps: true })
+  const proximityRef = useRef(proximity)
+  proximityRef.current = proximity
 
   const cameraRef = useRef<any>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -62,6 +70,12 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
             lat: loc.coords.latitude,
             lng: loc.coords.longitude,
             ts: Date.now(),
+          })
+          proximityRef.current.pushPosition({
+            lat: loc.coords.latitude,
+            lng: loc.coords.longitude,
+            heading: loc.coords.heading ?? null,
+            speed: loc.coords.speed ?? null,
           })
         }
       )
@@ -93,6 +107,12 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
               lat: loc.coords.latitude,
               lng: loc.coords.longitude,
               ts: Date.now(),
+            })
+            proximityRef.current.pushPosition({
+              lat: loc.coords.latitude,
+              lng: loc.coords.longitude,
+              heading: loc.coords.heading ?? null,
+              speed: loc.coords.speed ?? null,
             })
           }
         )
@@ -243,6 +263,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
 
     isCancelled.current = false
     stoppedManually.current = false
+    proximityRef.current.resetSession()
     const lastKnown = gpsLocations.current[gpsLocations.current.length - 1] ?? null
     const hadFreshFix = !!lastKnown && Date.now() - lastKnown.ts < 15_000
     segmentStartTime.current = Date.now()
@@ -465,7 +486,30 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
                 : 'GPS searching...'}
             </Text>
           </View>
+
+          <TouchableOpacity
+            onPress={() => setAlertsOn((v) => !v)}
+            style={[styles.alertToggle, alertsOn && styles.alertToggleOn]}
+            accessibilityLabel="Toggle pothole alerts"
+          >
+            <Ionicons
+              name={alertsOn ? 'notifications' : 'notifications-off'}
+              size={18}
+              color={alertsOn ? '#0c0c14' : '#fafafa'}
+            />
+          </TouchableOpacity>
         </View>
+
+        {/* Driving Mode proximity alert banner */}
+        {proximity.banner && (
+          <TouchableOpacity
+            onPress={proximity.dismissBanner}
+            style={[styles.alertBanner, proximity.banner.tier === 'urgent' && styles.alertBannerUrgent]}
+          >
+            <Ionicons name="warning" size={22} color="#0c0c14" />
+            <Text style={styles.alertBannerText}>{proximity.banner.text}</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Timer */}
         {status !== 'idle' && (
@@ -660,6 +704,39 @@ const styles = StyleSheet.create({
     color: '#fafafa',
     fontSize: 12,
     fontWeight: '600',
+  },
+  alertToggle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alertToggleOn: {
+    backgroundColor: '#22c55e',
+  },
+  alertBanner: {
+    position: 'absolute',
+    top: 120,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#f59e0b',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  alertBannerUrgent: {
+    backgroundColor: '#ef4444',
+  },
+  alertBannerText: {
+    flex: 1,
+    color: '#0c0c14',
+    fontSize: 16,
+    fontWeight: '800',
   },
   timerContainer: {
     position: 'absolute',
