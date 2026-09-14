@@ -29,7 +29,7 @@ function severityColor(severity: string | null | undefined): string {
   }
 }
 
-function buildDriveMapHtml(pins: Array<{ lat: number; lng: number; color: string }>): string {
+function buildDriveMapHtml(pins: Array<{ id: string; lat: number; lng: number; color: string }>): string {
   const data = JSON.stringify(pins)
   return `<!DOCTYPE html>
 <html>
@@ -50,11 +50,26 @@ function buildDriveMapHtml(pins: Array<{ lat: number; lng: number; color: string
   var map = L.map('map', { zoomControl: false }).setView([14.5547, 121.0509], 16);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
   var pins = ${data};
-  for (var i = 0; i < pins.length; i++) {
-    L.circleMarker([pins[i].lat, pins[i].lng], {
-      radius: 7, color: pins[i].color, fillColor: pins[i].color, fillOpacity: 0.85, weight: 2,
-    }).addTo(map);
+  var markers = {};
+  var highlightedId = null;
+  function baseStyle(color) {
+    return { radius: 7, color: color, fillColor: color, fillOpacity: 0.85, weight: 2 };
   }
+  for (var i = 0; i < pins.length; i++) {
+    markers[pins[i].id] = L.circleMarker([pins[i].lat, pins[i].lng], baseStyle(pins[i].color));
+    markers[pins[i].id].options.baseColor = pins[i].color;
+    markers[pins[i].id].addTo(map);
+  }
+  window.highlightHazard = function (id) {
+    if (highlightedId && markers[highlightedId]) {
+      markers[highlightedId].setStyle(baseStyle(markers[highlightedId].options.baseColor));
+    }
+    highlightedId = id;
+    if (id && markers[id]) {
+      markers[id].setStyle({ radius: 13, weight: 4 });
+      markers[id].bringToFront();
+    }
+  };
   var userMarker = null;
   window.updateUser = function (lat, lng, follow) {
     if (!userMarker) {
@@ -88,6 +103,7 @@ export default function DriveScreen({ onBack }: Props) {
   const pins = useMemo(
     () =>
       hazards.map((h) => ({
+        id: String(h.pothole_id),
         lat: h.consolidated_latitude,
         lng: h.consolidated_longitude,
         color: severityColor(h.worst_severity),
@@ -104,6 +120,14 @@ export default function DriveScreen({ onBack }: Props) {
       )
     }
   }, [driving, position, follow])
+
+  // Highlight the currently-alerted pin; clear when the banner dismisses.
+  useEffect(() => {
+    if (webviewRef.current) {
+      const id = banner ? JSON.stringify(banner.hazardId) : 'null'
+      webviewRef.current.injectJavaScript(`window.highlightHazard && window.highlightHazard(${id}); true;`)
+    }
+  }, [banner])
 
   const kmh = speedMps != null ? Math.round(speedMps * 3.6) : null
 
