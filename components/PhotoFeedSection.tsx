@@ -37,6 +37,7 @@ export default function PhotoFeedSection({ refreshKey, userId }: Props) {
     const { data } = await supabase
       .from('v_community_photos')
       .select('*')
+      .eq('activity_status', 'active')
       .order('created_at', { ascending: false })
       .limit(50)
     setUploadedPosts(data ?? [])

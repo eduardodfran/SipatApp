@@ -92,6 +92,7 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
             .from('community_photos')
             .select('id, image_url, caption, created_at, detection_status, reporter_username')
             .or(`caption.ilike.${pattern},reporter_username.ilike.${pattern}`)
+            .eq('activity_status', 'active')
             .order('created_at', { ascending: false })
             .limit(15),
           supabase

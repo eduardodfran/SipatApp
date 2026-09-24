@@ -484,6 +484,12 @@ function buildMapHtml(
       var commentSend = document.getElementById('comment-send-' + p.id);
 
       function doVerify(body) {
+        var signal = body === '✅ Fixed' ? 'fixed' : 'still';
+        fetch(SUPABASE_URL + '/rest/v1/rpc/mark_hazard_signal', {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_content_type: 'pothole', p_content_id: String(p.id), p_signal: signal })
+        }).catch(function() {});
         fetch(SUPABASE_URL + '/rest/v1/rpc/create_detection_comment', {
           method: 'POST',
           headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
@@ -763,6 +769,12 @@ function buildMapHtml(
             var commentSend = document.getElementById('cp-comment-send-' + cp.id);
 
             function doVerify(body) {
+              var signal = body === '✅ Fixed' ? 'fixed' : 'still';
+              fetch(SUPABASE_URL + '/rest/v1/rpc/mark_hazard_signal', {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_signal: signal })
+              }).catch(function() {});
               fetch(SUPABASE_URL + '/rest/v1/rpc/create_community_photo_comment', {
                 method: 'POST',
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
@@ -883,6 +895,12 @@ function buildMapHtml(
             var commentSend = document.getElementById('cp-comment-send-' + cp.id);
 
             function doVerify(body) {
+              var signal = body === '✅ Fixed' ? 'fixed' : 'still';
+              fetch(SUPABASE_URL + '/rest/v1/rpc/mark_hazard_signal', {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_content_type: 'photo', p_content_id: String(cp.id), p_signal: signal })
+              }).catch(function() {});
               fetch(SUPABASE_URL + '/rest/v1/rpc/create_community_photo_comment', {
                 method: 'POST',
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_TOKEN, 'Content-Type': 'application/json' },

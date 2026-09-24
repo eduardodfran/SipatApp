@@ -59,11 +59,13 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
         supabase.from('community_photos')
           .select('id, image_url, created_at, detection_status, worst_severity')
           .eq('user_id', userId)
+          .eq('activity_status', 'active')
           .order('created_at', { ascending: false })
           .limit(50),
         supabase.from('v_unified_potholes')
           .select('pothole_id, image_url, worst_severity, total_detection_hits, citizen_first_reported_at, caption, formatted_address')
           .eq('reporter_user_id', userId)
+          .eq('activity_status', 'active')
           .order('citizen_first_reported_at', { ascending: false, nullsFirst: false })
           .limit(50),
       ])

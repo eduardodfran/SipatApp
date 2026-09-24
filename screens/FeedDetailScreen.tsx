@@ -102,6 +102,14 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
   }, [item])
 
   const handleVerify = useCallback(async (body: string) => {
+    const signal = body === '✅ Fixed' ? 'fixed' : 'still'
+    try {
+      await supabase.rpc('mark_hazard_signal', {
+        p_content_type: item.type === 'photo' ? 'photo' : 'pothole',
+        p_content_id: String(item.type === 'photo' ? item.data.id : item.data.pothole_id),
+        p_signal: signal,
+      })
+    } catch {}
     if (item.type === 'photo') {
       await supabase.rpc('create_community_photo_comment', { p_photo_id: item.data.id, p_body: body })
     } else {
