@@ -12,7 +12,7 @@ function getHostIp(): string | null {
 
 const FALLBACK_LAN_IP = getHostIp() ?? '192.168.1.7'
 const DEV_URL = process.env.EXPO_PUBLIC_LOCAL_URL || `http://${FALLBACK_LAN_IP}:8000`
-const PROD_URL = 'http://85.211.193.145'
+const PROD_URL = 'http://4.193.125.81'
 
 export const AZURE_URL = PROD_URL
 export const LOCAL_URL = DEV_URL

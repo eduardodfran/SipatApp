@@ -465,7 +465,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} ref={cameraRef} mode="video" videoQuality="720p" zoom={0} enablePinchGesture={false}>
+      <CameraView style={styles.camera} ref={cameraRef} mode="video" videoQuality="720p" zoom={0}>
         {/* Header overlay */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleCancel} style={styles.headerBtn}>
