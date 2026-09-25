@@ -5,9 +5,11 @@ import type { Hazard } from '../lib/useCommunityHazards'
 
 type Props = {
   hazards: Hazard[]
-  position: { lat: number; lng: number } | null
+  position: { lat: number; lng: number; heading?: number | null } | null
   highlightId?: string | null
   follow?: boolean
+  /** Draw 100m/30m alert rings around the user position (Drive HUD). */
+  rings?: boolean
   style?: StyleProp<ViewStyle>
 }
 
@@ -24,7 +26,10 @@ function severityColor(severity: string | null | undefined): string {
   }
 }
 
-function buildDriveMapHtml(pins: Array<{ id: string; lat: number; lng: number; color: string }>): string {
+function buildDriveMapHtml(
+  pins: Array<{ id: string; lat: number; lng: number; color: string }>,
+  rings: boolean,
+): string {
   const data = JSON.stringify(pins)
   return `<!DOCTYPE html>
 <html>
@@ -37,6 +42,9 @@ function buildDriveMapHtml(pins: Array<{ id: string; lat: number; lng: number; c
   #map { height: 100%; width: 100%; }
   .user-dot { width: 18px; height: 18px; border-radius: 9px; background: #06b6d4;
     border: 3px solid #ffffff; box-shadow: 0 0 12px #06b6d4; }
+  .user-arrow { width: 0; height: 0; border-left: 8px solid transparent;
+    border-right: 8px solid transparent; border-bottom: 18px solid #06b6d4;
+    filter: drop-shadow(0 0 6px #06b6d4); transform-origin: 50% 75%; }
 </style>
 </head>
 <body>
@@ -47,6 +55,9 @@ function buildDriveMapHtml(pins: Array<{ id: string; lat: number; lng: number; c
   var pins = ${data};
   var markers = {};
   var highlightedId = null;
+  var enableRings = ${rings ? 'true' : 'false'};
+  var ring100 = null;
+  var ring30 = null;
   function baseStyle(color) {
     return { radius: 7, color: color, fillColor: color, fillOpacity: 0.85, weight: 2 };
   }
@@ -65,14 +76,46 @@ function buildDriveMapHtml(pins: Array<{ id: string; lat: number; lng: number; c
       markers[id].bringToFront();
     }
   };
+  function updateRings(lat, lng) {
+    if (!ring100) {
+      ring100 = L.circle([lat, lng], { radius: 100, color: '#f59e0b', weight: 1,
+        opacity: 0.7, fillColor: '#f59e0b', fillOpacity: 0.06, interactive: false }).addTo(map);
+    } else {
+      ring100.setLatLng([lat, lng]);
+    }
+    if (!ring30) {
+      ring30 = L.circle([lat, lng], { radius: 30, color: '#ef4444', weight: 1,
+        opacity: 0.7, fillColor: '#ef4444', fillOpacity: 0.10, interactive: false }).addTo(map);
+    } else {
+      ring30.setLatLng([lat, lng]);
+    }
+    ring100.bringToBack();
+    ring30.bringToBack();
+  }
   var userMarker = null;
-  window.updateUser = function (lat, lng, follow) {
+  window.updateUser = function (lat, lng, follow, heading) {
+    if (enableRings) updateRings(lat, lng);
+    var hasHeading = typeof heading === 'number' && !isNaN(heading);
+    var html = hasHeading
+      ? '<div class="user-arrow" style="transform: rotate(' + heading + 'deg);"></div>'
+      : '<div class="user-dot"></div>';
     if (!userMarker) {
       userMarker = L.marker([lat, lng], {
-        icon: L.divIcon({ className: '', html: '<div class="user-dot"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }),
+        icon: L.divIcon({ className: '', html: html, iconSize: [18, 18], iconAnchor: [9, 12] }),
+        zIndexOffset: 1000,
       }).addTo(map);
       map.setView([lat, lng], 16);
     } else {
+      if (hasHeading !== userMarker._hadHeading) {
+        userMarker._hadHeading = hasHeading;
+        userMarker.setIcon(L.divIcon({ className: '', html: html, iconSize: [18, 18], iconAnchor: [9, 12] }));
+      } else if (hasHeading) {
+        var el = userMarker.getElement();
+        if (el) {
+          var arrow = el.querySelector('.user-arrow');
+          if (arrow) arrow.style.transform = 'rotate(' + heading + 'deg)';
+        }
+      }
       userMarker.setLatLng([lat, lng]);
       if (follow) map.panTo([lat, lng]);
     }
@@ -82,7 +125,14 @@ function buildDriveMapHtml(pins: Array<{ id: string; lat: number; lng: number; c
 </html>`
 }
 
-export default function HazardMap({ hazards, position, highlightId, follow = true, style }: Props) {
+export default function HazardMap({
+  hazards,
+  position,
+  highlightId,
+  follow = true,
+  rings = false,
+  style,
+}: Props) {
   const webviewRef = useRef<WebView | null>(null)
 
   const pins = useMemo(
@@ -95,13 +145,14 @@ export default function HazardMap({ hazards, position, highlightId, follow = tru
       })),
     [hazards],
   )
-  const mapHtml = useMemo(() => buildDriveMapHtml(pins), [pins])
+  const mapHtml = useMemo(() => buildDriveMapHtml(pins, rings), [pins, rings])
 
   // Push live position into the map (follow mode).
   useEffect(() => {
     if (position && webviewRef.current) {
+      const heading = position.heading != null ? String(position.heading) : 'null'
       webviewRef.current.injectJavaScript(
-        `window.updateUser && window.updateUser(${position.lat}, ${position.lng}, ${follow ? 'true' : 'false'}); true;`,
+        `window.updateUser && window.updateUser(${position.lat}, ${position.lng}, ${follow ? 'true' : 'false'}, ${heading}); true;`,
       )
     }
   }, [position, follow])

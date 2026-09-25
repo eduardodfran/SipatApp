@@ -43,9 +43,11 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
   const [gpsFresh, setGpsFresh] = useState(false)
   const [alertsOn, setAlertsOn] = useState(true)
   const [view, setView] = useState<'camera' | 'map'>('camera')
+  // Floating mini-map (PiP) over the camera preview; header button toggles it.
+  const [showMiniMap, setShowMiniMap] = useState(true)
   // Map position fed directly by the location watch (independent of alertsOn,
   // which gates pushPosition) so the Drive map keeps tracking with alerts off.
-  const [mapPos, setMapPos] = useState<{ lat: number; lng: number } | null>(null)
+  const [mapPos, setMapPos] = useState<{ lat: number; lng: number; heading: number | null } | null>(null)
 
   // Driving Mode proximity alerts — fed by this screen's existing GPS watch
   // (no second subscription). Fresh alert state per recording session.
@@ -73,7 +75,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
         (loc) => {
           setGpsAccuracy(loc.coords.accuracy)
           setGpsFresh(true)
-          setMapPos({ lat: loc.coords.latitude, lng: loc.coords.longitude })
+          setMapPos({ lat: loc.coords.latitude, lng: loc.coords.longitude, heading: loc.coords.heading ?? null })
           gpsLocations.current.push({
             lat: loc.coords.latitude,
             lng: loc.coords.longitude,
@@ -111,7 +113,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
           (loc) => {
             setGpsAccuracy(loc.coords.accuracy)
             setGpsFresh(true)
-            setMapPos({ lat: loc.coords.latitude, lng: loc.coords.longitude })
+            setMapPos({ lat: loc.coords.latitude, lng: loc.coords.longitude, heading: loc.coords.heading ?? null })
             gpsLocations.current.push({
               lat: loc.coords.latitude,
               lng: loc.coords.longitude,
@@ -472,18 +474,56 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
     ? 1
     : 0
 
+  const mapScreensActive =
+    status === 'idle' ||
+    status === 'recording' ||
+    status === 'waitingForNext' ||
+    status === 'waitingForGps'
+  const showMini = mapScreensActive && showMiniMap && view === 'camera'
+  const expanded = mapScreensActive && view === 'map'
+  const kmh = proximity.speedMps != null ? Math.round(proximity.speedMps * 3.6) : null
+
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} ref={cameraRef} mode="video" videoQuality="720p" zoom={0}>
-        {/* Full-screen Drive map — camera stays mounted and recording underneath */}
-        {view === 'map' && (
+        {/* Full-screen Drive map (expanded from mini-map) — camera keeps recording underneath */}
+        {expanded && (
           <HazardMap
             hazards={hazards}
             position={mapPos}
             highlightId={proximity.banner?.hazardId ?? null}
             follow
+            rings
             style={styles.mapFill}
           />
+        )}
+
+        {/* Floating mini-map (PiP) — tap to expand full screen */}
+        {showMini && (
+          <TouchableOpacity
+            style={styles.miniWrap}
+            onPress={() => setView('map')}
+            activeOpacity={0.9}
+            accessibilityLabel="Expand drive map"
+          >
+            <View style={styles.miniMap} pointerEvents="none">
+              <HazardMap
+                hazards={hazards}
+                position={mapPos}
+                highlightId={proximity.banner?.hazardId ?? null}
+                follow
+                rings
+                style={StyleSheet.absoluteFill}
+              />
+            </View>
+            <View style={styles.miniExpand} pointerEvents="none">
+              <Ionicons name="expand" size={13} color="#fafafa" />
+            </View>
+            <View style={styles.speedChip} pointerEvents="none">
+              <Ionicons name="speedometer" size={14} color="#06b6d4" />
+              <Text style={styles.speedChipText}>{kmh != null ? `${kmh} km/h` : '— km/h'}</Text>
+            </View>
+          </TouchableOpacity>
         )}
 
         {/* Header overlay */}
@@ -520,19 +560,19 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
               />
             </TouchableOpacity>
 
-            {(status === 'idle' ||
-              status === 'recording' ||
-              status === 'waitingForNext' ||
-              status === 'waitingForGps') && (
+            {mapScreensActive && (
               <TouchableOpacity
-                onPress={() => setView((v) => (v === 'map' ? 'camera' : 'map'))}
-                style={[styles.mapToggle, view === 'map' && styles.mapToggleOn]}
+                onPress={() => {
+                  if (view === 'map') setView('camera')
+                  else setShowMiniMap((v) => !v)
+                }}
+                style={[styles.mapToggle, (showMiniMap || view === 'map') && styles.mapToggleOn]}
                 accessibilityLabel="Toggle drive map"
               >
                 <Ionicons
-                  name={view === 'map' ? 'videocam' : 'map'}
+                  name="map"
                   size={18}
-                  color={view === 'map' ? '#0c0c14' : '#fafafa'}
+                  color={showMiniMap || view === 'map' ? '#0c0c14' : '#fafafa'}
                 />
               </TouchableOpacity>
             )}
@@ -547,6 +587,18 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
           >
             <Ionicons name="warning" size={22} color="#0c0c14" />
             <Text style={styles.alertBannerText}>{proximity.banner.text}</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Clear back-to-camera pill while expanded map view is open */}
+        {expanded && (
+          <TouchableOpacity
+            style={styles.backPill}
+            onPress={() => setView('camera')}
+            accessibilityLabel="Back to camera"
+          >
+            <Ionicons name="chevron-back" size={18} color="#06b6d4" />
+            <Text style={styles.backPillText}>Camera</Text>
           </TouchableOpacity>
         )}
 
@@ -773,6 +825,68 @@ const styles = StyleSheet.create({
   },
   mapFill: {
     ...StyleSheet.absoluteFill,
+  },
+  miniWrap: {
+    position: 'absolute',
+    top: 174,
+    right: 12,
+    width: 140,
+    alignItems: 'center',
+  },
+  miniMap: {
+    width: 140,
+    height: 140,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: '#0c0c14',
+  },
+  miniExpand: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  speedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  speedChipText: {
+    color: '#fafafa',
+    fontSize: 12,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  backPill: {
+    position: 'absolute',
+    top: 174,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(6,182,212,0.6)',
+  },
+  backPillText: {
+    color: '#fafafa',
+    fontSize: 14,
+    fontWeight: '700',
   },
   alertBanner: {
     position: 'absolute',
