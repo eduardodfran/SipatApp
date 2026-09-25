@@ -485,7 +485,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} ref={cameraRef} mode="video" videoQuality="720p" zoom={0}>
+      <CameraView style={styles.camera} ref={cameraRef} mode="video" videoQuality="720p" zoom={0} />
         {/* Full-screen Drive map (expanded from mini-map) — camera keeps recording underneath */}
         {expanded && (
           <HazardMap
@@ -718,7 +718,6 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
             </View>
           </View>
         )}
-      </CameraView>
     </View>
   )
 }

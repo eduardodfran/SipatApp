@@ -147,23 +147,43 @@ export default function HazardMap({
   )
   const mapHtml = useMemo(() => buildDriveMapHtml(pins, rings), [pins, rings])
 
-  // Push live position into the map (follow mode).
-  useEffect(() => {
-    if (position && webviewRef.current) {
-      const heading = position.heading != null ? String(position.heading) : 'null'
+  // Latest values so a freshly-mounted WebView (e.g. expanding the mini-map to
+  // full screen) can re-inject as soon as the HTML finishes loading.
+  const positionRef = useRef(position)
+  positionRef.current = position
+  const highlightRef = useRef(highlightId)
+  highlightRef.current = highlightId
+
+  const injectUser = () => {
+    const pos = positionRef.current
+    if (pos && webviewRef.current) {
+      const heading = pos.heading != null ? String(pos.heading) : 'null'
       webviewRef.current.injectJavaScript(
-        `window.updateUser && window.updateUser(${position.lat}, ${position.lng}, ${follow ? 'true' : 'false'}, ${heading}); true;`,
+        `window.updateUser && window.updateUser(${pos.lat}, ${pos.lng}, ${follow ? 'true' : 'false'}, ${heading}); true;`,
       )
     }
+  }
+
+  // Push live position into the map (follow mode).
+  useEffect(() => {
+    injectUser()
   }, [position, follow])
 
   // Highlight the currently-alerted pin; clear when the banner dismisses.
   useEffect(() => {
     if (webviewRef.current) {
-      const id = highlightId ? JSON.stringify(highlightId) : 'null'
+      const id = highlightRef.current ? JSON.stringify(highlightRef.current) : 'null'
       webviewRef.current.injectJavaScript(`window.highlightHazard && window.highlightHazard(${id}); true;`)
     }
   }, [highlightId])
+
+  // Re-inject once Leaflet is ready — mount-time injections are dropped because
+  // the HTML document hasn't loaded yet.
+  const handleLoadEnd = () => {
+    injectUser()
+    const id = highlightRef.current ? JSON.stringify(highlightRef.current) : 'null'
+    webviewRef.current?.injectJavaScript(`window.highlightHazard && window.highlightHazard(${id}); true;`)
+  }
 
   return (
     <WebView
@@ -173,6 +193,7 @@ export default function HazardMap({
       javaScriptEnabled
       domStorageEnabled
       originWhitelist={['*']}
+      onLoadEnd={handleLoadEnd}
     />
   )
 }

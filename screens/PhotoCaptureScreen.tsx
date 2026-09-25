@@ -168,7 +168,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
 
   return (
     <View style={styles.container}>
-      <CameraView ref={cameraRef} style={styles.camera} facing="back" zoom={0}>
+      <CameraView ref={cameraRef} style={styles.camera} facing="back" zoom={0} />
         <View style={styles.cameraOverlay}>
           <TouchableOpacity style={styles.closeBtn} onPress={onCancel}>
             <Ionicons name="close" size={28} color="#fafafa" />
@@ -189,7 +189,6 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
             </Text>
           </View>
         </View>
-      </CameraView>
     </View>
   )
 }
@@ -197,7 +196,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0c0c14' },
   camera: { flex: 1 },
-  cameraOverlay: { flex: 1, justifyContent: 'space-between' },
+  cameraOverlay: { ...StyleSheet.absoluteFill, justifyContent: 'space-between' },
   closeBtn: {
     alignSelf: 'flex-end', margin: 20, marginTop: 56,
     width: 40, height: 40, borderRadius: 20,
