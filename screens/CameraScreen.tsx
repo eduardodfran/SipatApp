@@ -16,6 +16,8 @@ import { Accelerometer, Gyroscope } from 'expo-sensors'
 import { Ionicons } from '@expo/vector-icons'
 import type { Recording } from '../lib/types'
 import { useProximityAlerts } from '../lib/useProximityAlerts'
+import { useCommunityHazards } from '../lib/useCommunityHazards'
+import HazardMap from '../components/HazardMap'
 
 type Props = {
   onFinish: (recording: Recording) => void
@@ -40,12 +42,17 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
   const [gpsFresh, setGpsFresh] = useState(false)
   const [alertsOn, setAlertsOn] = useState(true)
+  const [view, setView] = useState<'camera' | 'map'>('camera')
+  // Map position fed directly by the location watch (independent of alertsOn,
+  // which gates pushPosition) so the Drive map keeps tracking with alerts off.
+  const [mapPos, setMapPos] = useState<{ lat: number; lng: number } | null>(null)
 
   // Driving Mode proximity alerts — fed by this screen's existing GPS watch
   // (no second subscription). Fresh alert state per recording session.
   const proximity = useProximityAlerts({ enabled: alertsOn, externalGps: true })
   const proximityRef = useRef(proximity)
   proximityRef.current = proximity
+  const { hazards } = useCommunityHazards()
 
   const cameraRef = useRef<any>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -66,6 +73,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
         (loc) => {
           setGpsAccuracy(loc.coords.accuracy)
           setGpsFresh(true)
+          setMapPos({ lat: loc.coords.latitude, lng: loc.coords.longitude })
           gpsLocations.current.push({
             lat: loc.coords.latitude,
             lng: loc.coords.longitude,
@@ -103,6 +111,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
           (loc) => {
             setGpsAccuracy(loc.coords.accuracy)
             setGpsFresh(true)
+            setMapPos({ lat: loc.coords.latitude, lng: loc.coords.longitude })
             gpsLocations.current.push({
               lat: loc.coords.latitude,
               lng: loc.coords.longitude,
@@ -466,6 +475,17 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} ref={cameraRef} mode="video" videoQuality="720p" zoom={0}>
+        {/* Full-screen Drive map — camera stays mounted and recording underneath */}
+        {view === 'map' && (
+          <HazardMap
+            hazards={hazards}
+            position={mapPos}
+            highlightId={proximity.banner?.hazardId ?? null}
+            follow
+            style={styles.mapFill}
+          />
+        )}
+
         {/* Header overlay */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleCancel} style={styles.headerBtn}>
@@ -478,26 +498,45 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
             </Text>
           </View>
 
-          <View style={[styles.gpsBadge, gpsFresh && styles.gpsActive]}>
-            <View style={[styles.gpsDot, gpsFresh && styles.gpsDotActive]} />
-            <Text style={styles.gpsText}>
-              {gpsFresh
-                ? `GPS${gpsAccuracy ? ` ${Math.round(gpsAccuracy)}m` : ''}`
-                : 'GPS searching...'}
-            </Text>
-          </View>
+          <View style={styles.headerRight}>
+            <View style={[styles.gpsBadge, gpsFresh && styles.gpsActive]}>
+              <View style={[styles.gpsDot, gpsFresh && styles.gpsDotActive]} />
+              <Text style={styles.gpsText}>
+                {gpsFresh
+                  ? `GPS${gpsAccuracy ? ` ${Math.round(gpsAccuracy)}m` : ''}`
+                  : 'GPS searching...'}
+              </Text>
+            </View>
 
-          <TouchableOpacity
-            onPress={() => setAlertsOn((v) => !v)}
-            style={[styles.alertToggle, alertsOn && styles.alertToggleOn]}
-            accessibilityLabel="Toggle pothole alerts"
-          >
-            <Ionicons
-              name={alertsOn ? 'notifications' : 'notifications-off'}
-              size={18}
-              color={alertsOn ? '#0c0c14' : '#fafafa'}
-            />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setAlertsOn((v) => !v)}
+              style={[styles.alertToggle, alertsOn && styles.alertToggleOn]}
+              accessibilityLabel="Toggle pothole alerts"
+            >
+              <Ionicons
+                name={alertsOn ? 'notifications' : 'notifications-off'}
+                size={18}
+                color={alertsOn ? '#0c0c14' : '#fafafa'}
+              />
+            </TouchableOpacity>
+
+            {(status === 'idle' ||
+              status === 'recording' ||
+              status === 'waitingForNext' ||
+              status === 'waitingForGps') && (
+              <TouchableOpacity
+                onPress={() => setView((v) => (v === 'map' ? 'camera' : 'map'))}
+                style={[styles.mapToggle, view === 'map' && styles.mapToggleOn]}
+                accessibilityLabel="Toggle drive map"
+              >
+                <Ionicons
+                  name={view === 'map' ? 'videocam' : 'map'}
+                  size={18}
+                  color={view === 'map' ? '#0c0c14' : '#fafafa'}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Driving Mode proximity alert banner */}
@@ -715,6 +754,25 @@ const styles = StyleSheet.create({
   },
   alertToggleOn: {
     backgroundColor: '#22c55e',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  mapToggle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapToggleOn: {
+    backgroundColor: '#06b6d4',
+  },
+  mapFill: {
+    ...StyleSheet.absoluteFillObject,
   },
   alertBanner: {
     position: 'absolute',
