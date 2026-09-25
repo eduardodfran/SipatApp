@@ -5,13 +5,8 @@
     "scheme": "sipat",
     "version": "1.0.0",
     "orientation": "portrait",
-      "icon": "./assets/sipat-app.png",
+    "icon": "./assets/sipat-app.png",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/sipat-logo-splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0c0c14"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -22,8 +17,15 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "sipat" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "sipat"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -51,7 +53,18 @@
         }
       ],
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      "expo-audio",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/sipat-logo-splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0c0c14"
+        }
+      ],
+      "expo-status-bar",
+      "expo-asset"
     ],
     "web": {
       "favicon": "./assets/favicon.png"

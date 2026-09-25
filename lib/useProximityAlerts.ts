@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Vibration } from 'react-native'
 import * as Location from 'expo-location'
-import { Audio } from 'expo-av'
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio'
+import type { AudioPlayer } from 'expo-audio'
 import {
   ALERT_COOLDOWN_MS,
   DriverPosition,
@@ -54,8 +55,8 @@ export function useProximityAlerts({ enabled, muted = false, externalGps = false
   const lastLoadPosRef = useRef<{ lat: number; lng: number } | null>(null)
   const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const subRef = useRef<Location.LocationSubscription | null>(null)
-  const warnSoundRef = useRef<Audio.Sound | null>(null)
-  const urgentSoundRef = useRef<Audio.Sound | null>(null)
+  const warnSoundRef = useRef<AudioPlayer | null>(null)
+  const urgentSoundRef = useRef<AudioPlayer | null>(null)
   const mutedRef = useRef(muted)
   mutedRef.current = muted
   const enabledRef = useRef(enabled)
@@ -93,7 +94,10 @@ export function useProximityAlerts({ enabled, muted = false, externalGps = false
       Vibration.vibrate(alert.tier === 'urgent' ? URGENT_PATTERN : WARN_PATTERN)
       try {
         const sound = alert.tier === 'urgent' ? urgentSoundRef.current : warnSoundRef.current
-        if (sound) await sound.replayAsync()
+        if (sound) {
+          await sound.seekTo(0)
+          sound.play()
+        }
       } catch {
         // Audio session clash (e.g. camera recording) — vibration+banner still delivered.
       }
@@ -106,17 +110,15 @@ export function useProximityAlerts({ enabled, muted = false, externalGps = false
     let cancelled = false
     ;(async () => {
       try {
-        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
-        const warn = new Audio.Sound()
-        const urgent = new Audio.Sound()
-        await warn.loadAsync(require('../assets/alert_warn.wav'))
-        await urgent.loadAsync(require('../assets/alert_urgent.wav'))
+        await setAudioModeAsync({ playsInSilentMode: true })
+        const warn = createAudioPlayer(require('../assets/alert_warn.wav'))
+        const urgent = createAudioPlayer(require('../assets/alert_urgent.wav'))
         if (!cancelled) {
           warnSoundRef.current = warn
           urgentSoundRef.current = urgent
         } else {
-          await warn.unloadAsync()
-          await urgent.unloadAsync()
+          warn.remove()
+          urgent.remove()
         }
       } catch {
         // Sound unavailable — vibration+banner path remains.
@@ -124,8 +126,8 @@ export function useProximityAlerts({ enabled, muted = false, externalGps = false
     })()
     return () => {
       cancelled = true
-      warnSoundRef.current?.unloadAsync().catch(() => {})
-      urgentSoundRef.current?.unloadAsync().catch(() => {})
+      warnSoundRef.current?.remove()
+      urgentSoundRef.current?.remove()
       warnSoundRef.current = null
       urgentSoundRef.current = null
     }

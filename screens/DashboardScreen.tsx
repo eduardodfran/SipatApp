@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(37, 99, 235, 0.2)',
   },
   mapCardBg: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: 'hidden',
   },
   mapGridLine1: {
@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#06b6d4',
   },
   mapCardOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(12, 12, 20, 0.4)',
   },
   mapCardContent: {

@@ -1228,7 +1228,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0c0c14',
   },
   map: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   backBtn: {
     width: 40,

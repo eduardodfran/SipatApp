@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Location from 'expo-location'
-import { Audio } from 'expo-av'
+import { requestRecordingPermissionsAsync } from 'expo-audio'
 import { File, Paths } from 'expo-file-system'
 import { Accelerometer, Gyroscope } from 'expo-sensors'
 import { Ionicons } from '@expo/vector-icons'
@@ -262,7 +262,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
     if (!cameraRef.current) return
 
     // Request audio permission for video recording
-    const audioPerm = await Audio.requestPermissionsAsync()
+    const audioPerm = await requestRecordingPermissionsAsync()
     if (!audioPerm.granted) {
       Alert.alert('Audio Required', 'Microphone permission is needed to record video with audio.', [
         { text: 'OK' },
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#06b6d4',
   },
   mapFill: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   alertBanner: {
     position: 'absolute',
@@ -901,7 +901,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   uploadOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'center',
     alignItems: 'center',
