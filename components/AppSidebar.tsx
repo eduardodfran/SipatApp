@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { User } from '@supabase/supabase-js'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.72
@@ -89,7 +90,7 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
         <Animated.View style={[styles.sidebar, { transform: [{ translateX: slideAnim }] }]}>
           {/* Close button */}
           <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
-            <Ionicons name="close" size={22} color="#71717a" />
+            <Ionicons name="close" size={22} color={colors.textMuted} />
           </TouchableOpacity>
 
           {/* Profile section */}
@@ -131,7 +132,7 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
                     <Ionicons
                       name={item.icon as any}
                       size={20}
-                      color={isActive ? '#06b6d4' : '#71717a'}
+                      color={isActive ? colors.signal : colors.textSecondary}
                     />
                   </View>
                   <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
@@ -156,7 +157,7 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
             activeOpacity={0.7}
           >
             <View style={styles.navIconWrap}>
-              <Ionicons name="information-circle-outline" size={20} color="#71717a" />
+              <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
             </View>
             <Text style={styles.navLabel}>About</Text>
           </TouchableOpacity>
@@ -174,7 +175,7 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
             activeOpacity={0.7}
           >
             <View style={styles.logoutIconWrap}>
-              <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+              <Ionicons name="log-out-outline" size={20} color={colors.severe} />
             </View>
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
   },
   backdropTouch: {
     flex: 1,
@@ -205,13 +206,13 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     width: SIDEBAR_WIDTH,
-    backgroundColor: '#1c1c22',
+    backgroundColor: colors.surfaceRaised,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 40,
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.xl,
     borderRightWidth: 1,
-    borderRightColor: 'rgba(255, 255, 255, 0.06)',
-    shadowColor: '#000',
+    borderRightColor: colors.hairline,
+    shadowColor: colors.background,
     shadowOffset: { width: 4, height: 0 },
     shadowOpacity: 0.4,
     shadowRadius: 20,
@@ -220,120 +221,128 @@ const styles = StyleSheet.create({
   closeBtn: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 54 : 34,
-    right: 14,
+    right: spacing.md,
     width: 34,
     height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: radius.pill,
+    backgroundColor: colors.hairline,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
+  // User block — surface card with hairline
   profileSection: {
     alignItems: 'center',
-    paddingVertical: 20,
-    marginTop: 10,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.xxl,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.hairline,
   },
   avatar: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    backgroundColor: colors.signalDim,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(6, 182, 212, 0.2)',
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.signalLine,
   },
   avatarText: {
-    color: '#06b6d4',
+    color: colors.signal,
+    fontFamily: fonts.extrabold,
     fontSize: 22,
-    fontWeight: '800',
   },
   profileName: {
-    color: '#fafafa',
+    color: colors.textPrimary,
+    fontFamily: fonts.bold,
     fontSize: 17,
-    fontWeight: '700',
     textAlign: 'center',
   },
   profileEmail: {
-    color: '#71717a',
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
     fontSize: 12,
-    marginTop: 3,
+    marginTop: spacing.xs,
     textAlign: 'center',
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    marginVertical: 8,
+    backgroundColor: colors.hairline,
+    marginVertical: spacing.sm,
   },
   navSection: {
-    gap: 4,
+    gap: spacing.xs,
   },
   navItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    gap: 12,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    gap: spacing.md,
   },
   navItemActive: {
-    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+    backgroundColor: colors.signalDim,
   },
   navIconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: radius.sm,
+    backgroundColor: colors.hairline,
     justifyContent: 'center',
     alignItems: 'center',
   },
   navIconWrapActive: {
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    backgroundColor: colors.signalDim,
   },
   navLabel: {
-    color: '#a1a1aa',
-    fontSize: 15,
-    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: fonts.semibold,
+    fontSize: 14,
     flex: 1,
   },
   navLabelActive: {
-    color: '#fafafa',
-    fontWeight: '700',
+    color: colors.signal,
   },
   navActiveDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#06b6d4',
+    backgroundColor: colors.signal,
   },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    gap: 12,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    gap: spacing.md,
   },
   logoutIconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderRadius: radius.sm,
+    backgroundColor: colors.severeDim,
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoutText: {
-    color: '#ef4444',
-    fontSize: 15,
-    fontWeight: '600',
+    color: colors.severe,
+    fontFamily: fonts.semibold,
+    fontSize: 14,
   },
+  // Brand tag
   version: {
-    color: '#71717a',
+    color: colors.textMuted,
+    fontFamily: fonts.extrabold,
     fontSize: 11,
+    letterSpacing: 0.5,
     textAlign: 'center',
-    marginTop: 12,
-    fontWeight: '500',
+    marginTop: spacing.md,
   },
 })

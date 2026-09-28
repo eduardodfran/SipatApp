@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -12,6 +11,9 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
+import ScreenHeader from '../components/ScreenHeader'
+import Brackets from '../components/Brackets'
 
 type Props = {
   onBack: () => void
@@ -149,14 +151,14 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
         <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
       ) : (
         <View style={[styles.avatar, styles.avatarPlaceholder]}>
-          <Ionicons name="person" size={18} color="#71717a" />
+          <Ionicons name="person" size={18} color={colors.textMuted} />
         </View>
       )}
       <View style={styles.userInfo}>
         <Text style={styles.username}>{item.username ?? 'Anonymous'}</Text>
         {item.full_name ? <Text style={styles.fullName}>{item.full_name}</Text> : null}
       </View>
-      <Ionicons name="chevron-forward" size={16} color="#3f3f46" />
+      <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
     </TouchableOpacity>
   ), [onViewProfile])
 
@@ -176,7 +178,7 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
         <Image source={{ uri: item.image_url }} style={styles.detectionThumb} />
       ) : (
         <View style={[styles.detectionThumb, styles.detectionThumbPlaceholder]}>
-          <Ionicons name="warning-outline" size={20} color="#71717a" />
+          <Ionicons name="warning-outline" size={20} color={colors.textMuted} />
         </View>
       )}
       <View style={styles.detectionInfo}>
@@ -207,17 +209,14 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color="#fafafa" />
-        </TouchableOpacity>
+      <ScreenHeader onBack={onBack}>
         <View style={styles.searchInputWrap}>
-          <Ionicons name="search-outline" size={18} color="#71717a" />
+          <Ionicons name="search-outline" size={18} color={colors.textMuted} />
           <TextInput
             ref={inputRef}
             style={styles.searchInput}
             placeholder={tab === 'users' ? 'Search users...' : 'Search detections...'}
-            placeholderTextColor="#52525b"
+            placeholderTextColor={colors.textMuted}
             value={query}
             onChangeText={handleTextChange}
             onSubmitEditing={handleSubmit}
@@ -227,11 +226,11 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={handleClear} activeOpacity={0.7}>
-              <Ionicons name="close-circle" size={18} color="#52525b" />
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           )}
         </View>
-      </View>
+      </ScreenHeader>
 
       <View style={styles.tabRow}>
         <TouchableOpacity
@@ -239,7 +238,7 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
           onPress={() => handleTabChange('users')}
           activeOpacity={0.7}
         >
-          <Ionicons name="people-outline" size={14} color={tab === 'users' ? '#0c0c14' : '#71717a'} />
+          <Ionicons name="people-outline" size={14} color={tab === 'users' ? colors.signal : colors.textSecondary} />
           <Text style={[styles.tabText, tab === 'users' && styles.tabTextActive]}>Users</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -247,18 +246,21 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
           onPress={() => handleTabChange('detections')}
           activeOpacity={0.7}
         >
-          <Ionicons name="alert-circle-outline" size={14} color={tab === 'detections' ? '#0c0c14' : '#71717a'} />
+          <Ionicons name="alert-circle-outline" size={14} color={tab === 'detections' ? colors.signal : colors.textSecondary} />
           <Text style={[styles.tabText, tab === 'detections' && styles.tabTextActive]}>Detections</Text>
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="small" color="#06b6d4" />
+          <ActivityIndicator size="small" color={colors.signal} />
         </View>
       ) : !searched ? (
         <View style={styles.emptyState}>
-          <Ionicons name="search" size={40} color="#27272a" />
+          <View style={styles.emptyIcon}>
+            <Brackets size={14} />
+            <Ionicons name="search" size={34} color={colors.signal} />
+          </View>
           <Text style={styles.emptyTitle}>Search SIPAT</Text>
           <Text style={styles.emptySub}>Find users or road distress reports</Text>
         </View>
@@ -288,65 +290,138 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0c0c14' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingTop: Platform.OS === 'ios' ? 56 : 36, paddingBottom: 10, paddingHorizontal: 16,
-  },
-  backBtn: {
-    width: 38, height: 38, borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)', justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   searchInputWrap: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: 12,
-    paddingHorizontal: 12, paddingVertical: 10,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    height: 46,
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.hairline,
   },
   searchInput: {
-    flex: 1, color: '#fafafa', fontSize: 15, padding: 0,
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textPrimary,
+    padding: 0,
   },
   tabRow: {
-    flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 10,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
   },
   tabBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    backgroundColor: colors.hairline,
+    borderWidth: 1,
+    borderColor: colors.hairline,
   },
   tabBtnActive: {
-    backgroundColor: '#06b6d4', borderColor: '#06b6d4',
+    backgroundColor: colors.signalDim,
+    borderColor: colors.signalLine,
   },
-  tabText: { color: '#71717a', fontSize: 13, fontWeight: '600' },
-  tabTextActive: { color: '#0c0c14' },
+  tabText: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: colors.textSecondary,
+  },
+  tabTextActive: { color: colors.signal },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 40 },
-  resultCount: { color: '#52525b', fontSize: 12, fontWeight: '500', paddingVertical: 8 },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 120, gap: 8 },
-  emptyTitle: { color: '#fafafa', fontSize: 17, fontWeight: '700' },
-  emptySub: { color: '#52525b', fontSize: 13 },
-  userRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)',
+  listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
+  resultCount: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    letterSpacing: 0.6,
+    color: colors.textMuted,
+    paddingVertical: spacing.sm,
   },
-  avatar: { width: 40, height: 40, borderRadius: 20 },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingTop: 120,
+  },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  emptyTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  emptySub: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
+  },
+  avatar: { width: 40, height: 40, borderRadius: radius.pill },
   avatarPlaceholder: {
-    backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: colors.hairline,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   userInfo: { flex: 1 },
-  username: { color: '#fafafa', fontSize: 15, fontWeight: '600' },
-  fullName: { color: '#71717a', fontSize: 13 },
-  detectionRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)',
+  username: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: colors.textPrimary,
   },
-  detectionThumb: { width: 48, height: 48, borderRadius: 10 },
+  fullName: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  detectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
+  },
+  detectionThumb: { width: 48, height: 48, borderRadius: radius.md },
   detectionThumbPlaceholder: {
-    backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: colors.hairline,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   detectionInfo: { flex: 1 },
-  detectionTitle: { color: '#fafafa', fontSize: 14, fontWeight: '500' },
-  detectionMeta: { color: '#71717a', fontSize: 12, marginTop: 2 },
+  detectionTitle: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  detectionMeta: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
 })

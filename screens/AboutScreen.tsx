@@ -1,5 +1,8 @@
-import { Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
+import ScreenHeader from '../components/ScreenHeader'
+import LaneDivider from '../components/LaneDivider'
 
 type Props = {
   onBack: () => void
@@ -16,31 +19,31 @@ const FEATURES = [
   {
     title: 'Mobile Recording + AI Detection',
     description: 'Record your ride with the app. Our AI analyzes every frame for potholes, cracks, and road distress.',
-    color: '#06b6d4',
+    color: colors.signal,
   },
   {
     title: 'Live Hazard Map',
     description: 'View all detected hazards on an interactive map with severity coloring, heatmap visualization, and location-based filtering.',
-    color: '#22c55e',
+    color: colors.minor,
   },
   {
     title: 'Community Photo Reports',
     description: 'Anyone can submit road photos. Our AI automatically detects and classifies hazards from community submissions.',
-    color: '#f59e0b',
+    color: colors.moderate,
   },
 ]
 
 const PIPELINE_STEPS = [
-  { number: '01', title: 'Record', description: 'The app records 3 x 5-minute segments with GPS telemetry', color: '#06b6d4' },
-  { number: '02', title: 'Upload', description: 'Each segment uploads automatically to Azure cloud storage', color: '#22c55e' },
-  { number: '03', title: 'Process', description: 'AI detects hazards, measures real-world area, severity is classified', color: '#f59e0b' },
-  { number: '04', title: 'Map', description: 'Hazards appear on the map with severity, location, and detection details', color: '#06b6d4' },
+  { number: '01', title: 'Record', description: 'The app records 3 x 5-minute segments with GPS telemetry', color: colors.signal },
+  { number: '02', title: 'Upload', description: 'Each segment uploads automatically to Azure cloud storage', color: colors.minor },
+  { number: '03', title: 'Process', description: 'AI detects hazards, measures real-world area, severity is classified', color: colors.moderate },
+  { number: '04', title: 'Map', description: 'Hazards appear on the map with severity, location, and detection details', color: colors.signal },
 ]
 
 const SEVERITY = [
-  { level: 'Minor', color: '#22c55e', threshold: 'IPM area < 0.03m²', description: 'Surface distress, cosmetic damage' },
-  { level: 'Moderate', color: '#f59e0b', threshold: 'IPM area 0.03–0.17m²', description: 'Noticeable hazard, vehicle impact' },
-  { level: 'Severe', color: '#ef4444', threshold: 'IPM area > 0.17m²', description: 'Critical hazard, safety risk' },
+  { level: 'Minor', color: colors.minor, threshold: 'IPM area < 0.03m²', description: 'Surface distress, cosmetic damage' },
+  { level: 'Moderate', color: colors.moderate, threshold: 'IPM area 0.03–0.17m²', description: 'Noticeable hazard, vehicle impact' },
+  { level: 'Severe', color: colors.severe, threshold: 'IPM area > 0.17m²', description: 'Critical hazard, safety risk' },
 ]
 
 const RESOURCES = [
@@ -51,18 +54,12 @@ const RESOURCES = [
 export default function AboutScreen({ onBack }: Props) {
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color="#fafafa" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>About</Text>
-        <View style={{ width: 38 }} />
-      </View>
+      <ScreenHeader onBack={onBack} title="About" />
 
       <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Hero */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>ABOUT SIPAT</Text>
+          <Text style={styles.eyebrow}>ABOUT SIPAT</Text>
           <Text style={styles.heroTitle}>Born from the road.</Text>
           <Text style={styles.heroSubtitle}>System for Infrastructure Pothole Assessment Technology</Text>
           <Text style={styles.heroDesc}>
@@ -86,11 +83,11 @@ export default function AboutScreen({ onBack }: Props) {
           <Text style={styles.teamSchool}>Taguig City University — Computer Science, 4th Year</Text>
         </View>
 
-        <View style={styles.divider} />
+        <LaneDivider />
 
         {/* What is SIPAT */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>WHAT IS SIPAT</Text>
+          <Text style={styles.eyebrow}>WHAT IS SIPAT</Text>
           <Text style={styles.sectionTitle}>Detect. Map. Prevent.</Text>
           <Text style={styles.sectionDesc}>
             SIPAT is an AI-powered road hazard intelligence platform for the Philippines. It combines dashcam-based detection, community reporting, and interactive mapping to monitor road conditions in real time.
@@ -99,7 +96,7 @@ export default function AboutScreen({ onBack }: Props) {
             {FEATURES.map((f) => (
               <View key={f.title} style={styles.featureCard}>
                 <View style={[styles.featureDot, { backgroundColor: f.color }]} />
-                <View style={{ flex: 1 }}>
+                <View style={styles.featureBody}>
                   <Text style={styles.featureTitle}>{f.title}</Text>
                   <Text style={styles.featureDesc}>{f.description}</Text>
                 </View>
@@ -108,11 +105,11 @@ export default function AboutScreen({ onBack }: Props) {
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <LaneDivider />
 
         {/* Pipeline */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>DATA PIPELINE</Text>
+          <Text style={styles.eyebrow}>DATA PIPELINE</Text>
           <Text style={styles.sectionTitle}>From road to results</Text>
           <View style={styles.pipelineList}>
             {PIPELINE_STEPS.map((step) => (
@@ -130,11 +127,11 @@ export default function AboutScreen({ onBack }: Props) {
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <LaneDivider />
 
         {/* Severity */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>STANDARDS</Text>
+          <Text style={styles.eyebrow}>STANDARDS</Text>
           <Text style={styles.sectionTitle}>Severity Classification</Text>
           <Text style={styles.sectionDesc}>Based on DPWH D.O. No. 120 s. 2019 (adopting FHWA LTPP Distress ID Manual)</Text>
           <View style={styles.severityList}>
@@ -152,11 +149,11 @@ export default function AboutScreen({ onBack }: Props) {
           <Text style={styles.severityNote}>Confidence-based capping ensures low-confidence detections are conservatively classified.</Text>
         </View>
 
-        <View style={styles.divider} />
+        <LaneDivider />
 
         {/* Resources */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>RESOURCES</Text>
+          <Text style={styles.eyebrow}>RESOURCES</Text>
           <Text style={styles.sectionTitle}>Explore SIPAT</Text>
           <View style={styles.resourceList}>
             {RESOURCES.map((r) => (
@@ -166,12 +163,14 @@ export default function AboutScreen({ onBack }: Props) {
                 activeOpacity={0.7}
                 onPress={() => Linking.openURL(r.url)}
               >
-                <Ionicons name={r.icon} size={20} color="#06b6d4" />
-                <View style={{ flex: 1, marginLeft: 12 }}>
+                <View style={styles.resourceIcon}>
+                  <Ionicons name={r.icon} size={18} color={colors.signal} />
+                </View>
+                <View style={styles.resourceBody}>
                   <Text style={styles.resourceTitle}>{r.title}</Text>
                   <Text style={styles.resourceDesc}>{r.description}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#71717a" />
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
               </TouchableOpacity>
             ))}
           </View>
@@ -189,81 +188,256 @@ export default function AboutScreen({ onBack }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0c0c14' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-  },
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  headerTitle: { color: '#fafafa', fontSize: 16, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
-  section: { paddingHorizontal: 20, paddingVertical: 20 },
-  sectionLabel: { color: '#06b6d4', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 },
-  sectionTitle: { color: '#fafafa', fontSize: 24, fontWeight: '800', marginBottom: 8 },
-  sectionDesc: { color: '#a1a1aa', fontSize: 14, lineHeight: 22, marginBottom: 16 },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: 20 },
+  section: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+  },
+  eyebrow: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.4,
+    marginBottom: spacing.sm,
+  },
+  sectionTitle: {
+    fontFamily: fonts.extrabold,
+    fontSize: 17,
+    color: colors.textPrimary,
+    letterSpacing: -0.2,
+    marginBottom: spacing.sm,
+  },
+  sectionDesc: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+  },
 
   // Hero
-  heroTitle: { color: '#fafafa', fontSize: 28, fontWeight: '800', marginBottom: 4 },
-  heroSubtitle: { color: '#a1a1aa', fontSize: 14, marginBottom: 16 },
-  heroDesc: { color: '#71717a', fontSize: 14, lineHeight: 22 },
+  heroTitle: {
+    fontFamily: fonts.extrabold,
+    fontSize: 28,
+    color: colors.textPrimary,
+    letterSpacing: -0.4,
+    marginBottom: spacing.xs,
+  },
+  heroSubtitle: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+  },
+  heroDesc: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.textMuted,
+  },
 
   // Team
-  teamGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
-  teamCard: { width: '48%', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
-  teamAvatar: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(6,182,212,0.12)', justifyContent: 'center', alignItems: 'center' },
-  teamInitial: { color: '#06b6d4', fontSize: 14, fontWeight: '800' },
-  teamName: { color: '#fafafa', fontSize: 13, fontWeight: '700', marginTop: 8 },
-  teamRole: { color: '#71717a', fontSize: 11, marginTop: 2 },
-  teamSchool: { color: '#71717a', fontSize: 12, textAlign: 'center' },
+  teamGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  teamCard: {
+    width: '48%',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+  },
+  teamAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    backgroundColor: colors.signalDim,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  teamInitial: {
+    fontFamily: fonts.extrabold,
+    fontSize: 14,
+    color: colors.signal,
+  },
+  teamName: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    color: colors.textPrimary,
+    marginTop: spacing.sm,
+  },
+  teamRole: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  teamSchool: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.textMuted,
+    textAlign: 'center',
+  },
 
   // Features
-  featureList: { gap: 10 },
-  featureCard: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', gap: 12 },
+  featureList: { gap: spacing.sm },
+  featureCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    gap: spacing.md,
+  },
   featureDot: { width: 4, height: 4, borderRadius: 2, marginTop: 6 },
-  featureTitle: { color: '#fafafa', fontSize: 14, fontWeight: '700' },
-  featureDesc: { color: '#71717a', fontSize: 12, lineHeight: 18, marginTop: 4 },
+  featureBody: { flex: 1 },
+  featureTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  featureDesc: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
 
   // Pipeline
   pipelineList: { gap: 0 },
-  pipelineStep: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, position: 'relative' },
-  pipelineNum: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', zIndex: 1 },
-  pipelineNumText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  pipelineLine: { position: 'absolute', left: 15, top: 32, bottom: -20, width: 2, backgroundColor: 'rgba(255,255,255,0.06)' },
-  pipelineContent: { flex: 1, paddingBottom: 20 },
-  pipelineTitle: { color: '#fafafa', fontSize: 14, fontWeight: '700' },
-  pipelineDesc: { color: '#71717a', fontSize: 12, lineHeight: 18, marginTop: 2 },
+  pipelineStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    position: 'relative',
+  },
+  pipelineNum: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.pill,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  pipelineNumText: {
+    fontFamily: fonts.extrabold,
+    fontSize: 13,
+    color: colors.onSignal,
+  },
+  pipelineLine: {
+    position: 'absolute',
+    left: 15,
+    top: 32,
+    bottom: -20,
+    width: 2,
+    backgroundColor: colors.hairline,
+  },
+  pipelineContent: { flex: 1, paddingBottom: spacing.lg },
+  pipelineTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  pipelineDesc: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
 
   // Severity
-  severityList: { gap: 10 },
-  severityCard: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 14, borderWidth: 1 },
-  severityHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  severityList: { gap: spacing.sm },
+  severityCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+  },
+  severityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   severityDot: { width: 8, height: 8, borderRadius: 4 },
-  severityLevel: { fontSize: 14, fontWeight: '700' },
-  severityThreshold: { color: '#fafafa', fontSize: 16, fontWeight: '800', marginTop: 8 },
-  severityDesc: { color: '#71717a', fontSize: 12, marginTop: 4 },
-  severityNote: { color: '#71717a', fontSize: 12, marginTop: 12, textAlign: 'center' },
+  severityLevel: { fontFamily: fonts.bold, fontSize: 14 },
+  severityThreshold: {
+    fontFamily: fonts.monoBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+    marginTop: spacing.sm,
+  },
+  severityDesc: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+  severityNote: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
 
   // Resources
-  resourceList: { gap: 10 },
-  resourceCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
-  resourceTitle: { color: '#fafafa', fontSize: 14, fontWeight: '700' },
-  resourceDesc: { color: '#71717a', fontSize: 12, marginTop: 2 },
+  resourceList: { gap: spacing.sm },
+  resourceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    gap: spacing.md,
+  },
+  resourceIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    backgroundColor: colors.signalDim,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resourceBody: { flex: 1 },
+  resourceTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  resourceDesc: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
 
   // Thesis
-  thesisNote: { marginHorizontal: 20, marginTop: 24, marginBottom: 40, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
-  thesisText: { color: '#a1a1aa', fontSize: 13, lineHeight: 20, textAlign: 'center' },
+  thesisNote: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xxl,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+  },
+  thesisText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
 })

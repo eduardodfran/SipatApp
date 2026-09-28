@@ -1,4 +1,5 @@
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 type Props = {
   active: 'dashboard' | 'feed'
@@ -33,13 +34,15 @@ export default function AppTabBar({ active, onTabChange }: Props) {
 const styles = StyleSheet.create({
   container: {
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     paddingBottom: 10,
-    backgroundColor: '#0c0c14',
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
   },
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.hairline,
     borderRadius: 10,
     padding: 3,
     gap: 3,
@@ -47,18 +50,18 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
   },
   tabActive: {
-    backgroundColor: '#06b6d4',
+    backgroundColor: colors.signal,
   },
   tabText: {
-    color: '#71717a',
+    color: colors.textMuted,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
   },
   tabTextActive: {
-    color: '#0c0c14',
+    color: colors.onSignal,
   },
 })

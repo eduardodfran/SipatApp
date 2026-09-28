@@ -18,6 +18,7 @@ import type { Recording } from '../lib/types'
 import { useProximityAlerts } from '../lib/useProximityAlerts'
 import { useCommunityHazards } from '../lib/useCommunityHazards'
 import HazardMap from '../components/HazardMap'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 type Props = {
   onFinish: (recording: Recording) => void
@@ -447,7 +448,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
   if (!permission) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#06b6d4" />
+        <ActivityIndicator size="large" color={colors.signal} />
       </View>
     )
   }
@@ -455,7 +456,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
   if (!permission.granted) {
     return (
       <View style={styles.center}>
-        <Ionicons name="camera-outline" size={64} color="#71717a" />
+        <Ionicons name="camera-outline" size={64} color={colors.textMuted} />
         <Text style={styles.permTitle}>Camera Access Required</Text>
         <Text style={styles.permSub}>Grant camera permission to record road hazards</Text>
         <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
@@ -517,10 +518,10 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
               />
             </View>
             <View style={styles.miniExpand} pointerEvents="none">
-              <Ionicons name="expand" size={13} color="#fafafa" />
+              <Ionicons name="expand" size={13} color={colors.textPrimary} />
             </View>
             <View style={styles.speedChip} pointerEvents="none">
-              <Ionicons name="speedometer" size={14} color="#06b6d4" />
+              <Ionicons name="speedometer" size={14} color={colors.signal} />
               <Text style={styles.speedChipText}>{kmh != null ? `${kmh} km/h` : '— km/h'}</Text>
             </View>
           </TouchableOpacity>
@@ -529,7 +530,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
         {/* Header overlay */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleCancel} style={styles.headerBtn}>
-            <Ionicons name="close" size={24} color="#fafafa" />
+            <Ionicons name="close" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
 
           <View style={styles.segmentBadge}>
@@ -556,7 +557,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
               <Ionicons
                 name={alertsOn ? 'notifications' : 'notifications-off'}
                 size={18}
-                color={alertsOn ? '#0c0c14' : '#fafafa'}
+                color={alertsOn ? colors.onSignal : colors.textPrimary}
               />
             </TouchableOpacity>
 
@@ -572,7 +573,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
                 <Ionicons
                   name="map"
                   size={18}
-                  color={showMiniMap || view === 'map' ? '#0c0c14' : '#fafafa'}
+                  color={showMiniMap || view === 'map' ? colors.onSignal : colors.textPrimary}
                 />
               </TouchableOpacity>
             )}
@@ -585,7 +586,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
             onPress={proximity.dismissBanner}
             style={[styles.alertBanner, proximity.banner.tier === 'urgent' && styles.alertBannerUrgent]}
           >
-            <Ionicons name="warning" size={22} color="#0c0c14" />
+            <Ionicons name="warning" size={22} color={colors.onSignal} />
             <Text style={styles.alertBannerText}>{proximity.banner.text}</Text>
           </TouchableOpacity>
         )}
@@ -597,7 +598,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
             onPress={() => setView('camera')}
             accessibilityLabel="Back to camera"
           >
-            <Ionicons name="chevron-back" size={18} color="#06b6d4" />
+            <Ionicons name="chevron-back" size={18} color={colors.signal} />
             <Text style={styles.backPillText}>Camera</Text>
           </TouchableOpacity>
         )}
@@ -645,7 +646,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
             </TouchableOpacity>
           ) : status === 'waitingForNext' || status === 'waitingForGps' ? (
             <View style={styles.recordBtn}>
-              <ActivityIndicator size={28} color="#fafafa" />
+              <ActivityIndicator size={28} color={colors.textPrimary} />
             </View>
           ) : null}
         </View>
@@ -654,7 +655,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
         {status === 'uploading' && (
           <View style={styles.uploadOverlay}>
             <View style={styles.uploadCard}>
-              <ActivityIndicator size="large" color="#06b6d4" />
+              <ActivityIndicator size="large" color={colors.signal} />
               <Text style={styles.uploadTitle}>Saving recording...</Text>
               <Text style={styles.uploadSub}>Please wait</Text>
             </View>
@@ -666,7 +667,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
           <View style={styles.uploadOverlay}>
             <View style={styles.resultCard}>
               <View style={styles.successIcon}>
-                <Ionicons name="checkmark" size={32} color="#22c55e" />
+                <Ionicons name="checkmark" size={32} color={colors.minor} />
               </View>
               <Text style={styles.resultTitle}>Recording saved!</Text>
               <Text style={styles.resultSub}>
@@ -675,7 +676,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
                   : 'Your ride was uploaded successfully.'}
               </Text>
               <TouchableOpacity style={styles.resultBtnPrimary} onPress={onViewRides}>
-                <Ionicons name="car" size={18} color="#0c0c14" />
+                <Ionicons name="car" size={18} color={colors.onSignal} />
                 <Text style={styles.resultBtnPrimaryText}>View Rides</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -697,7 +698,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
           <View style={styles.uploadOverlay}>
             <View style={styles.resultCard}>
               <View style={styles.errorIcon}>
-                <Ionicons name="close" size={32} color="#ef4444" />
+                <Ionicons name="close" size={32} color={colors.severe} />
               </View>
               <Text style={styles.resultTitle}>Upload failed</Text>
               <Text style={styles.resultSub}>{uploadResult?.message ?? 'Something went wrong.'}</Text>
@@ -709,7 +710,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
                   setSegment(1)
                 }}
               >
-                <Ionicons name="refresh" size={18} color="#0c0c14" />
+                <Ionicons name="refresh" size={18} color={colors.onSignal} />
                 <Text style={styles.resultBtnPrimaryText}>Try Again</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.resultBtnSecondary} onPress={handleCancel}>
@@ -725,14 +726,14 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: colors.background,
   },
   center: {
     flex: 1,
-    backgroundColor: '#0c0c14',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: spacing.xxl,
   },
   camera: {
     flex: 1,
@@ -746,28 +747,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 48,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   headerBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: radius.pill,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   segmentBadge: {
     backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: radius.md,
   },
   segmentText: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
   },
   gpsBadge: {
     flexDirection: 'row',
@@ -776,7 +777,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: radius.md,
   },
   gpsActive: {
     backgroundColor: 'rgba(34,197,94,0.2)',
@@ -784,43 +785,43 @@ const styles = StyleSheet.create({
   gpsDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-    backgroundColor: '#71717a',
+    borderRadius: radius.pill,
+    backgroundColor: colors.textMuted,
   },
   gpsDotActive: {
-    backgroundColor: '#22c55e',
+    backgroundColor: colors.minor,
   },
   gpsText: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
   },
   alertToggle: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.pill,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   alertToggleOn: {
-    backgroundColor: '#22c55e',
+    backgroundColor: colors.minor,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
   mapToggle: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.pill,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   mapToggleOn: {
-    backgroundColor: '#06b6d4',
+    backgroundColor: colors.signal,
   },
   mapFill: {
     ...StyleSheet.absoluteFill,
@@ -828,18 +829,18 @@ const styles = StyleSheet.create({
   miniWrap: {
     position: 'absolute',
     top: 174,
-    right: 12,
+    right: spacing.md,
     width: 140,
     alignItems: 'center',
   },
   miniMap: {
     width: 140,
     height: 140,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.35)',
-    backgroundColor: '#0c0c14',
+    backgroundColor: colors.background,
   },
   miniExpand: {
     position: 'absolute',
@@ -855,23 +856,23 @@ const styles = StyleSheet.create({
   speedChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
     marginTop: 6,
     backgroundColor: 'rgba(0,0,0,0.65)',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: spacing.xs,
     borderRadius: 10,
   },
   speedChipText: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: fonts.monoBold,
     fontVariant: ['tabular-nums'],
   },
   backPill: {
     position: 'absolute',
     top: 174,
-    left: 16,
+    left: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
@@ -883,31 +884,31 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(6,182,212,0.6)',
   },
   backPillText: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
   alertBanner: {
     position: 'absolute',
     top: 120,
-    left: 16,
-    right: 16,
+    left: spacing.lg,
+    right: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#f59e0b',
+    backgroundColor: colors.moderate,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     borderRadius: 14,
   },
   alertBannerUrgent: {
-    backgroundColor: '#ef4444',
+    backgroundColor: colors.severe,
   },
   alertBannerText: {
     flex: 1,
-    color: '#0c0c14',
+    color: colors.onSignal,
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: fonts.extrabold,
   },
   timerContainer: {
     position: 'absolute',
@@ -917,25 +918,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timer: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 48,
-    fontWeight: '700',
+    fontFamily: fonts.monoBold,
     fontVariant: ['tabular-nums'],
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   waitingText: {
-    color: '#f59e0b',
+    color: colors.moderate,
     fontSize: 14,
-    fontWeight: '600',
-    marginTop: 8,
+    fontFamily: fonts.semibold,
+    marginTop: spacing.sm,
   },
   progressContainer: {
     position: 'absolute',
     bottom: 120,
-    left: 32,
-    right: 32,
+    left: spacing.xxl,
+    right: spacing.xxl,
   },
   progressBarBg: {
     height: 4,
@@ -945,7 +946,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: 4,
-    backgroundColor: '#ef4444',
+    backgroundColor: colors.severe,
     borderRadius: 2,
   },
   controls: {
@@ -964,54 +965,56 @@ const styles = StyleSheet.create({
   recordBtnOuter: {
     width: 72,
     height: 72,
-    borderRadius: 36,
+    borderRadius: radius.pill,
     borderWidth: 4,
-    borderColor: '#fafafa',
+    borderColor: colors.textPrimary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   recordBtnInner: {
     width: 58,
     height: 58,
-    borderRadius: 29,
-    backgroundColor: '#ef4444',
+    borderRadius: radius.pill,
+    backgroundColor: colors.severe,
   },
   stopBtn: {
     width: 24,
     height: 24,
     borderRadius: 4,
-    backgroundColor: '#fafafa',
+    backgroundColor: colors.textPrimary,
   },
   permTitle: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
+    fontFamily: fonts.bold,
+    marginTop: spacing.lg,
   },
   permSub: {
-    color: '#71717a',
+    color: colors.textMuted,
     fontSize: 14,
-    marginTop: 8,
+    fontFamily: fonts.regular,
+    marginTop: spacing.sm,
     textAlign: 'center',
   },
   permBtn: {
-    marginTop: 24,
-    backgroundColor: '#06b6d4',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
+    marginTop: spacing.xl,
+    backgroundColor: colors.signal,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
   },
   permBtnText: {
-    color: '#0c0c14',
+    color: colors.onSignal,
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
   cancelLink: {
-    marginTop: 16,
+    marginTop: spacing.lg,
   },
   cancelLinkText: {
-    color: '#71717a',
+    color: colors.textMuted,
     fontSize: 14,
+    fontFamily: fonts.regular,
   },
   uploadOverlay: {
     ...StyleSheet.absoluteFill,
@@ -1020,87 +1023,89 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   uploadCard: {
-    backgroundColor: '#1c1c1e',
-    borderRadius: 20,
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.lg,
     paddingHorizontal: 40,
     paddingVertical: 36,
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
   },
   uploadTitle: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 18,
-    fontWeight: '700',
-    marginTop: 8,
+    fontFamily: fonts.bold,
+    marginTop: spacing.sm,
   },
   uploadSub: {
-    color: '#71717a',
+    color: colors.textMuted,
     fontSize: 14,
+    fontFamily: fonts.regular,
   },
   resultCard: {
-    backgroundColor: '#1c1c1e',
-    borderRadius: 20,
-    paddingHorizontal: 32,
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.xxl,
     paddingVertical: 36,
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
     width: 280,
   },
   successIcon: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: radius.pill,
     backgroundColor: 'rgba(34,197,94,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   errorIcon: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: radius.pill,
     backgroundColor: 'rgba(239,68,68,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   resultTitle: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 20,
-    fontWeight: '700',
-    marginTop: 4,
+    fontFamily: fonts.bold,
+    marginTop: spacing.xs,
   },
   resultSub: {
-    color: '#a1a1aa',
+    color: colors.textSecondary,
     fontSize: 14,
+    fontFamily: fonts.regular,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   resultBtnPrimary: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#06b6d4',
-    borderRadius: 14,
+    gap: spacing.sm,
+    backgroundColor: colors.signal,
+    borderRadius: radius.md,
     paddingVertical: 14,
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xl,
     width: '100%',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   resultBtnPrimaryText: {
-    color: '#0c0c14',
+    color: colors.onSignal,
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
   resultBtnSecondary: {
     paddingVertical: 10,
-    paddingHorizontal: 16,
-    marginTop: 4,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xs,
   },
   resultBtnSecondaryText: {
-    color: '#71717a',
+    color: colors.textMuted,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
   },
 })

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   ActivityIndicator,
   Image,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,9 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import ScreenHeader from '../components/ScreenHeader'
+import Brackets from '../components/Brackets'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 type ProfileData = {
   id: string
@@ -88,18 +90,22 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
   const photoCount = photos.length
   const potholeCount = potholes.length
 
+  const renderEmpty = (icon: any, label: string) => (
+    <View style={styles.emptyState}>
+      <View style={styles.emptyIcon}>
+        <Brackets size={14} />
+        <Ionicons name={icon} size={32} color={colors.signal} />
+      </View>
+      <Text style={styles.emptyTitle}>{label}</Text>
+    </View>
+  )
+
   if (loading) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#fafafa" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <View style={{ width: 38 }} />
-        </View>
+        <ScreenHeader onBack={onBack} title="Profile" />
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color="#06b6d4" />
+          <ActivityIndicator size="large" color={colors.signal} />
         </View>
       </View>
     )
@@ -107,13 +113,7 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color="#fafafa" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ width: 38 }} />
-      </View>
+      <ScreenHeader onBack={onBack} title="Profile" />
 
       <ScrollView style={styles.scroll}>
         <View style={styles.profileSection}>
@@ -145,7 +145,7 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
             onPress={() => setActiveTab('photos')}
             activeOpacity={0.7}
           >
-            <Ionicons name="camera" size={16} color={activeTab === 'photos' ? '#06b6d4' : '#71717a'} />
+            <Ionicons name="camera" size={16} color={activeTab === 'photos' ? colors.signal : colors.textMuted} />
             <Text style={[styles.tabText, activeTab === 'photos' && styles.tabTextActive]}>Photos</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -153,7 +153,7 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
             onPress={() => setActiveTab('potholes')}
             activeOpacity={0.7}
           >
-            <Ionicons name="warning" size={16} color={activeTab === 'potholes' ? '#06b6d4' : '#71717a'} />
+            <Ionicons name="warning" size={16} color={activeTab === 'potholes' ? colors.signal : colors.textMuted} />
             <Text style={[styles.tabText, activeTab === 'potholes' && styles.tabTextActive]}>Detections</Text>
           </TouchableOpacity>
         </View>
@@ -161,10 +161,7 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
         {activeTab === 'photos' && (
           <View style={styles.gridSection}>
             {photos.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="camera-outline" size={40} color="#2a2a3a" />
-                <Text style={styles.emptyText}>No photos yet</Text>
-              </View>
+              renderEmpty('camera-outline', 'No photos yet')
             ) : (
               photos.map((photo) => (
                 <TouchableOpacity
@@ -188,13 +185,10 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
         {activeTab === 'potholes' && (
           <View style={styles.listSection}>
             {potholes.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="warning-outline" size={40} color="#2a2a3a" />
-                <Text style={styles.emptyText}>No detections yet</Text>
-              </View>
+              renderEmpty('warning-outline', 'No detections yet')
             ) : (
               potholes.map((p) => {
-                const sevColor = p.worst_severity === 'Severe' ? '#ef4444' : p.worst_severity === 'Moderate' ? '#f59e0b' : '#22c55e'
+                const sevColor = p.worst_severity === 'Severe' ? colors.severe : p.worst_severity === 'Moderate' ? colors.moderate : colors.minor
                 return (
                   <TouchableOpacity
                     key={p.pothole_id}
@@ -226,76 +220,73 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0c0c14' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-  },
-  backBtn: {
-    width: 38, height: 38, borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)', justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-  },
-  headerTitle: { color: '#fafafa', fontSize: 16, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  profileSection: { alignItems: 'center', paddingVertical: 24 },
+  profileSection: { alignItems: 'center', paddingVertical: spacing.xl },
   avatarCircle: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    width: 80, height: 80, borderRadius: radius.pill,
+    backgroundColor: colors.signalDim,
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 2, borderColor: 'rgba(6, 182, 212, 0.25)',
-    marginBottom: 12, overflow: 'hidden',
+    borderWidth: 2, borderColor: colors.signalLine,
+    marginBottom: spacing.md, overflow: 'hidden',
   },
-  avatarImage: { width: 80, height: 80, borderRadius: 40 },
-  avatarInitial: { color: '#06b6d4', fontSize: 32, fontWeight: '800' },
-  displayName: { color: '#fafafa', fontSize: 20, fontWeight: '700' },
+  avatarImage: { width: 80, height: 80, borderRadius: radius.pill },
+  avatarInitial: { color: colors.signal, fontFamily: fonts.extrabold, fontSize: 32 },
+  displayName: { color: colors.textPrimary, fontFamily: fonts.extrabold, fontSize: 20, letterSpacing: -0.2 },
   statsRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 24, marginTop: 16,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xl, marginTop: spacing.lg,
   },
   statItem: { alignItems: 'center' },
-  statNumber: { color: '#fafafa', fontSize: 18, fontWeight: '700' },
-  statLabel: { color: '#71717a', fontSize: 12, fontWeight: '500', marginTop: 2 },
-  statDivider: { width: 1, height: 24, backgroundColor: 'rgba(255,255,255,0.06)' },
+  statNumber: { color: colors.textPrimary, fontFamily: fonts.monoBold, fontSize: 18 },
+  statLabel: {
+    color: colors.textMuted, fontFamily: fonts.semibold, fontSize: 10,
+    textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 2,
+  },
+  statDivider: { width: 1, height: 24, backgroundColor: colors.hairline },
   tabRow: {
-    flexDirection: 'row', marginHorizontal: 20, gap: 8, marginBottom: 16,
+    flexDirection: 'row', marginHorizontal: spacing.lg, gap: spacing.sm, marginBottom: spacing.lg,
   },
   tab: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    paddingVertical: 10, borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)',
+    paddingVertical: 10, borderRadius: radius.md,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.hairline,
   },
-  tabActive: { backgroundColor: 'rgba(6, 182, 212, 0.08)', borderColor: 'rgba(6, 182, 212, 0.15)' },
-  tabText: { color: '#71717a', fontSize: 13, fontWeight: '600' },
-  tabTextActive: { color: '#06b6d4' },
-  gridSection: { paddingHorizontal: 20 },
+  tabActive: { backgroundColor: colors.signalDim, borderColor: colors.signalLine },
+  tabText: { color: colors.textMuted, fontFamily: fonts.semibold, fontSize: 13 },
+  tabTextActive: { color: colors.signal },
+  gridSection: { paddingHorizontal: spacing.lg },
   gridItem: {
-    width: '100%', height: 200, borderRadius: 14, overflow: 'hidden',
-    marginBottom: 10, backgroundColor: '#18181b',
+    width: '100%', height: 200, borderRadius: radius.lg, overflow: 'hidden',
+    marginBottom: spacing.sm, backgroundColor: colors.surface,
+    borderWidth: 1, borderColor: colors.hairline,
   },
   gridImage: { width: '100%', height: '100%' },
   gridOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: 10, backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: spacing.sm, backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  gridDate: { color: '#fafafa', fontSize: 11, fontWeight: '600' },
-  listSection: { paddingHorizontal: 20 },
+  gridDate: { color: colors.textPrimary, fontFamily: fonts.mono, fontSize: 11 },
+  listSection: { paddingHorizontal: spacing.lg },
   potholeCard: {
-    flexDirection: 'row', backgroundColor: '#18181b', borderRadius: 14,
-    overflow: 'hidden', marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)',
+    flexDirection: 'row', backgroundColor: colors.surface, borderRadius: radius.lg,
+    overflow: 'hidden', marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.hairline,
   },
   potholeImage: { width: 90, height: 90 },
-  potholeInfo: { flex: 1, padding: 12, justifyContent: 'center' },
+  potholeInfo: { flex: 1, padding: spacing.md, justifyContent: 'center' },
   potholeTop: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   severityDot: { width: 7, height: 7, borderRadius: 3.5 },
-  severityText: { color: '#fafafa', fontSize: 12, fontWeight: '700' },
-  potholeHits: { color: '#71717a', fontSize: 11, marginLeft: 'auto' },
-  potholeCaption: { color: '#a1a1aa', fontSize: 11, fontStyle: 'italic', marginTop: 2 },
-  potholeAddress: { color: '#71717a', fontSize: 10, marginTop: 2 },
-  emptyState: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { color: '#71717a', fontSize: 13, marginTop: 8 },
+  severityText: { color: colors.textPrimary, fontFamily: fonts.bold, fontSize: 12, letterSpacing: 0.4 },
+  potholeHits: { color: colors.textMuted, fontFamily: fonts.mono, fontSize: 11, marginLeft: 'auto' },
+  potholeCaption: { color: colors.textSecondary, fontFamily: fonts.regular, fontSize: 11, fontStyle: 'italic', marginTop: 2 },
+  potholeAddress: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 10, marginTop: 2 },
+  emptyState: {
+    alignItems: 'center', paddingVertical: spacing.xxl,
+    backgroundColor: colors.surface, borderRadius: radius.lg,
+    borderWidth: 1, borderColor: colors.hairline,
+  },
+  emptyIcon: {
+    width: 72, height: 72, justifyContent: 'center', alignItems: 'center', marginBottom: spacing.lg,
+  },
+  emptyTitle: { color: colors.textPrimary, fontFamily: fonts.semibold, fontSize: 15 },
 })

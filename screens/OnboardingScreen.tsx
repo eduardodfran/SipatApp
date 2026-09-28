@@ -10,6 +10,8 @@ import {
   View,
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
+import Brackets from '../components/Brackets'
 import RecordRideSvg from '../assets/onboarding/record-ride.svg'
 import CommunitySvg from '../assets/onboarding/community.svg'
 import RealtimeMapSvg from '../assets/onboarding/realtime-map.svg'
@@ -79,7 +81,16 @@ export default function OnboardingScreen({ onDone }: Props) {
       >
         {slides.map((slide, i) => (
           <View key={i} style={styles.slide}>
-            {i === 0 && <Image source={require('../assets/sipat-logo-main.png')} style={styles.slideLogo} resizeMode="contain" />}
+            {i === 0 && (
+              <View style={styles.slideLogoFrame}>
+                <Brackets size={14} />
+                <Image
+                  source={require('../assets/sipat-logo-main.png')}
+                  style={styles.slideLogo}
+                  resizeMode="contain"
+                />
+              </View>
+            )}
             <View style={styles.illustrationWrap}>
               <slide.Illustration width={240} height={240} />
             </View>
@@ -115,18 +126,20 @@ export default function OnboardingScreen({ onDone }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#09090b',
+    backgroundColor: colors.background,
   },
   skipBtn: {
     position: 'absolute',
     top: 60,
-    right: 24,
+    right: spacing.xl,
     zIndex: 10,
   },
   skipText: {
-    color: '#71717a',
-    fontSize: 15,
-    fontWeight: '500',
+    color: colors.textMuted,
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   slidesContainer: {
     flex: 1,
@@ -136,62 +149,70 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: spacing.xxl,
   },
   illustrationWrap: {
-    marginBottom: 32,
+    marginBottom: spacing.xxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slideLogoFrame: {
+    width: 120,
+    height: 120,
+    marginBottom: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
   slideLogo: {
     width: 120,
     height: 120,
-    marginBottom: 24,
   },
   title: {
+    fontFamily: fonts.extrabold,
     fontSize: 26,
-    fontWeight: '700',
-    color: '#fafafa',
+    letterSpacing: -0.3,
+    color: colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   subtitle: {
-    fontSize: 15,
-    color: '#a1a1aa',
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
   },
   bottom: {
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xl,
     paddingBottom: 60,
     alignItems: 'center',
   },
   dots: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 32,
+    gap: spacing.sm,
+    marginBottom: spacing.xxl,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#71717a',
+    backgroundColor: colors.hairlineStrong,
   },
   dotActive: {
-    backgroundColor: '#06b6d4',
+    backgroundColor: colors.signal,
     width: 24,
   },
   nextBtn: {
-    backgroundColor: '#06b6d4',
-    borderRadius: 999,
-    paddingVertical: 14,
-    paddingHorizontal: 48,
+    backgroundColor: colors.signal,
+    borderRadius: radius.md,
+    height: 48,
     width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   nextBtnText: {
-    color: '#09090b',
+    color: colors.onSignal,
+    fontFamily: fonts.semibold,
     fontSize: 16,
-    fontWeight: '700',
   },
 })

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useProximityAlerts } from '../lib/useProximityAlerts'
 import { useCommunityHazards } from '../lib/useCommunityHazards'
 import HazardMap from '../components/HazardMap'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 type Props = {
   onBack: () => void
@@ -29,15 +30,15 @@ export default function DriveScreen({ onBack }: Props) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.headerBtn}>
-          <Ionicons name="arrow-back" size={24} color="#fafafa" />
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Drive Mode</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={() => setFollow((v) => !v)} style={styles.headerBtn}>
-            <Ionicons name={follow ? 'locate' : 'locate-outline'} size={20} color={follow ? '#06b6d4' : '#fafafa'} />
+            <Ionicons name={follow ? 'locate' : 'locate-outline'} size={20} color={follow ? colors.signal : colors.textPrimary} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setMuted((v) => !v)} style={styles.headerBtn}>
-            <Ionicons name={muted ? 'volume-mute' : 'volume-high'} size={20} color="#fafafa" />
+            <Ionicons name={muted ? 'volume-mute' : 'volume-high'} size={20} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -57,7 +58,7 @@ export default function DriveScreen({ onBack }: Props) {
             onPress={dismissBanner}
             style={[styles.alertBanner, banner.tier === 'urgent' && styles.alertBannerUrgent]}
           >
-            <Ionicons name="warning" size={22} color="#0c0c14" />
+            <Ionicons name="warning" size={22} color={colors.onSignal} />
             <Text style={styles.alertBannerText}>{banner.text}</Text>
           </TouchableOpacity>
         )}
@@ -89,7 +90,7 @@ export default function DriveScreen({ onBack }: Props) {
           onPress={() => setDriving((v) => !v)}
           style={[styles.driveBtn, driving && styles.driveBtnActive]}
         >
-          <Ionicons name={driving ? 'stop' : 'navigate'} size={22} color={driving ? '#fafafa' : '#0c0c14'} />
+          <Ionicons name={driving ? 'stop' : 'navigate'} size={22} color={driving ? colors.textPrimary : colors.onSignal} />
           <Text style={[styles.driveBtnText, driving && styles.driveBtnTextActive]}>
             {driving ? 'Stop' : 'Start Driving'}
           </Text>
@@ -105,42 +106,42 @@ export default function DriveScreen({ onBack }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0c0c14',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   headerBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.md,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.hairline,
   },
   headerTitle: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: fonts.extrabold,
   },
   headerRight: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing.sm,
   },
   mapWrap: {
     flex: 1,
-    marginHorizontal: 12,
-    borderRadius: 16,
+    marginHorizontal: spacing.md,
+    borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: '#18181b',
+    backgroundColor: colors.surface,
   },
   map: {
     flex: 1,
-    backgroundColor: '#0c0c14',
+    backgroundColor: colors.background,
   },
   alertBanner: {
     position: 'absolute',
@@ -150,55 +151,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#f59e0b',
+    backgroundColor: colors.moderate,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     borderRadius: 14,
   },
   alertBannerUrgent: {
-    backgroundColor: '#ef4444',
+    backgroundColor: colors.severe,
   },
   alertBannerText: {
     flex: 1,
-    color: '#0c0c14',
+    color: colors.onSignal,
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: fonts.extrabold,
   },
   cards: {
     flexDirection: 'row',
     gap: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
     paddingTop: 10,
   },
   card: {
     flex: 1,
-    backgroundColor: '#18181b',
+    backgroundColor: colors.surface,
     borderRadius: 14,
-    padding: 12,
+    padding: spacing.md,
     alignItems: 'center',
   },
   nextCard: {
     flex: 2,
   },
   cardLabel: {
-    color: '#71717a',
+    color: colors.textMuted,
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     textTransform: 'uppercase',
   },
   cardValue: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 26,
-    fontWeight: '800',
+    fontFamily: fonts.monoBold,
     marginTop: 2,
   },
   cardUnit: {
-    color: '#a1a1aa',
+    color: colors.textSecondary,
     fontSize: 12,
     marginTop: 2,
   },
   footer: {
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
     paddingTop: 10,
     alignItems: 'center',
   },
@@ -206,26 +207,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#22c55e',
-    paddingHorizontal: 32,
+    backgroundColor: colors.minor,
+    paddingHorizontal: spacing.xxl,
     paddingVertical: 14,
-    borderRadius: 16,
+    borderRadius: radius.lg,
   },
   driveBtnActive: {
-    backgroundColor: '#ef4444',
+    backgroundColor: colors.severe,
   },
   driveBtnText: {
-    color: '#0c0c14',
+    color: colors.onSignal,
     fontSize: 17,
-    fontWeight: '800',
+    fontFamily: fonts.extrabold,
   },
   driveBtnTextActive: {
-    color: '#fafafa',
+    color: colors.textPrimary,
   },
   hint: {
-    color: '#71717a',
+    color: colors.textMuted,
     fontSize: 12,
-    marginTop: 8,
+    marginTop: spacing.sm,
     textAlign: 'center',
   },
 })

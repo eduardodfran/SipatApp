@@ -10,13 +10,14 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useDistressSummary, friendlyClassName, type DistressType } from '../lib/useDistressSummary'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 function severityDotColor(severity: string): string {
   switch (severity?.toLowerCase()) {
-    case 'severe': return '#ef4444'
-    case 'moderate': return '#f59e0b'
-    case 'minor': return '#22c55e'
-    default: return '#71717a'
+    case 'severe': return colors.severe
+    case 'moderate': return colors.moderate
+    case 'minor': return colors.minor
+    default: return colors.textMuted
   }
 }
 
@@ -27,7 +28,7 @@ export default function DistressSummary() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color="#06b6d4" />
+        <ActivityIndicator size="small" color={colors.signal} />
       </View>
     )
   }
@@ -40,7 +41,7 @@ export default function DistressSummary() {
     <>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Ionicons name="warning" size={16} color="#06b6d4" />
+          <Ionicons name="warning" size={14} color={colors.signal} />
           <Text style={styles.headerTitle}>Distress Types Detected</Text>
           <Text style={styles.headerCount}>{distresstypes.length}</Text>
         </View>
@@ -66,7 +67,7 @@ export default function DistressSummary() {
             onPress={() => setSelectedImage(null)}
             activeOpacity={0.7}
           >
-            <Ionicons name="close" size={28} color="#fafafa" />
+            <Ionicons name="close" size={28} color={colors.textPrimary} />
           </TouchableOpacity>
           {selectedImage && (
             <Image
@@ -108,8 +109,12 @@ function DistressRow({
           {(item.avg_confidence * 100).toFixed(0)}%
         </Text>
         {item.sample_image_url && (
-          <TouchableOpacity onPress={onImagePress} style={styles.imageBtn}>
-            <Ionicons name="image" size={14} color="#06b6d4" />
+          <TouchableOpacity
+            onPress={onImagePress}
+            style={styles.imageBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="image" size={14} color={colors.signal} />
           </TouchableOpacity>
         )}
       </View>
@@ -119,60 +124,61 @@ function DistressRow({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#18181b',
-    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.hairline,
     overflow: 'hidden',
   },
   loadingContainer: {
-    backgroundColor: '#18181b',
-    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-    padding: 20,
+    borderColor: colors.hairline,
+    padding: spacing.xl,
     alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: colors.hairline,
   },
   headerTitle: {
-    color: '#71717a',
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
     flex: 1,
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.4,
   },
   headerCount: {
-    color: '#06b6d4',
-    fontSize: 12,
-    fontWeight: '700',
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    borderRadius: 8,
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    letterSpacing: 0.4,
+    color: colors.signal,
+    backgroundColor: colors.signalDim,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: radius.sm,
     overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: colors.hairline,
   },
   rowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: 10,
+    gap: spacing.sm,
   },
   severityDot: {
     width: 8,
@@ -183,51 +189,54 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   className: {
-    color: '#fafafa',
+    color: colors.textPrimary,
+    fontFamily: fonts.bold,
     fontSize: 14,
-    fontWeight: '700',
   },
   friendlyName: {
-    color: '#71717a',
+    color: colors.textMuted,
+    fontFamily: fonts.regular,
     fontSize: 11,
     marginTop: 1,
   },
   rowCenter: {
     alignItems: 'center',
-    marginHorizontal: 16,
+    marginHorizontal: spacing.lg,
   },
   count: {
-    color: '#fafafa',
+    color: colors.textPrimary,
+    fontFamily: fonts.monoBold,
     fontSize: 16,
-    fontWeight: '700',
   },
   countLabel: {
-    color: '#71717a',
-    fontSize: 9,
+    color: colors.textMuted,
+    fontFamily: fonts.bold,
+    fontSize: 10,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
+    marginTop: 1,
   },
   rowRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
   confidence: {
-    color: '#71717a',
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
     fontSize: 12,
-    fontWeight: '600',
   },
   imageBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
+    backgroundColor: colors.signalDim,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -238,8 +247,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: radius.pill,
+    backgroundColor: colors.hairlineStrong,
     justifyContent: 'center',
     alignItems: 'center',
   },

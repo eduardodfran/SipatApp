@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 type Props = {
   contentType: 'photo' | 'pothole'
@@ -87,9 +88,9 @@ export default function ReportButton({ contentType, contentId, onReported }: Pro
       activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={reported ? '#ef4444' : '#71717a'} />
+        <ActivityIndicator size="small" color={reported ? colors.severe : colors.textSecondary} />
       ) : (
-        <Ionicons name="flag" size={14} color={reported ? '#ef4444' : '#71717a'} />
+        <Ionicons name="flag" size={14} color={reported ? colors.severe : colors.textSecondary} />
       )}
       <Text style={[styles.text, reported && styles.reportedText]}>
         {reported ? 'Reported' : 'Report'}
@@ -102,20 +103,25 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.hairline,
+    borderWidth: 1,
+    borderColor: colors.hairline,
   },
   reported: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: colors.severeDim,
+    borderColor: colors.hairlineStrong,
   },
   text: {
+    fontFamily: fonts.bold,
     fontSize: 12,
-    color: '#71717a',
+    color: colors.textSecondary,
   },
   reportedText: {
-    color: '#ef4444',
+    color: colors.severe,
   },
 })

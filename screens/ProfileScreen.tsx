@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,10 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
+import ScreenHeader from '../components/ScreenHeader'
+import Brackets from '../components/Brackets'
+import LaneDivider from '../components/LaneDivider'
 
 const COOLDOWN_DAYS = 7
 const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000
@@ -215,18 +218,15 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color="#fafafa" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ width: 38 }} />
-      </View>
+      <ScreenHeader onBack={onBack} title="Profile" />
 
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.avatarSection}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarInitial}>{initial}</Text>
+          <View style={styles.avatarFrame}>
+            <Brackets size={16} />
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarInitial}>{initial}</Text>
+            </View>
           </View>
           <Text style={styles.displayName}>{displayName}</Text>
           <Text style={styles.email}>{email}</Text>
@@ -239,14 +239,14 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
             value={username}
             onChangeText={setUsername}
             placeholder="Enter username"
-            placeholderTextColor="#71717a"
+            placeholderTextColor={colors.textMuted}
             autoCapitalize="none"
             autoCorrect={false}
             editable={!cooldown.locked}
           />
           {cooldown.locked && (
             <View style={styles.cooldownRow}>
-              <Ionicons name="time-outline" size={14} color="#f59e0b" />
+              <Ionicons name="time-outline" size={14} color={colors.moderate} />
               <Text style={styles.cooldownText}>{cooldown.remaining}</Text>
             </View>
           )}
@@ -254,7 +254,7 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
           <Text style={styles.label}>Email</Text>
           <View style={styles.readOnlyField}>
             <Text style={styles.readOnlyText}>{email}</Text>
-            <Ionicons name="lock-closed" size={14} color="#71717a" />
+            <Ionicons name="lock-closed" size={14} color={colors.textMuted} />
           </View>
 
           <TouchableOpacity
@@ -263,12 +263,14 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
             disabled={!hasChanges || saving || cooldown.locked}
           >
             {saving ? (
-              <ActivityIndicator color="#0c0c14" />
+              <ActivityIndicator color={colors.onSignal} />
             ) : (
               <Text style={styles.saveBtnText}>Save Changes</Text>
             )}
           </TouchableOpacity>
         </View>
+
+        <LaneDivider />
 
         <View style={styles.changePasswordSection}>
           <Text style={styles.sectionLabel}>CHANGE PASSWORD</Text>
@@ -279,7 +281,7 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
             value={currentPassword}
             onChangeText={setCurrentPassword}
             placeholder="Enter current password"
-            placeholderTextColor="#71717a"
+            placeholderTextColor={colors.textMuted}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
@@ -291,7 +293,7 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
             value={newPassword}
             onChangeText={setNewPassword}
             placeholder="Enter new password"
-            placeholderTextColor="#71717a"
+            placeholderTextColor={colors.textMuted}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
@@ -303,7 +305,7 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             placeholder="Confirm new password"
-            placeholderTextColor="#71717a"
+            placeholderTextColor={colors.textMuted}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
@@ -315,24 +317,26 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
             disabled={changingPassword}
           >
             {changingPassword ? (
-              <ActivityIndicator color="#0c0c14" />
+              <ActivityIndicator color={colors.signal} />
             ) : (
               <Text style={styles.changePasswordBtnText}>Update Password</Text>
             )}
           </TouchableOpacity>
         </View>
 
+        <LaneDivider />
+
         <View style={styles.dangerSection}>
           <TouchableOpacity style={styles.aboutBtn} onPress={onAbout} activeOpacity={0.7}>
-            <Ionicons name="information-circle-outline" size={18} color="#06b6d4" />
+            <Ionicons name="information-circle-outline" size={18} color={colors.signal} />
             <Text style={styles.aboutText}>About SIPAT</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount} activeOpacity={0.7}>
-            <Ionicons name="trash-outline" size={18} color="#ef4444" />
+            <Ionicons name="trash-outline" size={18} color={colors.severe} />
             <Text style={styles.deleteText}>Delete Account</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
-            <Ionicons name="log-out-outline" size={18} color="#ef4444" />
+            <Ionicons name="log-out-outline" size={18} color={colors.severe} />
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </View>
@@ -344,13 +348,13 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Delete Account</Text>
-            <Text style={styles.modalDesc}>Type <Text style={{ fontWeight: '800', color: '#ef4444' }}>DELETE</Text> to confirm permanent account deletion.</Text>
+            <Text style={styles.modalDesc}>Type <Text style={{ fontFamily: fonts.extrabold, color: colors.severe }}>DELETE</Text> to confirm permanent account deletion.</Text>
             <TextInput
               style={styles.modalInput}
               value={deleteInput}
               onChangeText={setDeleteInput}
               placeholder="Type DELETE"
-              placeholderTextColor="#71717a"
+              placeholderTextColor={colors.textMuted}
               autoCapitalize="characters"
               autoCorrect={false}
               editable={!deleting}
@@ -371,7 +375,7 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
                 activeOpacity={0.7}
               >
                 {deleting ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={colors.severe} />
                 ) : (
                   <Text style={styles.modalDeleteText}>Delete</Text>
                 )}
@@ -385,282 +389,281 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0c0c14' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-  },
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  headerTitle: { color: '#fafafa', fontSize: 16, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
+
+  // Avatar — YOLO detection brackets frame the initial (single hero bracket)
   avatarSection: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: spacing.xl,
+  },
+  avatarFrame: {
+    width: 96,
+    height: 96,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   avatarCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    backgroundColor: colors.signalDim,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(6, 182, 212, 0.25)',
-    marginBottom: 12,
   },
   avatarInitial: {
-    color: '#06b6d4',
+    color: colors.signal,
+    fontFamily: fonts.bold,
     fontSize: 32,
-    fontWeight: '800',
   },
   displayName: {
-    color: '#fafafa',
+    color: colors.textPrimary,
+    fontFamily: fonts.semibold,
     fontSize: 20,
-    fontWeight: '700',
   },
   email: {
-    color: '#71717a',
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
     fontSize: 13,
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
+
+  // Username / email form
   formSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
   },
   label: {
-    color: '#a1a1aa',
+    color: colors.textSecondary,
+    fontFamily: fonts.semibold,
     fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 8,
-    marginTop: 16,
+    marginBottom: spacing.sm,
+    marginTop: spacing.lg,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    color: '#fafafa',
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.md,
+    paddingVertical: 13,
+    paddingHorizontal: spacing.lg,
+    color: colors.textPrimary,
+    fontFamily: fonts.regular,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.hairline,
   },
   inputDisabled: {
-    opacity: 0.4,
+    borderColor: colors.hairlineStrong,
+    color: colors.textMuted,
   },
   cooldownRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    paddingVertical: 4,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+    backgroundColor: colors.moderateDim,
   },
   cooldownText: {
-    color: '#f59e0b',
+    color: colors.moderate,
+    fontFamily: fonts.semibold,
     fontSize: 12,
-    fontWeight: '600',
   },
   readOnlyField: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingVertical: 13,
+    paddingHorizontal: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.hairline,
   },
   readOnlyText: {
-    color: '#71717a',
-    fontSize: 15,
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: 14,
   },
   saveBtn: {
-    backgroundColor: '#06b6d4',
-    borderRadius: 12,
-    paddingVertical: 14,
+    height: 48,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
+    backgroundColor: colors.signal,
+    borderRadius: radius.md,
+    marginTop: spacing.xl,
   },
   saveBtnDisabled: {
     opacity: 0.4,
   },
   saveBtnText: {
-    color: '#0c0c14',
-    fontSize: 16,
-    fontWeight: '700',
+    color: colors.onSignal,
+    fontFamily: fonts.semibold,
+    fontSize: 15,
   },
   changePasswordSection: {
-    paddingHorizontal: 20,
-    marginTop: 32,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.sm,
   },
   sectionLabel: {
-    color: '#f59e0b',
+    fontFamily: fonts.bold,
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.2,
+    color: colors.textMuted,
+    letterSpacing: 1.4,
     textTransform: 'uppercase',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   passwordInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    color: '#fafafa',
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.md,
+    paddingVertical: 13,
+    paddingHorizontal: spacing.lg,
+    color: colors.textPrimary,
+    fontFamily: fonts.regular,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.hairline,
   },
   changePasswordBtn: {
-    backgroundColor: '#f59e0b',
-    borderRadius: 12,
-    paddingVertical: 14,
+    height: 48,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    backgroundColor: colors.signalDim,
+    borderRadius: radius.md,
+    marginTop: spacing.lg,
   },
   changePasswordBtnDisabled: {
     opacity: 0.4,
   },
   changePasswordBtnText: {
-    color: '#0c0c14',
-    fontSize: 16,
-    fontWeight: '700',
+    color: colors.signal,
+    fontFamily: fonts.semibold,
+    fontSize: 15,
   },
   dangerSection: {
-    paddingHorizontal: 20,
-    marginTop: 32,
-    gap: 10,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    gap: spacing.sm,
   },
   aboutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(6, 182, 212, 0.08)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.15)',
+    gap: spacing.sm,
+    height: 48,
+    backgroundColor: colors.signalDim,
+    borderRadius: radius.md,
   },
   aboutText: {
-    color: '#06b6d4',
+    color: colors.signal,
+    fontFamily: fonts.semibold,
     fontSize: 15,
-    fontWeight: '600',
   },
   deleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.15)',
+    gap: spacing.sm,
+    height: 48,
+    backgroundColor: colors.severeDim,
+    borderRadius: radius.md,
   },
   deleteText: {
-    color: '#ef4444',
+    color: colors.severe,
+    fontFamily: fonts.semibold,
     fontSize: 15,
-    fontWeight: '600',
   },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.15)',
+    gap: spacing.sm,
+    height: 48,
+    backgroundColor: colors.severeDim,
+    borderRadius: radius.md,
   },
   logoutText: {
-    color: '#ef4444',
+    color: colors.severe,
+    fontFamily: fonts.semibold,
     fontSize: 15,
-    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: spacing.xxl,
   },
   modalContent: {
-    backgroundColor: '#1c1c22',
-    borderRadius: 16,
-    padding: 24,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
     width: '100%',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.hairline,
   },
   modalTitle: {
-    color: '#fafafa',
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 8,
+    color: colors.textPrimary,
+    fontFamily: fonts.extrabold,
+    fontSize: 17,
+    marginBottom: spacing.sm,
   },
   modalDesc: {
-    color: '#a1a1aa',
+    color: colors.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   modalInput: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '700',
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.md,
+    paddingVertical: 13,
+    paddingHorizontal: spacing.lg,
+    color: colors.severe,
+    fontFamily: fonts.monoBold,
+    fontSize: 15,
     letterSpacing: 2,
     borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.3)',
+    borderColor: colors.hairlineStrong,
   },
   modalActions: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
+    gap: spacing.sm,
+    marginTop: spacing.lg,
   },
   modalCancelBtn: {
     flex: 1,
-    borderRadius: 12,
-    paddingVertical: 14,
+    height: 48,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.hairline,
   },
   modalCancelText: {
-    color: '#a1a1aa',
+    color: colors.textSecondary,
+    fontFamily: fonts.semibold,
     fontSize: 15,
-    fontWeight: '600',
   },
   modalDeleteBtn: {
     flex: 1,
-    borderRadius: 12,
-    paddingVertical: 14,
+    height: 48,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ef4444',
+    backgroundColor: colors.severeDim,
+    borderRadius: radius.md,
   },
   modalDeleteBtnDisabled: {
     opacity: 0.4,
   },
   modalDeleteText: {
-    color: '#fff',
+    color: colors.severe,
+    fontFamily: fonts.semibold,
     fontSize: 15,
-    fontWeight: '700',
   },
 })

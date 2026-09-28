@@ -13,6 +13,7 @@ import { supabase } from '../lib/supabase'
 import { loadPendingPhotos, updatePhotoPost, deletePhotoPost } from '../lib/pendingPhotos'
 import { uploadCommunityPhoto } from '../lib/uploadCommunityPhoto'
 import type { LocalPhotoPost } from '../lib/types'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 type Props = {
   refreshKey: number
@@ -20,9 +21,9 @@ type Props = {
 }
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'Analyzing...', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-  processed: { label: 'Detected', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
-  no_detection: { label: 'No Distress', color: '#71717a', bg: 'rgba(107, 114, 128, 0.1)' },
+  pending: { label: 'Analyzing...', color: colors.moderate, bg: colors.moderateDim },
+  processed: { label: 'Detected', color: colors.minor, bg: colors.minorDim },
+  no_detection: { label: 'No Distress', color: colors.textMuted, bg: colors.hairline },
 }
 
 export default function PhotoFeedSection({ refreshKey, userId }: Props) {
@@ -95,7 +96,7 @@ export default function PhotoFeedSection({ refreshKey, userId }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="images" size={18} color="#06b6d4" />
+        <Ionicons name="images" size={14} color={colors.signal} />
         <Text style={styles.headerTitle}>Community Feed</Text>
       </View>
 
@@ -117,23 +118,23 @@ export default function PhotoFeedSection({ refreshKey, userId }: Props) {
               {post.status === 'pending' && !isUploading && (
                 <>
                   <TouchableOpacity style={styles.uploadBtn} onPress={() => handleUpload(post)}>
-                    <Ionicons name="cloud-upload" size={16} color="#06b6d4" />
+                    <Ionicons name="cloud-upload" size={16} color={colors.signal} />
                     <Text style={styles.uploadBtnText}>Upload</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(post.id)}>
-                    <Ionicons name="trash" size={16} color="#ef4444" />
+                    <Ionicons name="trash" size={16} color={colors.severe} />
                   </TouchableOpacity>
                 </>
               )}
               {isUploading && (
                 <View style={styles.uploadingBadge}>
-                  <ActivityIndicator size="small" color="#f59e0b" />
-                  <Text style={[styles.badgeText, { color: '#f59e0b' }]}>Uploading...</Text>
+                  <ActivityIndicator size="small" color={colors.moderate} />
+                  <Text style={[styles.badgeText, { color: colors.moderate }]}>Uploading...</Text>
                 </View>
               )}
               {post.status === 'uploaded' && (
-                <View style={[styles.badge, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
-                  <Text style={[styles.badgeText, { color: '#f59e0b' }]}>
+                <View style={[styles.badge, { backgroundColor: colors.moderateDim }]}>
+                  <Text style={[styles.badgeText, { color: colors.moderate }]}>
                     {post.detection_status === 'processed'
                       ? `Detected ${post.confidence ? `(${(post.confidence * 100).toFixed(0)}%)` : ''}`
                       : post.detection_status === 'no_detection'
@@ -171,38 +172,84 @@ export default function PhotoFeedSection({ refreshKey, userId }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 10 },
+  container: { gap: spacing.md },
   header: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  headerTitle: { color: '#fafafa', fontSize: 16, fontWeight: '700', flex: 1 },
+  headerTitle: {
+    flex: 1,
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.4,
+  },
   postCard: {
-    backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.hairline,
   },
   postImage: { width: '100%', height: 180, resizeMode: 'cover' },
-  postBody: { padding: 12 },
-  postCaption: { color: '#fafafa', fontSize: 14, lineHeight: 20, marginBottom: 4 },
-  postAddress: { color: '#71717a', fontSize: 11, marginBottom: 6 },
-  postTime: { color: '#71717a', fontSize: 11 },
+  postBody: { padding: spacing.lg },
+  postCaption: {
+    color: colors.textPrimary,
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: spacing.xs,
+  },
+  postAddress: {
+    color: colors.textSecondary,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: spacing.xs,
+  },
+  postTime: { color: colors.textMuted, fontFamily: fonts.mono, fontSize: 11 },
   postActions: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 12, paddingBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   uploadBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(6, 182, 212, 0.1)', paddingVertical: 6, paddingHorizontal: 12,
-    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.signalDim,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
   },
-  uploadBtnText: { color: '#06b6d4', fontSize: 12, fontWeight: '600' },
-  deleteBtn: { padding: 6 },
+  uploadBtnText: { color: colors.signal, fontFamily: fonts.semibold, fontSize: 13 },
+  deleteBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.severeDim,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   uploadingBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(245, 158, 11, 0.1)', paddingVertical: 6, paddingHorizontal: 12,
-    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.moderateDim,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
   },
   badge: {
-    alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 6,
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: radius.sm,
   },
-  badgeText: { fontSize: 11, fontWeight: '600' },
+  badgeText: { fontFamily: fonts.bold, fontSize: 10, letterSpacing: 0.4 },
 })

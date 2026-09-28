@@ -16,6 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { Recording } from '../lib/types'
 import { colors, fonts, radius, spacing } from '../theme/tokens'
+import Brackets from '../components/Brackets'
+import LaneDivider from '../components/LaneDivider'
 
 type Props = {
   recordings: Recording[]
@@ -44,23 +46,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 }
 
 // YOLO detection-bracket corners — the app's signature element.
-function Brackets({ size = 18, color = colors.signalLine }: { size?: number; color?: string }) {
-  const base = { position: 'absolute' as const, width: size, height: size, borderColor: color }
-  return (
-    <>
-      <View style={[base, { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2 }]} />
-      <View style={[base, { top: -1, right: -1, borderTopWidth: 2, borderRightWidth: 2 }]} />
-      <View style={[base, { bottom: -1, left: -1, borderBottomWidth: 2, borderLeftWidth: 2 }]} />
-      <View style={[base, { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2 }]} />
-    </>
-  )
-}
-
-// Road-center-line divider between sections.
-function LaneDivider() {
-  return <View style={styles.laneDivider} />
-}
-
 export default function DashboardScreen({
   recordings,
   uploadingIds,
@@ -461,13 +446,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1.4,
-  },
-  laneDivider: {
-    marginTop: spacing.xl,
-    marginHorizontal: spacing.lg,
-    borderTopWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255, 255, 255, 0.13)',
   },
 
   // Quick-start guide

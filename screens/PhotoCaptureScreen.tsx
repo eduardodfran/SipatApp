@@ -13,6 +13,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Location from 'expo-location'
 import { Ionicons } from '@expo/vector-icons'
 import { savePendingPhoto } from '../lib/pendingPhotos'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 type Props = {
   onDone: (postId?: string) => void
@@ -89,7 +90,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
   if (!permission.granted) {
     return (
       <View style={styles.permissionWrap}>
-        <Ionicons name="camera-outline" size={48} color="#06b6d4" />
+        <Ionicons name="camera-outline" size={48} color={colors.signal} />
         <Text style={styles.permissionTitle}>Camera Access Needed</Text>
         <Text style={styles.permissionSub}>Allow Sipat to access your camera to capture road distress</Text>
         <TouchableOpacity style={styles.permissionBtn} onPress={requestPermission}>
@@ -107,13 +108,13 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
       <View style={styles.container}>
         {saved && (
           <View style={styles.successBanner}>
-            <Ionicons name="checkmark-circle" size={18} color="#fff" />
+            <Ionicons name="checkmark-circle" size={18} color={colors.textPrimary} />
             <Text style={styles.successBannerText}>Photo saved! Go to Feed to upload.</Text>
           </View>
         )}
         <View style={styles.previewHeader}>
           <TouchableOpacity style={styles.previewCloseBtn} onPress={() => { setPhoto(null); setCaption('') }}>
-            <Ionicons name="close" size={22} color="#fafafa" />
+            <Ionicons name="close" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.previewTitle}>Preview</Text>
           <View style={{ width: 38 }} />
@@ -122,7 +123,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
           <TextInput
             style={styles.captionInput}
             placeholder="Add a caption..."
-            placeholderTextColor="#71717a"
+            placeholderTextColor={colors.textMuted}
             value={caption}
             onChangeText={setCaption}
             multiline
@@ -134,7 +135,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
           <Image source={{ uri: photo }} style={styles.preview} />
           {!location && (
             <View style={styles.locationBadge}>
-              <Ionicons name="location-outline" size={12} color="#f59e0b" />
+              <Ionicons name="location-outline" size={12} color={colors.moderate} />
               <Text style={styles.locationText}>No location</Text>
             </View>
           )}
@@ -145,7 +146,7 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
             onPress={() => { setPhoto(null); setCaption(''); setLocation(null) }}
             activeOpacity={0.7}
           >
-            <Ionicons name="refresh" size={18} color="#fafafa" />
+            <Ionicons name="refresh" size={18} color={colors.textPrimary} />
             <Text style={styles.retakeBtnText}>Retake</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -155,9 +156,9 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
             disabled={saving}
           >
             {saving ? (
-              <ActivityIndicator size="small" color="#0c0c14" />
+              <ActivityIndicator size="small" color={colors.onSignal} />
             ) : (
-              <Ionicons name="checkmark" size={18} color="#0c0c14" />
+              <Ionicons name="checkmark" size={18} color={colors.onSignal} />
             )}
             <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save as Pending'}</Text>
           </TouchableOpacity>
@@ -171,13 +172,13 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
       <CameraView ref={cameraRef} style={styles.camera} facing="back" zoom={0} />
         <View style={styles.cameraOverlay}>
           <TouchableOpacity style={styles.closeBtn} onPress={onCancel}>
-            <Ionicons name="close" size={28} color="#fafafa" />
+            <Ionicons name="close" size={28} color={colors.textPrimary} />
           </TouchableOpacity>
           <View style={styles.cameraBottom}>
             <View style={styles.viewfinder} />
             {capturing ? (
               <View style={styles.captureBtn}>
-                <ActivityIndicator size="large" color="#06b6d4" />
+                <ActivityIndicator size="large" color={colors.signal} />
               </View>
             ) : (
               <TouchableOpacity style={styles.captureBtn} onPress={takePicture} activeOpacity={0.8}>
@@ -194,80 +195,80 @@ export default function PhotoCaptureScreen({ onDone, onCancel }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0c0c14' },
+  container: { flex: 1, backgroundColor: colors.background },
   camera: { flex: 1 },
   cameraOverlay: { ...StyleSheet.absoluteFill, justifyContent: 'space-between' },
   closeBtn: {
     alignSelf: 'flex-end', margin: 20, marginTop: 56,
-    width: 40, height: 40, borderRadius: 20,
+    width: 40, height: 40, borderRadius: radius.pill,
     backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center',
   },
   cameraBottom: { alignItems: 'center', paddingBottom: 40 },
   viewfinder: {
     width: 200, height: 200, borderWidth: 2, borderColor: 'rgba(6, 182, 212,0.6)',
-    borderRadius: 12, marginBottom: 24,
+    borderRadius: radius.md, marginBottom: spacing.xl,
   },
   captureBtn: {
-    width: 72, height: 72, borderRadius: 36, borderWidth: 4,
-    borderColor: '#06b6d4', justifyContent: 'center', alignItems: 'center',
+    width: 72, height: 72, borderRadius: radius.pill, borderWidth: 4,
+    borderColor: colors.signal, justifyContent: 'center', alignItems: 'center',
   },
-  captureBtnInner: { width: 58, height: 58, borderRadius: 29, backgroundColor: '#06b6d4' },
-  cameraHint: { color: '#a1a1aa', fontSize: 13, marginTop: 12 },
+  captureBtnInner: { width: 58, height: 58, borderRadius: radius.pill, backgroundColor: colors.signal },
+  cameraHint: { color: colors.textSecondary, fontFamily: fonts.regular, fontSize: 13, marginTop: spacing.md },
 
   // Preview
   previewHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingTop: 56, paddingBottom: 12, paddingHorizontal: 16,
-    backgroundColor: '#0c0c14',
+    paddingTop: 56, paddingBottom: spacing.md, paddingHorizontal: spacing.lg,
+    backgroundColor: colors.background,
   },
   previewCloseBtn: {
-    width: 38, height: 38, borderRadius: 19,
+    width: 38, height: 38, borderRadius: radius.pill,
     backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center',
   },
-  previewTitle: { color: '#fafafa', fontSize: 16, fontWeight: '600' },
+  previewTitle: { color: colors.textPrimary, fontFamily: fonts.semibold, fontSize: 16 },
   successBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#22c55e', paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: colors.minor, paddingHorizontal: spacing.lg, paddingTop: 56, paddingBottom: spacing.md,
   },
-  successBannerText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  previewCaptionArea: { paddingHorizontal: 16, paddingBottom: 12 },
+  successBannerText: { color: colors.textPrimary, fontFamily: fonts.semibold, fontSize: 14 },
+  previewCaptionArea: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
   captionInput: {
-    padding: 14, backgroundColor: '#18181b', borderRadius: 12, color: '#fafafa',
-    fontSize: 14, maxHeight: 100, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    padding: 14, backgroundColor: colors.surfaceRaised, borderRadius: radius.md, color: colors.textPrimary,
+    fontFamily: fonts.regular, fontSize: 14, maxHeight: 100, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
   },
-  previewImageWrap: { flex: 1, backgroundColor: '#000' },
+  previewImageWrap: { flex: 1, backgroundColor: colors.background },
   preview: { width: '100%', height: '100%', resizeMode: 'contain' },
   locationBadge: {
     position: 'absolute', bottom: 12, left: 12,
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.6)', paddingVertical: 4, paddingHorizontal: 8,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+    backgroundColor: 'rgba(0,0,0,0.6)', paddingVertical: spacing.xs, paddingHorizontal: spacing.sm,
     borderRadius: 6,
   },
-  locationText: { color: '#f59e0b', fontSize: 11, fontWeight: '500' },
+  locationText: { color: colors.moderate, fontFamily: fonts.medium, fontSize: 11 },
   previewActions: {
-    flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingBottom: 40, paddingTop: 12,
-    backgroundColor: '#0c0c14',
+    flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.lg, paddingBottom: 40, paddingTop: spacing.md,
+    backgroundColor: colors.background,
   },
   retakeBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#27272a', borderRadius: 14, paddingVertical: 14,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
+    backgroundColor: colors.surfaceRaised, borderRadius: radius.md, paddingVertical: 14,
   },
-  retakeBtnText: { color: '#fafafa', fontSize: 14, fontWeight: '600' },
+  retakeBtnText: { color: colors.textPrimary, fontFamily: fonts.semibold, fontSize: 14 },
   saveBtn: {
-    flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#06b6d4', borderRadius: 14, paddingVertical: 14,
+    flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
+    backgroundColor: colors.signal, borderRadius: radius.md, paddingVertical: 14,
   },
-  saveBtnText: { color: '#0c0c14', fontSize: 14, fontWeight: '700' },
+  saveBtnText: { color: colors.onSignal, fontFamily: fonts.bold, fontSize: 14 },
 
   // Permission
   permissionWrap: {
-    flex: 1, backgroundColor: '#0c0c14', justifyContent: 'center', alignItems: 'center', padding: 40,
+    flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', padding: 40,
   },
-  permissionTitle: { color: '#fafafa', fontSize: 20, fontWeight: '700', marginTop: 16, marginBottom: 8 },
-  permissionSub: { color: '#71717a', fontSize: 14, textAlign: 'center', marginBottom: 24 },
+  permissionTitle: { color: colors.textPrimary, fontFamily: fonts.bold, fontSize: 20, marginTop: spacing.lg, marginBottom: spacing.sm },
+  permissionSub: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, textAlign: 'center', marginBottom: spacing.xl },
   permissionBtn: {
-    backgroundColor: '#06b6d4', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 16,
+    backgroundColor: colors.signal, borderRadius: radius.md, paddingVertical: spacing.md, paddingHorizontal: spacing.xxl, marginBottom: spacing.lg,
   },
-  permissionBtnText: { color: '#0c0c14', fontSize: 15, fontWeight: '700' },
-  cancelText: { color: '#71717a', fontSize: 14 },
+  permissionBtnText: { color: colors.onSignal, fontFamily: fonts.bold, fontSize: 15 },
+  cancelText: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14 },
 })

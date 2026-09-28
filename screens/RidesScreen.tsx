@@ -1,7 +1,6 @@
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -13,6 +12,9 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import type { Recording } from '../lib/types'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
+import MenuHeader from '../components/MenuHeader'
+import Brackets from '../components/Brackets'
 
 type Props = {
   recordings: Recording[]
@@ -27,10 +29,10 @@ type Props = {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  queued: { label: 'Queued', color: '#60a5fa', bg: 'rgba(37, 99, 235, 0.12)' },
-  processing: { label: 'Processing', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-  completed: { label: 'Completed', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
-  failed: { label: 'Failed', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
+  queued: { label: 'Queued', color: colors.queued, bg: colors.queuedDim },
+  processing: { label: 'Processing', color: colors.moderate, bg: colors.moderateDim },
+  completed: { label: 'Completed', color: colors.minor, bg: colors.minorDim },
+  failed: { label: 'Failed', color: colors.severe, bg: colors.severeDim },
 }
 
 export default function RidesScreen({
@@ -106,22 +108,19 @@ export default function RidesScreen({
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn} activeOpacity={0.7}>
-            <Ionicons name="menu" size={22} color="#fafafa" />
+      <MenuHeader
+        title="Rides"
+        onMenuPress={onMenuPress}
+        right={
+          <TouchableOpacity onPress={onRefresh} style={styles.iconBtn}>
+            {refreshing ? (
+              <ActivityIndicator size="small" color={colors.signal} />
+            ) : (
+              <Ionicons name="refresh" size={18} color={colors.textPrimary} />
+            )}
           </TouchableOpacity>
-          <Text style={styles.title}>Rides</Text>
-        </View>
-        <TouchableOpacity onPress={onRefresh} style={styles.iconBtn}>
-          {refreshing ? (
-            <ActivityIndicator size="small" color="#06b6d4" />
-          ) : (
-            <Ionicons name="refresh" size={20} color="#fafafa" />
-          )}
-        </TouchableOpacity>
-      </View>
+        }
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -131,7 +130,8 @@ export default function RidesScreen({
         {sorted.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}>
-              <Ionicons name="bicycle-outline" size={40} color="#2a2a3a" />
+              <Brackets size={14} />
+              <Ionicons name="bicycle-outline" size={34} color={colors.signal} />
             </View>
             <Text style={styles.emptyTitle}>No rides yet</Text>
             <Text style={styles.emptySub}>
@@ -155,7 +155,7 @@ export default function RidesScreen({
                       <Ionicons
                         name={isProcessing ? 'sync' : 'bicycle'}
                         size={18}
-                        color={isProcessing ? '#f59e0b' : '#06b6d4'}
+                        color={isProcessing ? colors.moderate : colors.signal}
                       />
                     </View>
                     <View style={styles.rideInfo}>
@@ -165,9 +165,9 @@ export default function RidesScreen({
                   </View>
                   <View style={styles.rideRight}>
                     {noDetections && (
-                      <View style={styles.noDetBadge}>
-                        <Ionicons name="eye-off" size={10} color="#f59e0b" />
-                        <Text style={styles.noDetText}>No Detections</Text>
+                      <View style={[styles.noDetBadge, { backgroundColor: colors.moderateDim }]}>
+                        <Ionicons name="eye-off" size={10} color={colors.moderate} />
+                        <Text style={[styles.noDetText, { color: colors.moderate }]}>No Detections</Text>
                       </View>
                     )}
                     {statusCfg ? (
@@ -178,9 +178,9 @@ export default function RidesScreen({
                         </Text>
                       </View>
                     ) : (
-                      <View style={[styles.rideStatus, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
-                        <View style={[styles.statusDot, { backgroundColor: '#f59e0b' }]} />
-                        <Text style={[styles.rideStatusText, { color: '#f59e0b' }]}>Local</Text>
+                      <View style={[styles.rideStatus, { backgroundColor: colors.moderateDim }]}>
+                        <View style={[styles.statusDot, { backgroundColor: colors.moderate }]} />
+                        <Text style={[styles.rideStatusText, { color: colors.moderate }]}>Local</Text>
                       </View>
                     )}
                   </View>
@@ -209,38 +209,38 @@ export default function RidesScreen({
                 <View style={styles.actionsRow}>
                   {!item.uploaded && (
                     <TouchableOpacity
-                      style={styles.actionBtn}
+                      style={[styles.actionBtn, { backgroundColor: colors.queuedDim }]}
                       onPress={() => debounce(`upload-${item.id}`) && onUpload(item)}
                       disabled={uploadingIds.has(item.id)}
                       activeOpacity={0.7}
                     >
                       {uploadingIds.has(item.id) ? (
-                        <ActivityIndicator size="small" color="#2563eb" />
+                        <ActivityIndicator size="small" color={colors.queued} />
                       ) : (
                         <>
-                          <Ionicons name="cloud-upload" size={16} color="#2563eb" />
-                          <Text style={[styles.actionBtnText, { color: '#2563eb' }]}>Upload</Text>
+                          <Ionicons name="cloud-upload" size={15} color={colors.queued} />
+                          <Text style={[styles.actionBtnText, { color: colors.queued }]}>Upload</Text>
                         </>
                       )}
                     </TouchableOpacity>
                   )}
                   {item.uploaded && item.status !== 'completed' && (
                     <TouchableOpacity
-                      style={styles.actionBtn}
+                      style={[styles.actionBtn, { backgroundColor: colors.minorDim }]}
                       onPress={() => debounce(`process-${item.id}`) && onProcess(item)}
                       disabled={processingId === item.id}
                       activeOpacity={0.7}
                     >
                       {processingId === item.id ? (
-                        <ActivityIndicator size="small" color="#22c55e" />
+                        <ActivityIndicator size="small" color={colors.minor} />
                       ) : (
                         <>
                           <Ionicons
                             name={item.status === 'failed' || item.status === 'processing' ? 'reload' : 'play'}
-                            size={16}
-                            color="#22c55e"
+                            size={15}
+                            color={colors.minor}
                           />
-                          <Text style={[styles.actionBtnText, { color: '#22c55e' }]}>
+                          <Text style={[styles.actionBtnText, { color: colors.minor }]}>
                             {item.status === 'failed' || item.status === 'processing' ? 'Retry' : 'Process'}
                           </Text>
                         </>
@@ -248,12 +248,12 @@ export default function RidesScreen({
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity
-                    style={styles.actionBtn}
+                    style={[styles.actionBtn, { backgroundColor: colors.severeDim }]}
                     onPress={() => confirmDelete(item)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="trash-outline" size={16} color="#ef4444" />
-                    <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>Delete</Text>
+                    <Ionicons name="trash-outline" size={15} color={colors.severe} />
+                    <Text style={[styles.actionBtnText, { color: colors.severe }]}>Delete</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -270,66 +270,35 @@ export default function RidesScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0c0c14',
+    backgroundColor: colors.background,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 20,
-  },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingBottom: 12,
-    paddingHorizontal: 20,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  menuBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#fafafa',
-    letterSpacing: -0.5,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl,
   },
   iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.hairline,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.hairline,
   },
 
   // Ride Card
   rideCard: {
-    backgroundColor: '#18181b',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.hairline,
   },
   rideTopRow: {
     flexDirection: 'row',
@@ -340,13 +309,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: 12,
+    gap: spacing.md,
   },
   rideIconContainer: {
     width: 36,
     height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+    borderRadius: radius.md,
+    backgroundColor: colors.signalDim,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -354,29 +323,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rideDate: {
-    color: '#fafafa',
-    fontSize: 14,
-    fontWeight: '600',
+    color: colors.textPrimary,
+    fontFamily: fonts.semibold,
+    fontSize: 13,
   },
   rideTime: {
-    color: '#71717a',
-    fontSize: 12,
-    marginTop: 1,
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    marginTop: 2,
   },
   rideRight: { alignItems: 'flex-end', gap: 4 },
   noDetBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    paddingVertical: 3, paddingHorizontal: 8, borderRadius: 6,
+    paddingVertical: 3, paddingHorizontal: spacing.sm, borderRadius: radius.sm,
   },
-  noDetText: { color: '#f59e0b', fontSize: 10, fontWeight: '700' },
+  noDetText: { fontSize: 10, fontFamily: fonts.bold, letterSpacing: 0.3 },
   rideStatus: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingVertical: 4,
     paddingHorizontal: 10,
-    borderRadius: 8,
+    borderRadius: radius.sm,
   },
   statusDot: {
     width: 6,
@@ -384,18 +353,19 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   rideStatusText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontFamily: fonts.bold,
+    letterSpacing: 0.4,
   },
 
   // Progress Section
   progressSection: {
-    marginTop: 14,
+    marginTop: spacing.lg,
   },
   progressBarBg: {
-    height: 32,
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
-    borderRadius: 8,
+    height: 30,
+    backgroundColor: colors.moderateDim,
+    borderRadius: radius.sm,
     overflow: 'hidden',
     justifyContent: 'center',
     position: 'relative',
@@ -405,36 +375,36 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: '#f59e0b',
-    borderRadius: 8,
+    backgroundColor: colors.moderate,
+    borderRadius: radius.sm,
   },
   progressPercentage: {
     position: 'absolute',
-    right: 8,
+    right: spacing.sm,
     top: 0,
     bottom: 0,
     justifyContent: 'center',
   },
   progressPctText: {
-    color: '#0c0c14',
+    color: colors.background,
     fontSize: 12,
-    fontWeight: '800',
+    fontFamily: fonts.extrabold,
   },
   progressMessageText: {
-    color: '#f59e0b',
+    color: colors.moderate,
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     marginTop: 6,
   },
 
   // Actions
   actionsRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 14,
-    paddingTop: 12,
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    borderTopColor: colors.hairline,
   },
   actionBtn: {
     flexDirection: 'row',
@@ -442,42 +412,40 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 8,
     paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: radius.md,
   },
   actionBtnText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
 
   // Empty State
   emptyState: {
     alignItems: 'center',
     paddingVertical: 60,
-    backgroundColor: '#18181b',
-    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.hairline,
   },
   emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    width: 72,
+    height: 72,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: spacing.lg,
   },
   emptyTitle: {
-    color: '#fafafa',
-    fontSize: 16,
-    fontWeight: '700',
+    color: colors.textPrimary,
+    fontFamily: fonts.semibold,
+    fontSize: 15,
   },
   emptySub: {
-    color: '#71717a',
+    color: colors.textMuted,
+    fontFamily: fonts.regular,
     fontSize: 13,
     marginTop: 4,
     textAlign: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: spacing.xl,
   },
 })

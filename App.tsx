@@ -41,6 +41,7 @@ import AboutScreen from './screens/AboutScreen'
 import AppSidebar from './components/AppSidebar'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
+import { colors, fonts, radius } from './theme/tokens'
 import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRideData'
 
 SplashScreen.preventAutoHideAsync()
@@ -657,10 +658,10 @@ export default function App() {
         />
       )}
       {screen === 'map' && Platform.OS === 'web' && (
-        <View style={{ flex: 1, backgroundColor: '#0c0c14', justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: '#71717a', fontSize: 16 }}>Map view is not available on web.</Text>
-          <TouchableOpacity onPress={() => setScreen('dashboard')} style={{ marginTop: 16, padding: 12, backgroundColor: '#06b6d4', borderRadius: 10 }}>
-            <Text style={{ color: '#0c0c14', fontWeight: '700' }}>Go Back</Text>
+        <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: colors.textMuted, fontFamily: fonts.regular, fontSize: 16 }}>Map view is not available on web.</Text>
+          <TouchableOpacity onPress={() => setScreen('dashboard')} style={{ marginTop: 16, paddingVertical: 12, paddingHorizontal: 20, backgroundColor: colors.signal, borderRadius: radius.md }}>
+            <Text style={{ color: colors.onSignal, fontFamily: fonts.semibold }}>Go Back</Text>
           </TouchableOpacity>
         </View>
       )}

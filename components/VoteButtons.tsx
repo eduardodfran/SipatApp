@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { View, TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 type Props = {
   contentType: 'photo' | 'pothole'
@@ -71,12 +72,12 @@ export default function VoteButtons({
     [contentType, contentId, userVote, loading, onVoteChange],
   )
 
-  const scoreColor = score > 0 ? '#22c55e' : score < 0 ? '#ef4444' : '#71717a'
+  const scoreColor = score > 0 ? colors.signal : score < 0 ? colors.severe : colors.textMuted
 
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="small" color="#71717a" />
+        <ActivityIndicator size="small" color={colors.textMuted} />
       </View>
     )
   }
@@ -91,7 +92,7 @@ export default function VoteButtons({
         <Ionicons
           name="arrow-up"
           size={16}
-          color={userVote === 1 ? '#22c55e' : '#71717a'}
+          color={userVote === 1 ? colors.signal : colors.textSecondary}
         />
       </TouchableOpacity>
 
@@ -105,7 +106,7 @@ export default function VoteButtons({
         <Ionicons
           name="arrow-down"
           size={16}
-          color={userVote === -1 ? '#ef4444' : '#71717a'}
+          color={userVote === -1 ? colors.severe : colors.textSecondary}
         />
       </TouchableOpacity>
     </View>
@@ -116,22 +117,30 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: spacing.xs,
   },
   voteButton: {
-    padding: 4,
-    borderRadius: 4,
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.hairline,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   activeUpvote: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: colors.signalDim,
+    borderColor: colors.signalLine,
   },
   activeDownvote: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: colors.severeDim,
+    borderColor: colors.hairlineStrong,
   },
   score: {
+    fontFamily: fonts.monoMedium,
     fontSize: 12,
-    fontWeight: '600',
-    minWidth: 24,
+    minWidth: 32,
     textAlign: 'center',
   },
 })

@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { WebView, WebViewMessageEvent } from 'react-native-webview'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 type ViewMode = 'photos' | 'video' | 'all'
 
@@ -1164,11 +1165,11 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
 
       <View style={styles.topLeftRow}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={20} color="#fafafa" />
+          <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         {onMenuPress && (
           <TouchableOpacity style={styles.menuBtn} onPress={onMenuPress} activeOpacity={0.7}>
-            <Ionicons name="menu-outline" size={22} color="#fafafa" />
+            <Ionicons name="menu-outline" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
         )}
       </View>
@@ -1205,7 +1206,7 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
 
       {!loading && videoDistress.length === 0 && communityPhotos.length === 0 && (
         <View style={styles.emptyOverlay}>
-          <Ionicons name="map-outline" size={36} color="#2a2a3a" />
+          <Ionicons name="map-outline" size={36} color={colors.textMuted} />
           <Text style={styles.emptyText}>No map data available</Text>
         </View>
       )}
@@ -1213,7 +1214,7 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
       {loading && (
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingCard}>
-            <ActivityIndicator size="large" color="#06b6d4" />
+            <ActivityIndicator size="large" color={colors.signal} />
             <Text style={styles.loadingText}>Loading data</Text>
           </View>
         </View>
@@ -1225,7 +1226,7 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0c0c14',
+    backgroundColor: colors.background,
   },
   map: {
     ...StyleSheet.absoluteFill,
@@ -1233,7 +1234,7 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.md,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1249,7 +1250,7 @@ const styles = StyleSheet.create({
   menuBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.md,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1265,30 +1266,30 @@ const styles = StyleSheet.create({
   toggleBtn: {
     backgroundColor: 'rgba(0,0,0,0.6)',
     paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.lg,
   },
   toggleBtnActive: {
-    backgroundColor: '#06b6d4',
+    backgroundColor: colors.signal,
   },
   toggleText: {
-    color: '#71717a',
+    color: colors.textMuted,
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
   },
   toggleTextActive: {
-    color: '#0c0c14',
+    color: colors.onSignal,
   },
   summaryPanel: {
     position: 'absolute',
     bottom: 24,
     left: 16,
     right: 16,
-    backgroundColor: '#18181b',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.hairline,
     zIndex: 10,
   },
   summaryRow: {
@@ -1300,12 +1301,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryValue: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: fonts.monoBold,
   },
   summaryLabel: {
-    color: '#71717a',
+    color: colors.textMuted,
     fontSize: 11,
     marginTop: 2,
     textTransform: 'uppercase',
@@ -1314,7 +1315,7 @@ const styles = StyleSheet.create({
   summaryDivider: {
     width: 1,
     height: 32,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.hairline,
   },
   emptyOverlay: {
     position: 'absolute',
@@ -1324,9 +1325,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   emptyText: {
-    color: '#71717a',
+    color: colors.textMuted,
     fontSize: 14,
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   loadingOverlay: {
     position: 'absolute',
@@ -1340,18 +1341,18 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   loadingCard: {
-    backgroundColor: '#18181b',
+    backgroundColor: colors.surface,
     borderRadius: 20,
-    paddingVertical: 32,
+    paddingVertical: spacing.xxl,
     paddingHorizontal: 40,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.1)',
+    borderColor: colors.signalDim,
   },
   loadingText: {
-    color: '#fafafa',
+    color: colors.textPrimary,
     fontSize: 16,
-    fontWeight: '600',
-    marginTop: 16,
+    fontFamily: fonts.semibold,
+    marginTop: spacing.lg,
   },
 })

@@ -16,6 +16,8 @@ import {
 } from 'react-native'
 import * as Linking from 'expo-linking'
 import { supabase } from '../lib/supabase'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
+import Brackets from '../components/Brackets'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
@@ -135,7 +137,15 @@ export default function LoginScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Image source={require('../assets/sipat-logo-main.png')} style={styles.logo} resizeMode="contain" />
+            <View style={styles.brandMark}>
+              <Brackets size={16} />
+              <Image
+                source={require('../assets/sipat-logo-main.png')}
+                style={styles.brandLogo}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.wordmark}>SIPAT</Text>
 
             <Text style={styles.subtitle}>
               {mode === 'login' ? 'Road safety starts here' : 'Join the community'}
@@ -144,7 +154,7 @@ export default function LoginScreen() {
             <TextInput
               style={styles.input}
               placeholder="Email"
-              placeholderTextColor="#71717a"
+              placeholderTextColor={colors.textMuted}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -156,7 +166,7 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Username"
-                placeholderTextColor="#71717a"
+                placeholderTextColor={colors.textMuted}
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
@@ -168,7 +178,7 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.passwordInput}
                 placeholder="Password"
-                placeholderTextColor="#71717a"
+                placeholderTextColor={colors.textMuted}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -193,7 +203,7 @@ export default function LoginScreen() {
               disabled={loading || cooldown > 0}
             >
               {loading ? (
-                <ActivityIndicator color="#0c0c14" />
+                <ActivityIndicator color={colors.onSignal} />
               ) : cooldown > 0 ? (
                 <Text style={styles.primaryBtnText}>Wait {cooldown}s</Text>
               ) : (
@@ -242,70 +252,86 @@ function EyeClosedIcon() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#0c0c14',
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: '#0c0c14',
+    backgroundColor: colors.background,
   },
   scroll: {
     flex: 1,
-    backgroundColor: '#0c0c14',
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 24,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.xl,
   },
-  logo: {
-    width: 200,
-    height: 200,
-    marginBottom: 12,
+  brandMark: {
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  brandLogo: {
+    width: 64,
+    height: 64,
+  },
+  wordmark: {
+    fontFamily: fonts.extrabold,
+    fontSize: 26,
+    letterSpacing: 2,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    color: '#71717a',
+    fontFamily: fonts.regular,
     fontSize: 14,
+    color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: spacing.xxl,
   },
   input: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    color: '#fafafa',
+    height: 48,
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    color: colors.textPrimary,
+    fontFamily: fonts.regular,
     fontSize: 15,
-    marginBottom: 12,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.hairline,
   },
   passwordContainer: {
     width: '100%',
-    marginBottom: 12,
+    marginBottom: spacing.md,
     position: 'relative',
   },
   passwordInput: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    height: 48,
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
     paddingRight: 50,
-    color: '#fafafa',
+    color: colors.textPrimary,
+    fontFamily: fonts.regular,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.hairline,
   },
   eyeButton: {
     position: 'absolute',
-    right: 12,
+    right: spacing.md,
     top: '50%',
     transform: [{ translateY: -12 }],
-    padding: 8,
-    borderRadius: 6,
+    padding: spacing.sm,
+    borderRadius: radius.sm,
   },
   eyeIcon: {
     width: 20,
@@ -317,7 +343,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 14,
     borderWidth: 2,
-    borderColor: '#71717a',
+    borderColor: colors.textMuted,
     borderRadius: 10,
   },
   eyeIris: {
@@ -325,48 +351,49 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#71717a',
+    backgroundColor: colors.textMuted,
   },
   eyePupil: {
     position: 'absolute',
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#fafafa',
+    backgroundColor: colors.textPrimary,
   },
   eyeClosed: {
-    borderColor: '#ef4444',
+    borderColor: colors.severe,
   },
   eyeSlash: {
     position: 'absolute',
     width: 24,
     height: 2,
-    backgroundColor: '#ef4444',
+    backgroundColor: colors.severe,
     transform: [{ rotate: '45deg' }],
   },
   primaryBtn: {
     width: '100%',
-    backgroundColor: '#06b6d4',
-    borderRadius: 12,
-    paddingVertical: 14,
+    height: 48,
+    backgroundColor: colors.signal,
+    borderRadius: radius.md,
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'center',
+    marginTop: spacing.sm,
   },
   primaryBtnDisabled: {
     opacity: 0.6,
   },
   primaryBtnText: {
-    color: '#0c0c14',
+    color: colors.onSignal,
+    fontFamily: fonts.semibold,
     fontSize: 16,
-    fontWeight: '700',
   },
   switchBtn: {
-    marginTop: 16,
+    marginTop: spacing.lg,
     alignItems: 'center',
   },
   switchText: {
-    color: '#06b6d4',
+    color: colors.signal,
+    fontFamily: fonts.medium,
     fontSize: 13,
-    fontWeight: '500',
   },
 })
