@@ -148,7 +148,10 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
       supabase.rpc('get_feed_potholes', { p_offset: potholeOff, p_limit: PAGE_SIZE }),
     ])
     const photoData = photoRes.data
-    const potholeData = potholeRes.data
+    // Defense-in-depth (mirrors web): never render items marked hidden via caption prefix.
+    const potholeData = (potholeRes.data ?? []).filter(
+      (p: any) => !String(p.caption ?? '').startsWith('[HIDDEN]'),
+    )
     if (photoRes.error) console.error('[FeedScreen] get_feed_photos error:', photoRes.error)
     if (potholeRes.error) console.error('[FeedScreen] get_feed_potholes error:', potholeRes.error)
 

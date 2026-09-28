@@ -95,6 +95,7 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
             .select('id, image_url, caption, created_at, detection_status, reporter_username')
             .or(`caption.ilike.${pattern},reporter_username.ilike.${pattern}`)
             .eq('activity_status', 'active')
+            .neq('detection_status', 'hidden')
             .order('created_at', { ascending: false })
             .limit(15),
           supabase
@@ -102,6 +103,8 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
             .select('pothole_id, image_url, caption, formatted_address, worst_severity, citizen_first_reported_at, reporter_username')
             .or(`caption.ilike.${pattern},formatted_address.ilike.${pattern},reporter_username.ilike.${pattern}`)
             .eq('activity_status', 'active')
+            .eq('visibility_status', 'visible')
+            .not('caption', 'like', '[HIDDEN]%')
             .order('citizen_first_reported_at', { ascending: false, nullsFirst: false })
             .limit(15),
         ])

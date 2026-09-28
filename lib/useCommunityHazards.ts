@@ -27,6 +27,8 @@ export function useCommunityHazards() {
           'pothole_id, worst_severity, total_detection_hits, consolidated_latitude, consolidated_longitude, street, barangay, city, province, region, country, formatted_address, citizen_first_reported_at',
         )
         .eq('activity_status', 'active')
+        .eq('visibility_status', 'visible')
+        .not('caption', 'like', '[HIDDEN]%')
         .order('citizen_first_reported_at', { ascending: false })
         .limit(200)
 

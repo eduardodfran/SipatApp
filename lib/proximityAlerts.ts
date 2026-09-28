@@ -107,6 +107,7 @@ export async function loadNearbyHazards(lat: number, lng: number): Promise<Hazar
     .gte('consolidated_longitude', lng - dLng)
     .lte('consolidated_longitude', lng + dLng)
     .not('caption', 'like', '[HIDDEN]%')
+    .eq('visibility_status', 'visible')
     .order('total_detection_hits', { ascending: false })
     .limit(HAZARD_LOAD_LIMIT)
 

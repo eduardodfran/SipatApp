@@ -1069,6 +1069,7 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
           .select('*')
           .not('caption', 'like', '[HIDDEN]%')
           .eq('activity_status', 'active')
+          .eq('visibility_status', 'visible')
           .order('total_detection_hits', { ascending: false })
           .limit(500)
 
@@ -1111,6 +1112,7 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
           .select('id, latitude, longitude, detection_status, worst_severity, image_url, formatted_address, street, barangay, city, province, region, country, confidence, class_name, reporter_username, created_at')
           .neq('detection_status', 'hidden')
           .eq('activity_status', 'active')
+          .eq('visibility_status', 'visible')
           .order('created_at', { ascending: false })
           .limit(100)
 

@@ -39,6 +39,8 @@ export default function PhotoFeedSection({ refreshKey, userId }: Props) {
       .from('v_community_photos')
       .select('*')
       .eq('activity_status', 'active')
+      .eq('visibility_status', 'visible')
+      .neq('detection_status', 'hidden')
       .order('created_at', { ascending: false })
       .limit(50)
     setUploadedPosts(data ?? [])
