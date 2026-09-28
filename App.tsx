@@ -9,6 +9,19 @@ import { User } from '@supabase/supabase-js'
 import * as SplashScreen from 'expo-splash-screen'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Linking from 'expo-linking'
+import {
+  useFonts,
+  Overpass_400Regular,
+  Overpass_500Medium,
+  Overpass_600SemiBold,
+  Overpass_700Bold,
+  Overpass_800ExtraBold,
+} from '@expo-google-fonts/overpass'
+import {
+  OverpassMono_400Regular,
+  OverpassMono_500Medium,
+  OverpassMono_700Bold,
+} from '@expo-google-fonts/overpass-mono'
 import { supabase } from './lib/supabase'
 import { fetchFastApi, resetFastApiPreference } from './lib/fastapi'
 import LoginScreen from './screens/LoginScreen'
@@ -46,6 +59,21 @@ export default function App() {
   const [lastUploadResult, setLastUploadResult] = useState<{ status: 'success' | 'error'; processStarted?: boolean; message?: string } | null>(null)
   const [searchFrom, setSearchFrom] = useState<Screen>('feed')
 
+  const [fontsLoaded, fontError] = useFonts({
+    Overpass_400Regular,
+    Overpass_500Medium,
+    Overpass_600SemiBold,
+    Overpass_700Bold,
+    Overpass_800ExtraBold,
+    OverpassMono_400Regular,
+    OverpassMono_500Medium,
+    OverpassMono_700Bold,
+  })
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) SplashScreen.hideAsync()
+  }, [fontsLoaded, fontError])
+
   useEffect(() => {
     ;(async () => {
       try {
@@ -62,8 +90,6 @@ export default function App() {
         }
       } catch {
         setScreen('login')
-      } finally {
-        await SplashScreen.hideAsync()
       }
     })()
 
@@ -529,6 +555,8 @@ export default function App() {
     },
     [],
   )
+
+  if (!fontsLoaded && !fontError) return null
 
   return (
     <SafeAreaProvider>

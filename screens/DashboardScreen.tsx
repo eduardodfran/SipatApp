@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { Recording } from '../lib/types'
+import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 type Props = {
   recordings: Recording[]
@@ -37,10 +38,28 @@ type Props = {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  queued: { label: 'Queued', color: '#60a5fa', bg: 'rgba(37, 99, 235, 0.12)' },
-  processing: { label: 'Processing', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-  completed: { label: 'Completed', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
-  failed: { label: 'Failed', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
+  queued: { label: 'Queued', color: colors.queued, bg: colors.queuedDim },
+  processing: { label: 'Processing', color: colors.moderate, bg: colors.moderateDim },
+  completed: { label: 'Completed', color: colors.minor, bg: colors.minorDim },
+  failed: { label: 'Failed', color: colors.severe, bg: colors.severeDim },
+}
+
+// YOLO detection-bracket corners — the app's signature element.
+function Brackets({ size = 18, color = colors.signalLine }: { size?: number; color?: string }) {
+  const base = { position: 'absolute' as const, width: size, height: size, borderColor: color }
+  return (
+    <>
+      <View style={[base, { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2 }]} />
+      <View style={[base, { top: -1, right: -1, borderTopWidth: 2, borderRightWidth: 2 }]} />
+      <View style={[base, { bottom: -1, left: -1, borderBottomWidth: 2, borderLeftWidth: 2 }]} />
+      <View style={[base, { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2 }]} />
+    </>
+  )
+}
+
+// Road-center-line divider between sections.
+function LaneDivider() {
+  return <View style={styles.laneDivider} />
 }
 
 export default function DashboardScreen({
@@ -114,23 +133,23 @@ export default function DashboardScreen({
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn} activeOpacity={0.7}>
-            <Ionicons name="menu" size={22} color="#fafafa" />
+          <TouchableOpacity onPress={onMenuPress} style={styles.iconBtn} activeOpacity={0.7}>
+            <Ionicons name="menu" size={20} color={colors.textPrimary} />
           </TouchableOpacity>
           <Image source={require('../assets/sipat-logo-main.png')} style={styles.headerLogo} resizeMode="contain" />
           <View>
             <Text style={styles.greeting}>{getGreeting()}</Text>
-            <Text style={styles.title}>Sipat</Text>
+            <Text style={styles.title}>SIPAT</Text>
           </View>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={onRefresh} style={styles.iconBtn}>
             {refreshing ? (
-              <ActivityIndicator size="small" color="#06b6d4" />
+              <ActivityIndicator size="small" color={colors.signal} />
             ) : (
-              <Ionicons name="refresh" size={20} color="#fafafa" />
+              <Ionicons name="refresh" size={18} color={colors.textPrimary} />
             )}
           </TouchableOpacity>
         </View>
@@ -146,7 +165,7 @@ export default function DashboardScreen({
             <View style={styles.quickStartHeader}>
               <Text style={styles.quickStartTitle}>Welcome to Sipat!</Text>
               <TouchableOpacity onPress={dismissQuickStart} activeOpacity={0.7}>
-                <Ionicons name="close" size={18} color="#71717a" />
+                <Ionicons name="close" size={18} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
             <View style={styles.quickStartStep}>
@@ -164,47 +183,53 @@ export default function DashboardScreen({
           </View>
         )}
 
-        {/* Hero Stats */}
+        {/* Hero Stats — detection brackets frame the headline number */}
         <View style={styles.heroSection}>
           <View style={styles.heroCard}>
             <View style={styles.heroGlow} />
-            <View style={styles.heroCardContent}>
-              <View style={styles.heroIconRow}>
-                <View style={styles.heroIcon}>
-                  <Ionicons name="videocam" size={22} color="#06b6d4" />
-                </View>
+            <View style={styles.heroTopRow}>
+              <Text style={styles.eyebrow}>Total rides</Text>
+              <View style={styles.heroIconWell}>
+                <Ionicons name="videocam" size={16} color={colors.signal} />
               </View>
+            </View>
+            <View style={styles.bracketBox}>
+              <Brackets />
               <Text style={styles.heroNumber}>{totalRecordings}</Text>
-              <Text style={styles.heroLabel}>Total Rides</Text>
             </View>
-          </View>
+            <Text style={styles.heroSub}>
+              {completed} analyzed · {processing + pending} in queue
+            </Text>
 
-          {(completed > 0 || processing > 0 || failed > 0) && (
-            <View style={styles.heroRow}>
-              <View style={[styles.heroSmallCard, { borderColor: 'rgba(34, 197, 94, 0.15)' }]}>
-                <View style={[styles.heroSmallIcon, { backgroundColor: 'rgba(34, 197, 94, 0.12)' }]}>
-                  <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
+            {(completed > 0 || processing > 0 || failed > 0) && (
+              <View style={styles.heroRow}>
+                <View style={styles.heroSmallCard}>
+                  <View style={[styles.heroSmallIcon, { backgroundColor: colors.minorDim }]}>
+                    <Ionicons name="checkmark-circle" size={16} color={colors.minor} />
+                  </View>
+                  <Text style={styles.heroSmallNumber}>{completed}</Text>
+                  <Text style={styles.heroSmallLabel}>Done</Text>
                 </View>
-                <Text style={styles.heroSmallNumber}>{completed}</Text>
-                <Text style={styles.heroSmallLabel}>Done</Text>
-              </View>
-              <View style={[styles.heroSmallCard, { borderColor: 'rgba(245, 158, 11, 0.15)' }]}>
-                <View style={[styles.heroSmallIcon, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-                  <Ionicons name="sync" size={18} color="#f59e0b" />
+                <View style={styles.heroSmallCard}>
+                  <View style={[styles.heroSmallIcon, { backgroundColor: colors.moderateDim }]}>
+                    <Ionicons name="sync" size={16} color={colors.moderate} />
+                  </View>
+                  <Text style={styles.heroSmallNumber}>{processing}</Text>
+                  <Text style={styles.heroSmallLabel}>Processing</Text>
                 </View>
-                <Text style={styles.heroSmallNumber}>{processing}</Text>
-                <Text style={styles.heroSmallLabel}>Processing</Text>
-              </View>
-              <View style={[styles.heroSmallCard, { borderColor: 'rgba(239, 68, 68, 0.15)' }]}>
-                <View style={[styles.heroSmallIcon, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
-                  <Ionicons name="alert-circle" size={18} color="#ef4444" />
+                <View style={styles.heroSmallCard}>
+                  <View style={[styles.heroSmallIcon, { backgroundColor: colors.severeDim }]}>
+                    <Ionicons name="alert-circle" size={16} color={colors.severe} />
+                  </View>
+                  <Text style={styles.heroSmallNumber}>{failed}</Text>
+                  <Text style={styles.heroSmallLabel}>Failed</Text>
                 </View>
-                <Text style={styles.heroSmallNumber}>{failed}</Text>
-                <Text style={styles.heroSmallLabel}>Failed</Text>
               </View>
-            </View>
-          )}
+            )}
+          </View>
         </View>
+
+        <LaneDivider />
 
         {/* Map Card */}
         {Platform.OS !== 'web' && (
@@ -219,17 +244,17 @@ export default function DashboardScreen({
                   <View style={styles.mapPinDot} />
                 </View>
                 <View style={styles.mapPin2}>
-                  <View style={[styles.mapPinDot, { backgroundColor: '#ef4444' }]} />
+                  <View style={[styles.mapPinDot, { backgroundColor: colors.severe }]} />
                 </View>
                 <View style={styles.mapPin3}>
-                  <View style={[styles.mapPinDot, { backgroundColor: '#22c55e' }]} />
+                  <View style={[styles.mapPinDot, { backgroundColor: colors.minor }]} />
                 </View>
               </View>
               <View style={styles.mapCardOverlay} />
               <View style={styles.mapCardContent}>
                 <View style={styles.mapCardLeft}>
                   <View style={styles.mapCardIcon}>
-                    <Ionicons name="map" size={20} color="#fafafa" />
+                    <Ionicons name="map" size={20} color={colors.signalBright} />
                   </View>
                   <View>
                     <Text style={styles.mapCardTitle}>Explore Map</Text>
@@ -237,7 +262,7 @@ export default function DashboardScreen({
                   </View>
                 </View>
                 <View style={styles.mapCardBadge}>
-                  <Ionicons name="navigate" size={14} color="#60a5fa" />
+                  <Ionicons name="navigate" size={12} color={colors.signalBright} />
                   <Text style={styles.mapCardBadgeText}>Open</Text>
                 </View>
               </View>
@@ -247,15 +272,15 @@ export default function DashboardScreen({
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.eyebrow}>Quick actions</Text>
           <View style={styles.actionsGrid}>
             <TouchableOpacity
               style={styles.actionCard}
               onPress={onDrive}
               activeOpacity={0.7}
             >
-              <View style={[styles.actionIcon, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-                <Ionicons name="navigate" size={24} color="#f59e0b" />
+              <View style={[styles.actionIcon, { backgroundColor: colors.moderateDim }]}>
+                <Ionicons name="navigate" size={22} color={colors.moderate} />
               </View>
               <Text style={styles.actionLabel}>Drive Mode</Text>
               <Text style={styles.actionSub}>Pothole alerts</Text>
@@ -265,8 +290,8 @@ export default function DashboardScreen({
               onPress={onRefresh}
               activeOpacity={0.7}
             >
-              <View style={[styles.actionIcon, { backgroundColor: 'rgba(34, 197, 94, 0.12)' }]}>
-                <Ionicons name="refresh-circle" size={24} color="#22c55e" />
+              <View style={[styles.actionIcon, { backgroundColor: colors.minorDim }]}>
+                <Ionicons name="refresh-circle" size={22} color={colors.minor} />
               </View>
               <Text style={styles.actionLabel}>Sync Data</Text>
               <Text style={styles.actionSub}>Refresh status</Text>
@@ -276,8 +301,8 @@ export default function DashboardScreen({
               onPress={onDistress}
               activeOpacity={0.7}
             >
-              <View style={[styles.actionIcon, { backgroundColor: 'rgba(6, 182, 212, 0.12)' }]}>
-                <Ionicons name="warning" size={24} color="#06b6d4" />
+              <View style={[styles.actionIcon, { backgroundColor: colors.signalDim }]}>
+                <Ionicons name="warning" size={22} color={colors.signal} />
               </View>
               <Text style={styles.actionLabel}>All Detections</Text>
               <Text style={styles.actionSub}>View all hazards</Text>
@@ -289,7 +314,7 @@ export default function DashboardScreen({
         {pending > 0 && (
           <View style={styles.queueBanner}>
             <View style={styles.queueLeft}>
-              <Ionicons name="time" size={18} color="#f59e0b" />
+              <Ionicons name="time" size={16} color={colors.moderate} />
               <Text style={styles.queueText}>
                 {pending} ride{pending !== 1 ? 's' : ''} waiting to upload
               </Text>
@@ -297,19 +322,22 @@ export default function DashboardScreen({
           </View>
         )}
 
+        <LaneDivider />
+
         {/* Recent Activity */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Rides</Text>
+          <Text style={styles.eyebrow}>Recent rides</Text>
 
           {recentRecordings.length === 0 ? (
             <View style={styles.emptyState}>
-              <View style={styles.emptyIcon}>
-                <Ionicons name="bicycle-outline" size={40} color="rgba(6, 182, 212, 0.4)" />
+              <View style={styles.emptyBracketBox}>
+                <Brackets size={16} color="rgba(6, 182, 212, 0.35)" />
+                <Ionicons name="bicycle-outline" size={34} color={colors.signal} />
               </View>
-                <Text style={styles.emptyTitle}>No rides yet</Text>
-                <Text style={styles.emptySub}>
-                  Tap the red Record button below to start detecting potholes
-                </Text>
+              <Text style={styles.emptyTitle}>No rides yet</Text>
+              <Text style={styles.emptySub}>
+                Tap the red Record button below to start detecting potholes
+              </Text>
             </View>
           ) : (
             recentRecordings.map((item, index) => {
@@ -324,7 +352,7 @@ export default function DashboardScreen({
                 >
                   <View style={styles.rideLeft}>
                     <View style={styles.rideIconContainer}>
-                      <Ionicons name="bicycle" size={18} color="#06b6d4" />
+                      <Ionicons name="bicycle" size={16} color={colors.signal} />
                     </View>
                     <View style={styles.rideInfo}>
                       <Text style={styles.rideDate}>{formatDate(item.timestamp)}</Text>
@@ -340,9 +368,9 @@ export default function DashboardScreen({
                         </Text>
                       </View>
                     ) : (
-                      <View style={[styles.rideStatus, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
-                        <View style={[styles.statusDot, { backgroundColor: '#f59e0b' }]} />
-                        <Text style={[styles.rideStatusText, { color: '#f59e0b' }]}>Local</Text>
+                      <View style={[styles.rideStatus, { backgroundColor: colors.moderateDim }]}>
+                        <View style={[styles.statusDot, { backgroundColor: colors.moderate }]} />
+                        <Text style={[styles.rideStatusText, { color: colors.moderate }]}>Local</Text>
                       </View>
                     )}
                   </View>
@@ -355,9 +383,9 @@ export default function DashboardScreen({
                       activeOpacity={0.7}
                     >
                       {uploadingIds.has(item.id) ? (
-                        <ActivityIndicator size="small" color="#2563eb" />
+                        <ActivityIndicator size="small" color={colors.queued} />
                       ) : (
-                        <Ionicons name="cloud-upload" size={16} color="#2563eb" />
+                        <Ionicons name="cloud-upload" size={16} color={colors.queued} />
                       )}
                     </TouchableOpacity>
                   )}
@@ -369,9 +397,9 @@ export default function DashboardScreen({
                       activeOpacity={0.7}
                     >
                       {processingId === item.id ? (
-                        <ActivityIndicator size="small" color="#22c55e" />
+                        <ActivityIndicator size="small" color={colors.minor} />
                       ) : (
-                        <Ionicons name="play" size={16} color="#22c55e" />
+                        <Ionicons name="play" size={16} color={colors.minor} />
                       )}
                     </TouchableOpacity>
                   )}
@@ -396,18 +424,18 @@ export default function DashboardScreen({
       </ScrollView>
 
       {/* Bottom Action Bar */}
-      <View style={[styles.bottomBar, { bottom: insets.bottom + 16 }]}>
+      <View style={[styles.bottomBar, { bottom: insets.bottom + spacing.lg }]}>
         <TouchableOpacity style={styles.fabBtn} onPress={onRecord} activeOpacity={0.8}>
           <View style={[styles.fabGlow, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]} />
-          <View style={[styles.fabOuter, { backgroundColor: '#ef4444' }]}>
-            <Ionicons name="radio-button-on" size={26} color="#0c0c14" />
+          <View style={[styles.fabOuter, { backgroundColor: colors.severe }]}>
+            <Ionicons name="radio-button-on" size={26} color={colors.onSignal} />
           </View>
           <Text style={styles.fabLabel}>Record</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.fabBtn} onPress={onPhoto} activeOpacity={0.8}>
           <View style={[styles.fabGlow, { backgroundColor: 'rgba(6, 182, 212, 0.15)' }]} />
-          <View style={[styles.fabOuter, { backgroundColor: '#06b6d4' }]}>
-            <Ionicons name="camera" size={26} color="#0c0c14" />
+          <View style={[styles.fabOuter, { backgroundColor: colors.signal }]}>
+            <Ionicons name="camera" size={26} color={colors.onSignal} />
           </View>
           <Text style={styles.fabLabel}>Photo</Text>
         </TouchableOpacity>
@@ -419,200 +447,228 @@ export default function DashboardScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0c0c14',
+    backgroundColor: colors.background,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: spacing.xl,
+  },
+
+  // Signature elements
+  eyebrow: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.4,
+  },
+  laneDivider: {
+    marginTop: spacing.xl,
+    marginHorizontal: spacing.lg,
+    borderTopWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(255, 255, 255, 0.13)',
   },
 
   // Quick-start guide
   quickStartCard: {
-    marginHorizontal: 16, marginTop: 12,
-    backgroundColor: '#18181b', borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.hairline,
   },
   quickStartHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
-  quickStartTitle: { color: '#fafafa', fontSize: 15, fontWeight: '700' },
+  quickStartTitle: {
+    fontFamily: fonts.bold,
+    color: colors.textPrimary,
+    fontSize: 15,
+  },
   quickStartStep: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    marginBottom: spacing.sm,
   },
   quickStartNum: {
-    width: 20, height: 20, borderRadius: 10,
-    backgroundColor: '#06b6d4', textAlign: 'center', lineHeight: 20,
-    color: '#0c0c14', fontSize: 11, fontWeight: '800', overflow: 'hidden',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.signal,
+    textAlign: 'center',
+    lineHeight: 20,
+    fontFamily: fonts.extrabold,
+    color: colors.onSignal,
+    fontSize: 11,
+    overflow: 'hidden',
   },
-  quickStartText: { flex: 1, color: '#a1a1aa', fontSize: 13, lineHeight: 18 },
+  quickStartText: {
+    flex: 1,
+    color: colors.textSecondary,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+  },
 
   // Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 12,
-    paddingHorizontal: 20,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
   },
-  menuBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.hairline,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-    marginRight: 4,
+    borderColor: colors.hairline,
   },
   headerLogo: {
-    width: 36,
-    height: 36,
-    marginRight: 8,
-  },
-  avatarCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(6, 182, 212, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(6, 182, 212, 0.25)',
+    width: 34,
+    height: 34,
+    marginRight: spacing.sm,
   },
   greeting: {
-    color: '#71717a',
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: 0.3,
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#fafafa',
-    letterSpacing: -0.5,
-    marginTop: 1,
+    fontFamily: fonts.extrabold,
+    fontSize: 23,
+    color: colors.textPrimary,
+    letterSpacing: 0.4,
+    marginTop: 2,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    gap: spacing.sm,
   },
 
   // Hero Section
   heroSection: {
-    paddingHorizontal: 20,
-    marginBottom: 8,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.md,
   },
   heroCard: {
-    borderRadius: 20,
+    borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: '#18181b',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.1)',
+    borderColor: colors.hairline,
+    padding: spacing.xl,
   },
   heroGlow: {
     position: 'absolute',
-    top: -40,
-    right: -40,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+    top: -50,
+    right: -50,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(6, 182, 212, 0.07)',
   },
-  heroCardContent: {
-    padding: 20,
-  },
-  heroIconRow: {
+  heroTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: spacing.md,
   },
-  heroIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+  heroIconWell: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.sm,
+    backgroundColor: colors.signalDim,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  heroNumber: {
-    color: '#fafafa',
-    fontSize: 42,
-    fontWeight: '800',
-    letterSpacing: -1,
+  bracketBox: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 22,
+    paddingVertical: 6,
   },
-  heroLabel: {
-    color: '#71717a',
+  heroNumber: {
+    fontFamily: fonts.extrabold,
+    color: colors.textPrimary,
+    fontSize: 46,
+    letterSpacing: -1,
+    fontVariant: ['tabular-nums'],
+  },
+  heroSub: {
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
     fontSize: 13,
-    fontWeight: '500',
-    marginTop: 2,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
   },
   heroRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 10,
+    gap: spacing.sm,
   },
   heroSmallCard: {
     flex: 1,
-    backgroundColor: '#18181b',
-    borderRadius: 16,
-    padding: 14,
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.md,
+    padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.hairline,
   },
   heroSmallIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 28,
+    height: 28,
+    borderRadius: radius.sm,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   heroSmallNumber: {
-    color: '#fafafa',
-    fontSize: 20,
-    fontWeight: '700',
+    fontFamily: fonts.monoBold,
+    color: colors.textPrimary,
+    fontSize: 18,
   },
   heroSmallLabel: {
-    color: '#71717a',
-    fontSize: 11,
-    fontWeight: '500',
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
     marginTop: 2,
   },
 
   // Map Card
   mapCardSection: {
-    paddingHorizontal: 20,
-    marginTop: 16,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xl,
   },
   mapCard: {
-    borderRadius: 20,
+    borderRadius: radius.lg,
     overflow: 'hidden',
-    height: 150,
+    height: 140,
     position: 'relative',
-    backgroundColor: '#18181b',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.2)',
+    borderColor: colors.hairline,
   },
   mapCardBg: {
     ...StyleSheet.absoluteFill,
@@ -624,7 +680,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    backgroundColor: 'rgba(6, 182, 212, 0.08)',
     transform: [{ rotate: '-12deg' }],
   },
   mapGridLine2: {
@@ -633,7 +689,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    backgroundColor: 'rgba(6, 182, 212, 0.08)',
     transform: [{ rotate: '-12deg' }],
   },
   mapGridLine3: {
@@ -642,7 +698,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 60,
     width: 1,
-    backgroundColor: 'rgba(37, 99, 235, 0.06)',
+    backgroundColor: 'rgba(6, 182, 212, 0.06)',
     transform: [{ rotate: '20deg' }],
   },
   mapGridLine4: {
@@ -651,7 +707,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 160,
     width: 1,
-    backgroundColor: 'rgba(37, 99, 235, 0.06)',
+    backgroundColor: 'rgba(6, 182, 212, 0.06)',
     transform: [{ rotate: '20deg' }],
   },
   mapPin1: {
@@ -661,7 +717,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    backgroundColor: colors.signalDim,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -672,7 +728,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: 'rgba(239, 68, 68, 0.18)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -683,7 +739,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+    backgroundColor: 'rgba(34, 197, 94, 0.18)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -691,135 +747,131 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#06b6d4',
+    backgroundColor: colors.signal,
   },
   mapCardOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(12, 12, 20, 0.4)',
+    backgroundColor: 'rgba(14, 16, 19, 0.45)',
   },
   mapCardContent: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
+    padding: spacing.lg,
   },
   mapCardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
   },
   mapCardIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(37, 99, 235, 0.25)',
+    width: 42,
+    height: 42,
+    borderRadius: radius.md,
+    backgroundColor: colors.signalDim,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.3)',
+    borderColor: 'rgba(6, 182, 212, 0.25)',
   },
   mapCardTitle: {
-    color: '#fafafa',
-    fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
+    color: colors.textPrimary,
+    fontSize: 15,
   },
   mapCardSub: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 13,
-    fontWeight: '500',
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    fontSize: 12,
     marginTop: 2,
   },
   mapCardBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(37, 99, 235, 0.15)',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+    gap: 4,
+    backgroundColor: colors.signalDim,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.25)',
+    borderColor: 'rgba(6, 182, 212, 0.25)',
   },
   mapCardBadgeText: {
-    color: '#60a5fa',
-    fontSize: 12,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
+    color: colors.signalBright,
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
 
   // Quick Actions
   section: {
-    paddingHorizontal: 20,
-    marginTop: 24,
-  },
-  sectionTitle: {
-    color: '#fafafa',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    marginBottom: 14,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xl,
   },
   actionsGrid: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
   actionCard: {
     flex: 1,
-    backgroundColor: '#18181b',
-    borderRadius: 16,
-    padding: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.hairline,
   },
   actionIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: spacing.md,
   },
   actionLabel: {
-    color: '#fafafa',
+    fontFamily: fonts.semibold,
+    color: colors.textPrimary,
     fontSize: 13,
-    fontWeight: '700',
     marginBottom: 2,
   },
   actionSub: {
-    color: '#71717a',
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
     fontSize: 11,
-    fontWeight: '400',
   },
 
   // Queue Banner
   queueBanner: {
-    marginHorizontal: 20,
-    marginTop: 20,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.xl,
     backgroundColor: 'rgba(245, 158, 11, 0.06)',
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: radius.md,
+    padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.12)',
+    borderColor: 'rgba(245, 158, 11, 0.14)',
   },
   queueLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: spacing.sm,
   },
   queueText: {
-    color: '#f59e0b',
-    fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
+    color: colors.moderate,
+    fontSize: 12,
   },
 
   // Recent Activity
   rideCard: {
-    backgroundColor: '#18181b',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 4,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginTop: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.hairline,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -830,13 +882,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: 12,
+    gap: spacing.md,
   },
   rideIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+    width: 34,
+    height: 34,
+    borderRadius: radius.sm,
+    backgroundColor: colors.signalDim,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -844,25 +896,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rideDate: {
-    color: '#fafafa',
-    fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
+    color: colors.textPrimary,
+    fontSize: 13,
   },
   rideTime: {
-    color: '#71717a',
-    fontSize: 12,
+    fontFamily: fonts.mono,
+    color: colors.textMuted,
+    fontSize: 11,
     marginTop: 1,
   },
   rideRight: {
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   rideStatus: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 8,
+    paddingHorizontal: 9,
+    borderRadius: radius.sm,
   },
   statusDot: {
     width: 6,
@@ -870,11 +923,12 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   rideStatusText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    letterSpacing: 0.3,
   },
   progressContainer: {
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   progressBarBg: {
     height: 4,
@@ -884,59 +938,59 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: 4,
-    backgroundColor: '#f59e0b',
+    backgroundColor: colors.moderate,
     borderRadius: 2,
   },
   progressText: {
-    color: '#f59e0b',
+    fontFamily: fonts.monoMedium,
+    color: colors.moderate,
     fontSize: 10,
-    fontWeight: '600',
     marginTop: 4,
   },
   rideAction: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    backgroundColor: colors.hairline,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  // Empty State
+  // Empty State — bracket-framed (signature)
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 32,
-    backgroundColor: '#18181b',
-    borderRadius: 20,
+    paddingVertical: spacing.xxl,
+    marginTop: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.hairline,
   },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  emptyBracketBox: {
+    width: 72,
+    height: 72,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: spacing.lg,
   },
   emptyTitle: {
-    color: '#fafafa',
-    fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
+    color: colors.textPrimary,
+    fontSize: 15,
   },
   emptySub: {
-    color: '#71717a',
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
     fontSize: 13,
     marginTop: 4,
     textAlign: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: spacing.xxl,
   },
 
   // Bottom Action Bar
   bottomBar: {
     position: 'absolute',
-    bottom: 16,
+    bottom: spacing.lg,
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 24,
@@ -967,9 +1021,9 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabLabel: {
-    color: '#a1a1aa',
+    fontFamily: fonts.semibold,
+    color: colors.textSecondary,
     fontSize: 11,
-    fontWeight: '600',
     marginTop: 6,
   },
 })
