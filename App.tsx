@@ -29,7 +29,6 @@ import DashboardScreen from './screens/DashboardScreen'
 import DriveScreen from './screens/DriveScreen'
 import CameraScreen from './screens/CameraScreen'
 import MapVerificationScreen from './screens/MapVerificationScreen'
-import DistressListScreen from './screens/DistressListScreen'
 import PhotoCaptureScreen from './screens/PhotoCaptureScreen'
 import FeedScreen from './screens/FeedScreen'
 import FeedDetailScreen from './screens/FeedDetailScreen'
@@ -46,7 +45,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'drive' | 'photo' | 'map' | 'distress' | 'rides' | 'profile' | 'publicprofile' | 'search' | 'about'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'drive' | 'photo' | 'map' | 'rides' | 'profile' | 'publicprofile' | 'search' | 'about'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -504,7 +503,6 @@ export default function App() {
         case 'camera':
         case 'photo':
         case 'map':
-        case 'distress':
         case 'rides':
         case 'profile':
           setScreen('dashboard')
@@ -579,7 +577,6 @@ export default function App() {
           onDrive={() => setScreen('drive')}
           onPhoto={() => setScreen('photo')}
           onMap={() => setScreen('map')}
-          onDistress={() => setScreen('distress')}
           onUpload={handleUploadRecording}
           onProcess={handleProcessRecording}
           onDelete={handleDeleteRecording}
@@ -666,9 +663,6 @@ export default function App() {
             <Text style={{ color: '#0c0c14', fontWeight: '700' }}>Go Back</Text>
           </TouchableOpacity>
         </View>
-      )}
-      {screen === 'distress' && (
-        <DistressListScreen onBack={() => setScreen('dashboard')} />
       )}
       {screen === 'profile' && user && (
         <ProfileScreen user={user} onBack={() => setScreen('dashboard')} onAbout={() => setScreen('about')} />

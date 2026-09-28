@@ -25,7 +25,6 @@ type Props = {
   onDrive: () => void
   onPhoto: () => void
   onMap: () => void
-  onDistress: () => void
   onUpload: (recording: Recording) => void | Promise<void>
   onProcess: (recording: Recording) => void | Promise<void>
   onDelete: (recording: Recording) => void
@@ -70,7 +69,6 @@ export default function DashboardScreen({
   onDrive,
   onPhoto,
   onMap,
-  onDistress,
   onUpload,
   onProcess,
   onDelete,
@@ -298,14 +296,14 @@ export default function DashboardScreen({
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={onDistress}
+              onPress={() => onTabChange('feed')}
               activeOpacity={0.7}
             >
               <View style={[styles.actionIcon, { backgroundColor: colors.signalDim }]}>
-                <Ionicons name="warning" size={22} color={colors.signal} />
+                <Ionicons name="newspaper" size={22} color={colors.signal} />
               </View>
-              <Text style={styles.actionLabel}>All Detections</Text>
-              <Text style={styles.actionSub}>View all hazards</Text>
+              <Text style={styles.actionLabel}>Community Feed</Text>
+              <Text style={styles.actionSub}>Photos & reports</Text>
             </TouchableOpacity>
           </View>
         </View>
