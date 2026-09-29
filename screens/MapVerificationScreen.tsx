@@ -66,71 +66,107 @@ function severityColor(severity: string): string {
   }
 }
 
-function buildMapHtml(
-  videoDistress: VideoDistress[],
-  communityPhotos: CommunityPhoto[],
-  viewMode: ViewMode,
+type VideoFeature = {
+  id: string
+  lat: number
+  lng: number
+  severity: string
+  hits: number
+  image_url: string | null
+  color: string
+  status: string
+  street: string | null
+  barangay: string | null
+  city: string | null
+  province: string | null
+  region: string | null
+  country: string | null
+  formatted_address: string | null
+  citizen_first_reported_at: string | null
+  latest_activity_at: string | null
+  detectors_count: number
+}
+
+type PhotoFeature = {
+  id: string
+  lat: number
+  lng: number
+  status: string
+  severity: string
+  image_url: string
+  formatted_address: string
+  street: string
+  barangay: string
+  city: string
+  province: string
+  region: string
+  country: string
+  confidence: number
+  class_name: string
+  reporter_username: string
+  created_at: string
+  color: string
+}
+
+function toVideoFeatures(rows: VideoDistress[]): VideoFeature[] {
+  return rows.map((p) => ({
+    id: p.pothole_id,
+    lat: p.consolidated_latitude,
+    lng: p.consolidated_longitude,
+    severity: p.worst_severity,
+    hits: p.total_detection_hits,
+    image_url: p.image_url,
+    color: severityColor(p.worst_severity),
+    status: p.status,
+    street: p.street,
+    barangay: p.barangay,
+    city: p.city,
+    province: p.province,
+    region: p.region,
+    country: p.country,
+    formatted_address: p.formatted_address,
+    citizen_first_reported_at: p.citizen_first_reported_at,
+    latest_activity_at: p.latest_activity_at,
+    detectors_count: p.detectors_count ?? 0,
+  }))
+}
+
+function toPhotoFeatures(rows: CommunityPhoto[]): PhotoFeature[] {
+  return rows.map((cp) => ({
+    id: cp.id,
+    lat: cp.latitude,
+    lng: cp.longitude,
+    status: cp.detection_status,
+    severity: cp.worst_severity,
+    image_url: cp.image_url,
+    formatted_address: cp.formatted_address,
+    street: cp.street,
+    barangay: cp.barangay,
+    city: cp.city,
+    province: cp.province,
+    region: cp.region,
+    country: cp.country,
+    confidence: cp.confidence,
+    class_name: cp.class_name,
+    reporter_username: cp.reporter_username,
+    created_at: cp.created_at,
+    color:
+      cp.detection_status === 'pending'
+        ? '#71717a'
+        : cp.detection_status === 'processed'
+          ? '#06b6d4'
+          : '#71717a',
+  }))
+}
+
+function buildMapShell(
   tileKey: string | undefined,
   supabaseUrl: string,
   supabaseAnonKey: string,
-  sessionToken: string,
 ): string {
-  const showVideo = viewMode === 'video' || viewMode === 'all'
-  const showPhotos = viewMode === 'photos' || viewMode === 'all'
   const tileUrl = tileKey
     ? `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${tileKey}`
     : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-
-  const videoFeatures = showVideo
-    ? videoDistress.map((p) => ({
-        id: p.pothole_id,
-        lat: p.consolidated_latitude,
-        lng: p.consolidated_longitude,
-        severity: p.worst_severity,
-        hits: p.total_detection_hits,
-        image_url: p.image_url,
-        color: severityColor(p.worst_severity),
-        status: p.status,
-        street: p.street,
-        barangay: p.barangay,
-        city: p.city,
-        province: p.province,
-        region: p.region,
-        country: p.country,
-        formatted_address: p.formatted_address,
-        citizen_first_reported_at: p.citizen_first_reported_at,
-        latest_activity_at: p.latest_activity_at,
-        detectors_count: p.detectors_count ?? 0,
-      }))
-    : []
-
-  const communityPhotoFeatures = showPhotos
-    ? communityPhotos.map((cp) => ({
-        id: cp.id,
-        lat: cp.latitude,
-        lng: cp.longitude,
-        status: cp.detection_status,
-        severity: cp.worst_severity,
-        image_url: cp.image_url,
-        formatted_address: cp.formatted_address,
-        street: cp.street,
-        barangay: cp.barangay,
-        city: cp.city,
-        province: cp.province,
-        region: cp.region,
-        country: cp.country,
-        confidence: cp.confidence,
-        class_name: cp.class_name,
-        reporter_username: cp.reporter_username,
-        created_at: cp.created_at,
-        color:
-          cp.detection_status === 'pending'
-            ? '#71717a'
-            : cp.detection_status === 'processed'
-              ? '#06b6d4'
-              : '#71717a',
-      }))
-    : []
 
   return `<!DOCTYPE html>
 <html>
@@ -153,7 +189,8 @@ function buildMapHtml(
 <script>
   var SUPABASE_URL = '${supabaseUrl}';
   var SUPABASE_KEY = '${supabaseAnonKey}';
-  var SUPABASE_TOKEN = '${sessionToken}';
+  var SUPABASE_TOKEN = '';
+  window.setToken = function(t) { SUPABASE_TOKEN = t; };
 
   function showToast(msg) {
     var t = document.createElement('div');
@@ -249,17 +286,71 @@ function buildMapHtml(
     };
   }
 
-  var map = L.map('map').setView([14.5547, 121.0509], 13);
+  var map = L.map('map', { preferCanvas: true }).setView([14.5547, 121.0509], 13);
   L.tileLayer('${tileUrl}', {
     maxZoom: 19,
     attribution: 'MapLibre | &copy; OpenStreetMap'
   }).addTo(map);
 
-  var bounds = [];
-  var videoData = ${JSON.stringify(videoFeatures)};
-  var communityPhotoData = ${JSON.stringify(communityPhotoFeatures)};
+  var videoData = [];
+  var communityPhotoData = [];
   var videoMarkers = {};
   var photoMarkers = {};
+  var videoBounds = [];
+  var photoBounds = [];
+  var currentMode = 'all';
+  var videoGroup = L.layerGroup();
+  var photoGroup = L.layerGroup();
+
+  function toggleLayer(layer, on) {
+    if (on && !map.hasLayer(layer)) map.addLayer(layer);
+    else if (!on && map.hasLayer(layer)) map.removeLayer(layer);
+  }
+
+  function syncLabels() {
+    var show = map.getZoom() >= 15;
+    for (var id in videoMarkers) {
+      var m = videoMarkers[id];
+      if (show) {
+        if (!m.getTooltip()) m.bindTooltip(m._labelText, { permanent: true, direction: 'center', className: 'hazard-label' });
+      } else if (m.getTooltip()) {
+        m.unbindTooltip();
+      }
+    }
+  }
+  map.on('zoomend', syncLabels);
+
+  function applyMode(force) {
+    var showVideo = currentMode === 'video' || currentMode === 'all';
+    var showPhotos = currentMode === 'photos' || currentMode === 'all';
+    toggleLayer(videoGroup, showVideo);
+    toggleLayer(photoGroup, showPhotos);
+    if (force) {
+      var b = [];
+      if (showVideo) b = b.concat(videoBounds);
+      if (showPhotos) b = b.concat(photoBounds);
+      if (b.length > 0) map.fitBounds(b, { padding: [40, 40] });
+    }
+    syncLabels();
+  }
+
+  window.setMapData = function(videoFeatures, photoFeatures) {
+    videoData = videoFeatures || [];
+    communityPhotoData = photoFeatures || [];
+    videoGroup.clearLayers();
+    photoGroup.clearLayers();
+    videoMarkers = {}; photoMarkers = {};
+    videoBounds = []; photoBounds = [];
+    buildVideoMarkers();
+    buildPhotoMarkers();
+    applyMode(true);
+  };
+
+  window.setViewMode = function(mode) {
+    if (mode === currentMode) return;
+    currentMode = mode;
+    applyMode(true);
+  };
 
   function focusVideo(id) {
     var tries = 0;
@@ -317,7 +408,7 @@ function buildMapHtml(
     var html = '<div style="min-width:220px;font-family:system-ui,sans-serif;">';
 
     if (p.image_url) {
-      html += '<img src="' + p.image_url + '" style="width:100%;height:160px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
+      html += '<img src="' + p.image_url + '" loading="lazy" style="width:100%;height:160px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
     }
 
     html += '<div style="display:flex;gap:6px;margin-bottom:10px;">';
@@ -605,27 +696,28 @@ function buildMapHtml(
     loadAndRender();
   }
 
-  videoData.forEach(function(p) {
-    var marker = L.circleMarker([p.lat, p.lng], {
-      radius: 10,
-      color: p.color,
-      fillColor: p.color,
-      fillOpacity: 0.8,
-      weight: 2
-    }).addTo(map);
+  function buildVideoMarkers() {
+    videoData.forEach(function(p) {
+      var marker = L.circleMarker([p.lat, p.lng], {
+        radius: 10,
+        color: p.color,
+        fillColor: p.color,
+        fillOpacity: 0.8,
+        weight: 2
+      }).addTo(videoGroup);
 
-    var label = p.severity === 'Severe' ? '!' : p.hits.toString();
-    marker.bindTooltip(label, { permanent: true, direction: 'center', className: 'hazard-label' });
+      marker._labelText = p.severity === 'Severe' ? '!' : p.hits.toString();
 
-    marker.bindPopup(videoPopupHtml(p, null, null), { maxWidth: 300, className: 'hazard-popup' });
+      marker.bindPopup(function() { return videoPopupHtml(p, null, null); }, { maxWidth: 300, className: 'hazard-popup' });
 
-    marker.on('popupopen', function() {
-      loadAndRenderVideo(marker, p);
+      marker.on('popupopen', function() {
+        loadAndRenderVideo(marker, p);
+      });
+
+      videoMarkers[p.id] = marker;
+      videoBounds.push([p.lat, p.lng]);
     });
-
-    videoMarkers[p.id] = marker;
-    bounds.push([p.lat, p.lng]);
-  });
+  }
 
   function communityPhotoPopupHtml(cp, comments) {
     var sevColors = { Severe: '#ef4444', Moderate: '#f59e0b', Minor: '#22c55e' };
@@ -645,7 +737,7 @@ function buildMapHtml(
     var html = '<div id="cp-popup-' + cp.id + '" style="min-width:220px;font-family:system-ui,sans-serif;">';
 
     if (cp.image_url) {
-      html += '<img src="' + cp.image_url + '" style="width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
+      html += '<img src="' + cp.image_url + '" loading="lazy" style="width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
     }
     html += '<div style="display:flex;gap:6px;margin-bottom:10px;">';
     if (cp.severity) {
@@ -736,7 +828,8 @@ function buildMapHtml(
     return html;
   }
 
-  communityPhotoData.forEach(function(cp) {
+  function buildPhotoMarkers() {
+    communityPhotoData.forEach(function(cp) {
     var icon = L.divIcon({
       className: '',
       html: '<div style="width:32px;height:32px;border-radius:8px;background:' + cp.color + ';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fafafa" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>',
@@ -744,8 +837,8 @@ function buildMapHtml(
       iconAnchor: [16, 16],
     });
 
-    var marker = L.marker([cp.lat, cp.lng], { icon: icon }).addTo(map);
-    marker.bindPopup(communityPhotoPopupHtml(cp, null), { maxWidth: 300, className: 'hazard-popup' });
+    var marker = L.marker([cp.lat, cp.lng], { icon: icon }).addTo(photoGroup);
+    marker.bindPopup(function() { return communityPhotoPopupHtml(cp, null); }, { maxWidth: 300, className: 'hazard-popup' });
 
     photoMarkers[cp.id] = marker;
 
@@ -1018,11 +1111,8 @@ function buildMapHtml(
       loadAndRender();
     });
 
-    bounds.push([cp.lat, cp.lng]);
-  });
-
-  if (bounds.length > 0) {
-    map.fitBounds(bounds, { padding: [40, 40] });
+    photoBounds.push([cp.lat, cp.lng]);
+    });
   }
 </script>
 </body>
@@ -1039,7 +1129,37 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
   const [viewMode, setViewMode] = useState<ViewMode>('all')
   const [sessionToken, setSessionToken] = useState('')
   const webViewRef = useRef<WebView>(null)
-  const SUPABASE_TOKEN = sessionToken
+  const loadedRef = useRef(false)
+  const focusItemRef = useRef(focusItem)
+  focusItemRef.current = focusItem
+  const latestRef = useRef({ video: [] as VideoDistress[], photos: [] as CommunityPhoto[], mode: 'all' as ViewMode, token: '' })
+  latestRef.current = { video: videoDistress, photos: communityPhotos, mode: viewMode, token: sessionToken }
+
+  const inject = (js: string) => webViewRef.current?.injectJavaScript(js)
+  const injectToken = () => {
+    const t = latestRef.current.token
+    if (t) inject(`window.setToken && window.setToken(${JSON.stringify(t)}); true;`)
+  }
+  const injectData = () => {
+    const d = latestRef.current
+    inject(`window.setMapData && window.setMapData(${JSON.stringify(toVideoFeatures(d.video))}, ${JSON.stringify(toPhotoFeatures(d.photos))}); true;`)
+  }
+  const injectMode = () => {
+    inject(`window.setViewMode && window.setViewMode(${JSON.stringify(latestRef.current.mode)}); true;`)
+  }
+  const injectFocus = () => {
+    const f = focusItemRef.current
+    if (!f) return
+    const call = f.type === 'pothole' ? 'focusVideo' : 'focusPhoto'
+    inject(`window.${call} && window.${call}(${JSON.stringify(String(f.id))}); true;`)
+  }
+  const pushAll = () => {
+    if (!loadedRef.current) return
+    injectToken()
+    injectData()
+    injectMode()
+    injectFocus()
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -1047,17 +1167,22 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
     })
   }, [])
 
+  // Focus as soon as it's set — the page's focusVideo/focusPhoto retry internally.
   useEffect(() => {
-    if (!focusItem || !webViewRef.current) return
-    const timeout = setTimeout(() => {
-      if (focusItem.type === 'pothole') {
-        webViewRef.current?.injectJavaScript(`focusVideo('${focusItem.id}');true;`)
-      } else {
-        webViewRef.current?.injectJavaScript(`focusPhoto('${focusItem.id}');true;`)
-      }
-    }, 1500)
-    return () => clearTimeout(timeout)
+    if (loadedRef.current) injectFocus()
   }, [focusItem])
+
+  useEffect(() => {
+    if (loadedRef.current) injectToken()
+  }, [sessionToken])
+
+  useEffect(() => {
+    if (loadedRef.current) injectData()
+  }, [videoDistress, communityPhotos])
+
+  useEffect(() => {
+    if (loadedRef.current) injectMode()
+  }, [viewMode])
 
   useEffect(() => {
     ;(async () => {
@@ -1066,7 +1191,7 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
       try {
         const { data, error } = await supabase
           .from('v_unified_potholes')
-          .select('*')
+          .select('pothole_id, consolidated_latitude, consolidated_longitude, worst_severity, total_detection_hits, image_url, street, barangay, city, province, region, country, formatted_address, citizen_first_reported_at, latest_activity_at, detectors_count')
           .not('caption', 'like', '[HIDDEN]%')
           .eq('activity_status', 'active')
           .eq('visibility_status', 'visible')
@@ -1133,8 +1258,8 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
   }, [])
 
   const html = useMemo(
-    () => buildMapHtml(videoDistress, communityPhotos, viewMode, MAPTILER_KEY, SUPABASE_URL, SUPABASE_ANON_KEY, sessionToken),
-    [videoDistress, communityPhotos, viewMode, sessionToken],
+    () => buildMapShell(MAPTILER_KEY, SUPABASE_URL, SUPABASE_ANON_KEY),
+    [],
   )
 
   const handleWebViewMessage = useCallback((event: WebViewMessageEvent) => {
@@ -1162,6 +1287,10 @@ export default function MapVerificationScreen({ onBack, focusItem, onViewFeedIte
           javaScriptEnabled={true}
           domStorageEnabled={true}
           onMessage={handleWebViewMessage}
+          onLoadEnd={() => {
+            loadedRef.current = true
+            pushAll()
+          }}
         />
       )}
 
