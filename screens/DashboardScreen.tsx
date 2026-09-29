@@ -18,6 +18,8 @@ import type { Recording } from '../lib/types'
 import { colors, fonts, radius, spacing } from '../theme/tokens'
 import Brackets from '../components/Brackets'
 import LaneDivider from '../components/LaneDivider'
+import CommunityHazardsSection from '../components/CommunityHazardsSection'
+import { useCommunityHazards } from '../lib/useCommunityHazards'
 
 type Props = {
   recordings: Recording[]
@@ -68,6 +70,7 @@ export default function DashboardScreen({
   const lastPressRef = useRef<Record<string, number>>({})
   const insets = useSafeAreaInsets()
   const [showQuickStart, setShowQuickStart] = useState(false)
+  const { hazards, loading: hazardsLoading } = useCommunityHazards()
 
   useEffect(() => {
     AsyncStorage.getItem('@sipat_quickstart_seen').then((seen) => {
@@ -213,6 +216,9 @@ export default function DashboardScreen({
         </View>
 
         <LaneDivider />
+
+        {/* Distress by area — ranked address breakdown */}
+        <CommunityHazardsSection hazards={hazards} loading={hazardsLoading} />
 
         {/* Map Card */}
         {Platform.OS !== 'web' && (

@@ -1,10 +1,12 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
+import { useState } from 'react'
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import type { Hazard } from '../lib/useCommunityHazards'
 import { colors, fonts, radius, spacing } from '../theme/tokens'
 import Brackets from './Brackets'
 
 type Props = { hazards: Hazard[]; loading: boolean }
+type Mode = 'barangay' | 'street'
 
 const SEVERITY_COLORS: Record<string, string> = {
   Severe: colors.severe,
@@ -15,97 +17,47 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 const SEVERITY_RANK: Record<string, number> = { Minor: 1, Moderate: 2, Severe: 3, Unknown: 0 }
 
-function aggregate<T extends string>(items: Hazard[], key: (h: Hazard) => T | null) {
-  const counts: Record<string, number> = {}
-  for (const h of items) {
-    const k = key(h)
-    if (!k) continue
-    counts[k] = (counts[k] ?? 0) + 1
-  }
-  return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-}
+type AreaRow = { name: string; count: number; worst: string }
 
-function aggregateStreet(items: Hazard[]) {
-  const map: Record<string, { count: number; worst: string }> = {}
-  for (const h of items) {
-    if (!h.street) continue
-    if (!map[h.street]) map[h.street] = { count: 0, worst: 'Unknown' }
-    map[h.street].count++
-    if ((SEVERITY_RANK[h.worst_severity] ?? 0) > (SEVERITY_RANK[map[h.street].worst] ?? 0)) {
-      map[h.street].worst = h.worst_severity
+function aggregateAreas(hazards: Hazard[], mode: Mode) {
+  const map: Record<string, AreaRow> = {}
+  let unmapped = 0
+  for (const h of hazards) {
+    const name = mode === 'barangay' ? h.barangay : h.street
+    if (!name) {
+      unmapped++
+      continue
+    }
+    const row = map[name] ?? (map[name] = { name, count: 0, worst: 'Unknown' })
+    row.count++
+    if ((SEVERITY_RANK[h.worst_severity] ?? 0) > (SEVERITY_RANK[row.worst] ?? 0)) {
+      row.worst = h.worst_severity
     }
   }
-  return Object.entries(map)
-    .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 5)
-}
-
-function aggregateSeverityByCity(items: Hazard[]) {
-  const cities: Record<string, Record<string, number>> = {}
-  for (const h of items) {
-    const city = h.city ?? 'Unknown'
-    if (!cities[city]) cities[city] = {}
-    const sev = h.worst_severity ?? 'Unknown'
-    cities[city][sev] = (cities[city][sev] ?? 0) + 1
+  const all = Object.values(map).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  return {
+    rows: all.slice(0, 5),
+    areaCount: all.length,
+    unmapped,
+    mapped: hazards.length - unmapped,
   }
-  return Object.entries(cities)
-    .map(([city, sevs]) => ({
-      city,
-      total: Object.values(sevs).reduce((a, b) => a + b, 0),
-      severe: sevs['Severe'] ?? 0,
-      moderate: sevs['Moderate'] ?? 0,
-      minor: sevs['Minor'] ?? 0,
-    }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5)
 }
 
-function RankRow({ rank, name, count, max }: { rank: number; name: string; count: number; max: number }) {
-  const pct = max > 0 ? (count / max) * 100 : 0
+function EmptyState({ title }: { title: string }) {
   return (
-    <View style={styles.rankRow}>
-      <Text style={styles.rankNum}>{rank}</Text>
-      <View style={styles.rankInfo}>
-        <Text style={styles.rankName} numberOfLines={1}>{name}</Text>
-        <View style={styles.rankBarBg}>
-          <View style={[styles.rankBarFill, { width: `${pct}%` }]} />
-        </View>
+    <View style={styles.emptyWrap}>
+      <View style={styles.emptyIcon}>
+        <Brackets size={14} />
+        <Ionicons name="location-outline" size={34} color={colors.signal} />
       </View>
-      <Text style={styles.rankCount}>{count}</Text>
-    </View>
-  )
-}
-
-function StreetRow({ rank, name, count, worst }: { rank: number; name: string; count: number; worst: string }) {
-  return (
-    <View style={styles.rankRow}>
-      <Text style={styles.rankNum}>{rank}</Text>
-      <View style={[styles.severityDot, { backgroundColor: SEVERITY_COLORS[worst] ?? colors.textMuted }]} />
-      <View style={styles.rankInfo}>
-        <Text style={styles.rankName} numberOfLines={1}>{name}</Text>
-      </View>
-      <Text style={styles.rankCount}>{count}</Text>
-    </View>
-  )
-}
-
-function StackedBar({ city, total, severe, moderate, minor }: { city: string; total: number; severe: number; moderate: number; minor: number }) {
-  return (
-    <View style={styles.stackedRow}>
-      <Text style={styles.stackedCity} numberOfLines={1}>{city}</Text>
-      <View style={styles.stackedBarBg}>
-        {minor > 0 && <View style={[styles.stackedSeg, { flex: minor, backgroundColor: SEVERITY_COLORS.Minor }]} />}
-        {moderate > 0 && <View style={[styles.stackedSeg, { flex: moderate, backgroundColor: SEVERITY_COLORS.Moderate }]} />}
-        {severe > 0 && <View style={[styles.stackedSeg, { flex: severe, backgroundColor: SEVERITY_COLORS.Severe }]} />}
-      </View>
-      <Text style={styles.stackedCount}>{total}</Text>
+      <Text style={styles.emptyTitle}>{title}</Text>
     </View>
   )
 }
 
 export default function CommunityHazardsSection({ hazards, loading }: Props) {
+  const [mode, setMode] = useState<Mode>('barangay')
+
   if (loading) {
     return (
       <View style={styles.loadingWrap}>
@@ -115,82 +67,145 @@ export default function CommunityHazardsSection({ hazards, loading }: Props) {
   }
 
   if (hazards.length === 0) {
-    return (
-      <View style={styles.emptyWrap}>
-        <View style={styles.emptyIcon}>
-          <Brackets size={14} />
-          <Ionicons name="location-outline" size={34} color={colors.signal} />
-        </View>
-        <Text style={styles.emptyTitle}>No address data yet</Text>
-      </View>
-    )
+    return <EmptyState title="No hazards yet" />
   }
 
-  const cities = aggregate(hazards, (h) => h.city)
-  const barangays = aggregate(hazards, (h) => h.barangay)
-  const streets = aggregateStreet(hazards)
-  const severityByCity = aggregateSeverityByCity(hazards)
-  const cityMax = cities[0]?.[1] ?? 1
-  const brgyMax = barangays[0]?.[1] ?? 1
+  const { rows, areaCount, unmapped, mapped } = aggregateAreas(hazards, mode)
+
+  if (mapped === 0) {
+    return <EmptyState title="No address data yet" />
+  }
+
+  const max = rows[0]?.count ?? 1
+  const noun = mode === 'barangay' ? (areaCount === 1 ? 'barangay' : 'barangays') : (areaCount === 1 ? 'street' : 'streets')
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Ionicons name="map" size={14} color={colors.signal} />
-        <Text style={styles.headerTitle}>Address Analytics</Text>
-        <Text style={styles.headerCount}>{hazards.length} hazards</Text>
-      </View>
-
-      {/* Top Cities */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Top Cities</Text>
-        {cities.map(([name, count], i) => (
-          <RankRow key={name} rank={i + 1} name={name} count={count} max={cityMax} />
-        ))}
-      </View>
-
-      {/* Top Barangays */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Top Barangays</Text>
-        {barangays.map(([name, count], i) => (
-          <RankRow key={name} rank={i + 1} name={name} count={count} max={brgyMax} />
-        ))}
-      </View>
-
-      {/* Top Streets */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Top Streets</Text>
-        {streets.map(([name, data], i) => (
-          <StreetRow key={name} rank={i + 1} name={name} count={data.count} worst={data.worst} />
-        ))}
-      </View>
-
-      {/* Severity by City */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Severity by City</Text>
-        <View style={styles.legendRow}>
-          <View style={[styles.legendDot, { backgroundColor: SEVERITY_COLORS.Severe }]} />
-          <Text style={styles.legendLabel}>Severe</Text>
-          <View style={[styles.legendDot, { backgroundColor: SEVERITY_COLORS.Moderate }]} />
-          <Text style={styles.legendLabel}>Moderate</Text>
-          <View style={[styles.legendDot, { backgroundColor: SEVERITY_COLORS.Minor }]} />
-          <Text style={styles.legendLabel}>Minor</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.eyebrow}>Distress by area</Text>
+        <View style={styles.toggle}>
+          <TouchableOpacity
+            style={[styles.toggleBtn, mode === 'barangay' && styles.toggleBtnActive]}
+            onPress={() => setMode('barangay')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.toggleText, mode === 'barangay' && styles.toggleTextActive]}>Barangay</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, mode === 'street' && styles.toggleBtnActive]}
+            onPress={() => setMode('street')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.toggleText, mode === 'street' && styles.toggleTextActive]}>Street</Text>
+          </TouchableOpacity>
         </View>
-        {severityByCity.map((row) => (
-          <StackedBar key={row.city} {...row} />
-        ))}
+      </View>
+
+      <View style={styles.card}>
+        {rows.map((row, i) => {
+          const pct = max > 0 ? (row.count / max) * 100 : 0
+          return (
+            <View key={row.name} style={styles.rankRow}>
+              <Text style={styles.rankNum}>{i + 1}</Text>
+              <View style={styles.rankInfo}>
+                <View style={styles.rankTop}>
+                  <Text style={styles.rankName} numberOfLines={1}>{row.name}</Text>
+                  <Text style={styles.rankCount}>{row.count}</Text>
+                </View>
+                <View style={styles.rankBarBg}>
+                  <View
+                    style={[
+                      styles.rankBarFill,
+                      { width: `${pct}%`, backgroundColor: SEVERITY_COLORS[row.worst] ?? colors.signal },
+                    ]}
+                  />
+                </View>
+              </View>
+            </View>
+          )
+        })}
+
+        {unmapped > 0 && (
+          <View style={styles.unmappedRow}>
+            <Ionicons name="location-outline" size={13} color={colors.textMuted} />
+            <Text style={styles.unmappedText}>No address — {unmapped}</Text>
+          </View>
+        )}
+
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>
+            {mapped} of {hazards.length} mapped · {areaCount} {noun}
+          </Text>
+        </View>
       </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { gap: spacing.md },
-  loadingWrap: { paddingVertical: spacing.xxl, alignItems: 'center' },
+  container: {
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xl,
+    gap: spacing.md,
+  },
 
-  // Empty state — the section's single bracket moment
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  eyebrow: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.4,
+  },
+
+  toggle: {
+    flexDirection: 'row',
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    padding: 2,
+    gap: 2,
+  },
+  toggleBtn: {
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: radius.pill,
+  },
+  toggleBtnActive: {
+    backgroundColor: colors.signalDim,
+  },
+  toggleText: {
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    color: colors.textMuted,
+  },
+  toggleTextActive: {
+    color: colors.signal,
+  },
+
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+  },
+
+  loadingWrap: {
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xl,
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+  },
   emptyWrap: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.xl,
     alignItems: 'center',
     paddingVertical: spacing.xxl,
     paddingHorizontal: spacing.xl,
@@ -208,53 +223,10 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { color: colors.textPrimary, fontFamily: fonts.semibold, fontSize: 15 },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  headerTitle: {
-    flex: 1,
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1.4,
-  },
-  headerCount: {
-    fontFamily: fonts.bold,
-    fontSize: 10,
-    letterSpacing: 0.4,
-    color: colors.signal,
-    backgroundColor: colors.signalDim,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
-    overflow: 'hidden',
-  },
-
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.hairline,
-  },
-  cardTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1.4,
-    marginBottom: spacing.md,
-  },
-
-  // Ranked list
   rankRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
     gap: spacing.sm,
   },
   rankNum: {
@@ -265,54 +237,53 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   rankInfo: { flex: 1 },
+  rankTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
   rankName: {
+    flex: 1,
     color: colors.textPrimary,
     fontFamily: fonts.semibold,
     fontSize: 13,
-    marginBottom: spacing.xs,
   },
-  rankBarBg: { height: 4, backgroundColor: colors.surfaceRaised, borderRadius: 2, overflow: 'hidden' },
-  rankBarFill: { height: 4, backgroundColor: colors.signal, borderRadius: 2 },
   rankCount: {
     color: colors.textSecondary,
     fontFamily: fonts.mono,
     fontSize: 12,
-    minWidth: 24,
-    textAlign: 'right',
   },
-
-  severityDot: { width: 8, height: 8, borderRadius: 4 },
-
-  // Stacked bars
-  legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendLabel: { color: colors.textMuted, fontFamily: fonts.mono, fontSize: 11, marginRight: spacing.sm },
-  stackedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  stackedCity: { color: colors.textPrimary, fontFamily: fonts.semibold, fontSize: 12, width: 80 },
-  stackedBarBg: {
-    flex: 1,
-    height: 12,
+  rankBarBg: {
+    height: 4,
     backgroundColor: colors.surfaceRaised,
-    borderRadius: radius.sm,
-    flexDirection: 'row',
+    borderRadius: 2,
     overflow: 'hidden',
   },
-  stackedSeg: { minWidth: 2 },
-  stackedCount: {
-    color: colors.textSecondary,
+  rankBarFill: { height: 4, borderRadius: 2 },
+
+  unmappedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
+    marginTop: spacing.xs,
+  },
+  unmappedText: {
+    color: colors.textMuted,
+    fontFamily: fonts.medium,
+    fontSize: 12,
+  },
+
+  footerRow: {
+    marginTop: spacing.sm,
+  },
+  footerText: {
+    color: colors.textMuted,
     fontFamily: fonts.mono,
     fontSize: 11,
-    minWidth: 20,
-    textAlign: 'right',
   },
 })
