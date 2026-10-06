@@ -48,6 +48,17 @@ export function useDetectionComments(potholeId: string | null) {
     return cleanup
   }, [fetchComments])
 
+  // Silent reconcile after a post — mirrors FeedScreen's post → reload pattern,
+  // so the list always ends up matching the DB even if the returned row is off.
+  const reload = useCallback(() => {
+    if (potholeId === null) return
+    supabase
+      .rpc('get_detection_comments', { p_pothole_id: parseInt(potholeId, 10) })
+      .then(({ data }) => {
+        setComments((data ?? []) as DetectionComment[])
+      })
+  }, [potholeId])
+
   const postComment = useCallback(async (body: string) => {
     if (potholeId === null || !body.trim()) return null
 
@@ -68,6 +79,7 @@ export function useDetectionComments(potholeId: string | null) {
       if (newComment) {
         setComments((prev) => [...prev, newComment])
       }
+      reload()
       return newComment
     } catch (err) {
       console.log('[Comments] Post exception:', JSON.stringify(err))
@@ -75,7 +87,7 @@ export function useDetectionComments(potholeId: string | null) {
     } finally {
       setPosting(false)
     }
-  }, [potholeId])
+  }, [potholeId, reload])
 
   return { comments, loading, posting, postComment }
 }

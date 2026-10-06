@@ -54,6 +54,16 @@ export function useCommunityPhotoComments(photoId: number | null) {
     return cleanup
   }, [fetchComments])
 
+  // Silent reconcile after a post — mirrors FeedScreen's post → reload pattern.
+  const reload = useCallback(() => {
+    if (photoId === null) return
+    supabase
+      .rpc('get_community_photo_comments', { p_photo_id: photoId })
+      .then(({ data }) => {
+        setComments((data ?? []) as PhotoComment[])
+      })
+  }, [photoId])
+
   const postComment = useCallback(
     async (body: string) => {
       if (photoId === null || !body.trim()) return null
@@ -77,6 +87,7 @@ export function useCommunityPhotoComments(photoId: number | null) {
         if (newComment) {
           setComments((prev) => [...prev, newComment])
         }
+        reload()
         return newComment
       } catch (err) {
         console.log('[PhotoComments] Post exception:', JSON.stringify(err))
@@ -85,7 +96,7 @@ export function useCommunityPhotoComments(photoId: number | null) {
         setPosting(false)
       }
     },
-    [photoId],
+    [photoId, reload],
   )
 
   return { comments, loading, posting, postComment }

@@ -80,6 +80,7 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
       animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
+      navigationBarTranslucent
     >
       <View style={styles.container}>
         {/* Backdrop */}

@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { colors, fonts, radius, spacing } from '../theme/tokens'
 import { REPORT_REASONS } from '../lib/reportReasons'
 
@@ -42,16 +43,25 @@ export default function ReportSheet({
   onConfirm,
   onCancel,
 }: Props) {
+  const insets = useSafeAreaInsets()
+
   if (!visible) return null
 
   return (
-    <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={onCancel}>
+    <Modal
+      visible
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onCancel}
+    >
       <View style={styles.backdrop}>
         <TouchableWithoutFeedback onPress={onCancel}>
           <View style={styles.backdropTouch} />
         </TouchableWithoutFeedback>
 
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: spacing.xl + spacing.md + insets.bottom }]}>
           <View style={styles.header}>
             <View style={styles.headerText}>
               <Text style={styles.title}>{title}</Text>

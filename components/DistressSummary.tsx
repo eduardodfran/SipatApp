@@ -59,6 +59,8 @@ export default function DistressSummary() {
         visible={!!selectedImage}
         transparent
         animationType="fade"
+        statusBarTranslucent
+        navigationBarTranslucent
         onRequestClose={() => setSelectedImage(null)}
       >
         <View style={styles.modalOverlay}>

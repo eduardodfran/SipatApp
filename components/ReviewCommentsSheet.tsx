@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDetectionComments } from '../lib/useDetectionComments'
 import { useCommunityPhotoComments } from '../lib/useCommunityPhotoComments'
 import { validateComment, MAX_COMMENT_LENGTH, COMMENT_COOLDOWN_MS } from '../lib/spamDetection'
@@ -62,6 +63,7 @@ export default function ReviewCommentsSheet({
   const [input, setInput] = useState('')
   const [error, setError] = useState('')
   const [cooldown, setCooldown] = useState(0)
+  const insets = useSafeAreaInsets()
 
   // Hooks gated on `open` — background deck cards never fetch comments
   const potholeComments = useDetectionComments(open && potholeId != null ? String(potholeId) : null)
@@ -103,6 +105,7 @@ export default function ReviewCommentsSheet({
       transparent
       animationType="slide"
       statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
@@ -149,7 +152,9 @@ export default function ReviewCommentsSheet({
                 comments.map((c) => <SheetCommentItem key={c.id} comment={c} />)}
             </ScrollView>
 
-            <View style={styles.composer}>
+            <View
+              style={[styles.composer, { paddingBottom: spacing.xl + insets.bottom }]}
+            >
               {error ? <Text style={styles.error}>{error}</Text> : null}
               <View style={styles.inputRow}>
                 <TextInput
@@ -207,14 +212,15 @@ const styles = StyleSheet.create({
   },
   sheetWrap: {
     width: '100%',
+    height: '60%',
   },
   sheet: {
+    flex: 1,
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     borderTopWidth: 1,
     borderColor: colors.hairline,
-    maxHeight: '75%',
   },
   header: {
     flexDirection: 'row',
@@ -241,13 +247,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   list: {
-    flexGrow: 0,
-    flexShrink: 1,
+    flex: 1,
   },
   listContent: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    gap: spacing.md,
   },
   loadingWrap: {
     alignItems: 'center',
@@ -263,6 +267,9 @@ const styles = StyleSheet.create({
   commentRow: {
     flexDirection: 'row',
     gap: spacing.sm,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
   },
   commentRowVerify: {
     opacity: 0.7,
@@ -272,6 +279,8 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.hairlineStrong,
     justifyContent: 'center',
     alignItems: 'center',
   },
