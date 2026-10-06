@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase'
 import { shortAddress } from './address'
+import type { VoteState } from './useVote'
 
 const PAGE_SIZE = 10
 
@@ -216,6 +217,26 @@ export function useReviewQueue(enabled: boolean) {
     setReloadKey((k) => k + 1)
   }, [])
 
+  // Write a card's vote state back into the queue so windowed-out cards
+  // re-seed correctly when they remount (useVote never refetches).
+  const updateItemVote = useCallback((key: string, votes: VoteState) => {
+    setItems((prev) => {
+      const idx = prev.findIndex((it) => it.key === key)
+      if (idx === -1) return prev
+      const it = prev[idx]
+      if (
+        it.upvotes === votes.upvotes &&
+        it.downvotes === votes.downvotes &&
+        it.userVote === votes.userVote
+      ) {
+        return prev
+      }
+      const next = [...prev]
+      next[idx] = { ...it, ...votes }
+      return next
+    })
+  }, [])
+
   const loadMore = useCallback(async () => {
     if (loadingMore || loading) return
     const needPotholes = hasMore.potholes
@@ -259,5 +280,14 @@ export function useReviewQueue(enabled: boolean) {
 
   const moreAvailable = hasMore.potholes || hasMore.photos
 
-  return { items, loading, loadingMore, error, hasMore: moreAvailable, loadMore, retry }
+  return {
+    items,
+    loading,
+    loadingMore,
+    error,
+    hasMore: moreAvailable,
+    loadMore,
+    retry,
+    updateItemVote,
+  }
 }

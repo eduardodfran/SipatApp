@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import {
   AccessibilityInfo,
   Animated,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useVote } from '../lib/useVote'
+import { useVote, type VoteState } from '../lib/useVote'
 import { useReport } from '../lib/useReport'
 import { useVerify } from '../lib/useVerify'
 import { formatRelativeTime } from '../lib/time'
@@ -115,12 +115,13 @@ function RailButton({
   )
 }
 
-export function ReviewCard({
+export const ReviewCard = memo(function ReviewCard({
   item,
   active,
   onAction,
   sheet,
   onSheetChange,
+  onVoteChange,
   onViewDetail,
 }: {
   item: ReviewItem
@@ -128,7 +129,8 @@ export function ReviewCard({
   onAction: () => void
   sheet: ReviewSheet
   onSheetChange: (s: ReviewSheet) => void
-  onViewDetail: () => void
+  onVoteChange: (key: string, votes: VoteState) => void
+  onViewDetail: (item: ReviewItem) => void
 }) {
   const contentType = item.kind
   const contentId = String(item.id)
@@ -234,6 +236,18 @@ export function ReviewCard({
 
   const reporterName = item.reporter ?? (item.kind === 'pothole' ? 'Auto-detected' : 'Anonymous')
   const inlineError = voteError || reportError
+
+  // Persist vote state into the queue — seeds correct when this card remounts
+  // after being windowed out (the deck unmounts off-window cards).
+  useEffect(() => {
+    if (
+      votes.upvotes !== item.upvotes ||
+      votes.downvotes !== item.downvotes ||
+      votes.userVote !== item.userVote
+    ) {
+      onVoteChange(item.key, votes)
+    }
+  }, [votes, item, onVoteChange])
   const sevColor = item.severity ? SEVERITY_COLORS[item.severity] ?? colors.textMuted : null
   const stampTone = stamp ? TONES[stamp.tone] : null
 
@@ -364,7 +378,7 @@ export function ReviewCard({
           <Text style={styles.metaReporter}>{reporterName}</Text>
           <Text style={styles.metaDot}>·</Text>
           <Text style={styles.metaTime}>{item.time ? formatRelativeTime(item.time) : ''}</Text>
-          <TouchableOpacity style={styles.detailsBtn} onPress={onViewDetail} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.detailsBtn} onPress={() => onViewDetail(item)} activeOpacity={0.7}>
             <Text style={styles.detailsText}>Details</Text>
           </TouchableOpacity>
         </View>
@@ -392,7 +406,7 @@ export function ReviewCard({
       />
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   card: {

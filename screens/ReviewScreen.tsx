@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   ScrollView,
@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import MenuHeader from '../components/MenuHeader'
 import { ReviewCard, type ReviewSheet } from '../components/ReviewCard'
-import { useReviewQueue } from '../lib/useReviewQueue'
+import { useReviewQueue, type ReviewItem } from '../lib/useReviewQueue'
 import { colors, fonts, radius, spacing } from '../theme/tokens'
 
 const COACH_KEY = '@sipat_review_guide_seen'
@@ -24,7 +24,8 @@ type Props = {
 }
 
 export default function ReviewScreen({ onMenuPress, onViewDetail, onGoFeed, onGoMap }: Props) {
-  const { items, loading, loadingMore, error, hasMore, loadMore, retry } = useReviewQueue(true)
+  const { items, loading, loadingMore, error, hasMore, loadMore, retry, updateItemVote } =
+    useReviewQueue(true)
 
   const [activeIndex, setActiveIndex] = useState(0)
   const [sheet, setSheet] = useState<ReviewSheet>(null)
@@ -54,15 +55,32 @@ export default function ReviewScreen({ onMenuPress, onViewDetail, onGoFeed, onGo
     if (!coachSeen) dismissCoach()
   }, [coachSeen, dismissCoach])
 
-  const handleMomentumEnd = useCallback(
-    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+  const handleViewDetail = useCallback(
+    (item: ReviewItem) => onViewDetail({ type: item.kind, data: item.raw }),
+    [onViewDetail],
+  )
+
+  // Track the active page while scrolling (not just after momentum ends) so the
+  // mount window always runs 2 pages ahead of the finger — no blank flings.
+  const updateIndex = useCallback(
+    (y: number) => {
       if (pageHeight <= 0) return
-      const idx = Math.round(e.nativeEvent.contentOffset.y / pageHeight)
-      const clamped = Math.min(Math.max(idx, 0), Math.max(items.length - 1 + (showEnd ? 1 : 0), 0))
-      if (clamped !== activeIndex) setSheet(null)
+      const idx = Math.round(y / pageHeight)
+      const clamped = Math.min(
+        Math.max(idx, 0),
+        Math.max(items.length - 1 + (showEnd ? 1 : 0), 0),
+      )
+      if (clamped === activeIndex) return
+      setSheet(null)
       setActiveIndex(clamped)
     },
     [pageHeight, items.length, showEnd, activeIndex],
+  )
+
+  const handleScroll = useCallback(
+    (e: { nativeEvent: { contentOffset: { y: number } } }) =>
+      updateIndex(e.nativeEvent.contentOffset.y),
+    [updateIndex],
   )
 
   // Prefetch while the user is on one of the last cards
@@ -71,12 +89,22 @@ export default function ReviewScreen({ onMenuPress, onViewDetail, onGoFeed, onGo
     if (hasMore && items.length > 0 && activeIndex >= items.length - 5) void loadMore()
   }, [activeIndex, items.length, hasMore, loadMore, showFatalError, showEnd])
 
+  // Position only — the queue grows via prefetch, so a total would keep jumping.
   const counter =
     items.length === 0
       ? ''
       : activeIndex >= items.length
         ? 'Done'
-        : `${activeIndex + 1}/${items.length}`
+        : `${activeIndex + 1}`
+
+  // Mount window: current card ± (1 behind, 2 ahead) regardless of queue size.
+  const windowStart = activeIndex - 1
+  const windowEnd = activeIndex + 2
+
+  const pageStyle = useMemo(
+    () => ({ height: pageHeight, backgroundColor: colors.surface }),
+    [pageHeight],
+  )
 
   return (
     <View style={styles.container}>
@@ -119,26 +147,29 @@ export default function ReviewScreen({ onMenuPress, onViewDetail, onGoFeed, onGo
             <ScrollView
               pagingEnabled
               showsVerticalScrollIndicator={false}
-              onMomentumScrollEnd={handleMomentumEnd}
+              scrollEventThrottle={16}
+              onScroll={handleScroll}
+              onMomentumScrollEnd={handleScroll}
               keyboardShouldPersistTaps="handled"
             >
               {items.map((item, i) => (
-                <View key={item.key} style={{ height: pageHeight }}>
-                  <ReviewCard
-                    item={item}
-                    active={i === activeIndex}
-                    onAction={handleAction}
-                    sheet={i === activeIndex ? sheet : null}
-                    onSheetChange={setSheet}
-                    onViewDetail={() =>
-                      onViewDetail({ type: item.kind, data: item.raw as any })
-                    }
-                  />
+                <View key={item.key} style={pageStyle}>
+                  {i >= windowStart && i <= windowEnd && (
+                    <ReviewCard
+                      item={item}
+                      active={i === activeIndex}
+                      onAction={handleAction}
+                      sheet={i === activeIndex ? sheet : null}
+                      onSheetChange={setSheet}
+                      onVoteChange={updateItemVote}
+                      onViewDetail={handleViewDetail}
+                    />
+                  )}
                 </View>
               ))}
 
-              {showEnd && (
-                <View style={{ height: pageHeight }}>
+              {showEnd && activeIndex + 2 >= items.length && (
+                <View style={pageStyle}>
                   <View style={styles.endWrap}>
                     <View style={styles.endIconWrap}>
                       <Ionicons name="checkmark" size={30} color={colors.minor} />
