@@ -41,6 +41,7 @@ type Props = {
   onPhoto: () => void
   onMenuPress: () => void
   onSearch: () => void
+  onReview: () => void
   onViewDetail: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
   onViewOnMap: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
   onViewProfile: (userId: string) => void
@@ -99,7 +100,7 @@ function FilterBar({ filters, onFiltersChange }: { filters: { country: string; c
   )
 }
 
-export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto, onMenuPress, onSearch, onViewDetail, onViewOnMap, onViewProfile }: Props) {
+export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto, onMenuPress, onSearch, onReview, onViewDetail, onViewOnMap, onViewProfile }: Props) {
   const [pendingPosts, setPendingPosts] = useState<LocalPhotoPost[]>([])
   const [uploadedPosts, setUploadedPosts] = useState<any[]>([])
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set())
@@ -831,9 +832,19 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
         onMenuPress={onMenuPress}
         variant="center"
         right={
-          <TouchableOpacity onPress={onSearch} style={styles.iconBtn} activeOpacity={0.7}>
-            <Ionicons name="search-outline" size={19} color={colors.textPrimary} />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={onReview}
+              style={styles.iconBtn}
+              activeOpacity={0.7}
+              accessibilityLabel="Review queue"
+            >
+              <Ionicons name="checkmark-done-outline" size={19} color={colors.signal} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onSearch} style={styles.iconBtn} activeOpacity={0.7}>
+              <Ionicons name="search-outline" size={19} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
         }
       />
 
@@ -856,6 +867,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  headerActions: { flexDirection: 'row', gap: spacing.sm },
   iconBtn: {
     width: 40,
     height: 40,

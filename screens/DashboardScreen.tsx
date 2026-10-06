@@ -38,6 +38,7 @@ type Props = {
   userId: string
   onTabChange: (tab: 'dashboard' | 'feed') => void
   onMenuPress: () => void
+  onReview: () => void
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -65,6 +66,7 @@ export default function DashboardScreen({
   userId,
   onTabChange,
   onMenuPress,
+  onReview,
 }: Props) {
 
   const lastPressRef = useRef<Record<string, number>>({})
@@ -295,6 +297,17 @@ export default function DashboardScreen({
               </View>
               <Text style={styles.actionLabel}>Community Feed</Text>
               <Text style={styles.actionSub}>Photos & reports</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={onReview}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: colors.queuedDim }]}>
+                <Ionicons name="checkmark-done" size={22} color={colors.queued} />
+              </View>
+              <Text style={styles.actionLabel}>Review Hazards</Text>
+              <Text style={styles.actionSub}>Vote & verify</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -794,11 +807,13 @@ const styles = StyleSheet.create({
   },
   actionsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     marginTop: spacing.md,
   },
   actionCard: {
     flex: 1,
+    minWidth: '46%',
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.md,

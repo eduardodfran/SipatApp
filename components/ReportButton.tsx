@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity } from 'react-native'
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import { colors, fonts, radius, spacing } from '../theme/tokens'
+import ReportSheet from './ReportSheet'
 
 type Props = {
   contentType: 'photo' | 'pothole'
@@ -10,17 +11,11 @@ type Props = {
   onReported?: (reportCount: number) => void
 }
 
-const REPORT_REASONS = [
-  { label: 'Spam', value: 'spam' },
-  { label: 'Inappropriate content', value: 'inappropriate' },
-  { label: 'Not a pothole', value: 'not_pothole' },
-  { label: 'Duplicate', value: 'duplicate' },
-  { label: 'Other', value: 'other' },
-] as const
-
 export default function ReportButton({ contentType, contentId, onReported }: Props) {
   const [reported, setReported] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [sheet, setSheet] = useState<'reasons' | 'confirm' | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.rpc('has_user_reported', {
@@ -32,47 +27,29 @@ export default function ReportButton({ contentType, contentId, onReported }: Pro
   }, [contentType, contentId])
 
   const handleReport = useCallback(() => {
-    if (reported) {
-      Alert.alert('Unreport', 'Remove your report for this content?', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Unreport',
-          style: 'destructive',
-          onPress: async () => {
-            setLoading(true)
-            const { error } = await supabase.rpc('unreport_content', {
-              p_content_type: contentType,
-              p_content_id: contentId,
-            })
-            setLoading(false)
-            if (!error) setReported(false)
-          },
-        },
-      ])
-      return
-    }
-
-    Alert.alert('Report Content', 'Why are you reporting this?', [
-      ...REPORT_REASONS.map((reason) => ({
-        text: reason.label,
-        onPress: () => submitReport(reason.value),
-      })),
-      { text: 'Cancel', style: 'cancel' },
-    ])
-  }, [reported, contentType, contentId])
+    setError(null)
+    setSheet('reasons')
+  }, [])
 
   const submitReport = async (reason: string) => {
-    setLoading(true)
-    const { data, error } = await supabase.rpc('report_content', {
+    if (submitting) return
+    setSubmitting(true)
+    setError(null)
+    const { data, error: err } = await supabase.rpc('report_content', {
       p_content_type: contentType,
       p_content_id: contentId,
       p_reason: reason,
     })
-    setLoading(false)
-    if (error) {
-      Alert.alert('Error', error.message.includes('Not authenticated') ? 'You need to sign in to report content.' : 'Could not submit report. Please try again.')
+    setSubmitting(false)
+    if (err) {
+      setError(
+        err.message.includes('Not authenticated')
+          ? 'You need to sign in to report content.'
+          : 'Could not submit report. Please try again.',
+      )
       return
     }
+    setSheet(null)
     setReported(true)
     const row = Array.isArray(data) ? data[0] : data
     if (row && typeof row === 'object' && 'report_count' in row) {
@@ -80,22 +57,63 @@ export default function ReportButton({ contentType, contentId, onReported }: Pro
     }
   }
 
+  const confirmUnreport = async () => {
+    if (submitting) return
+    setSubmitting(true)
+    setError(null)
+    const { error: err } = await supabase.rpc('unreport_content', {
+      p_content_type: contentType,
+      p_content_id: contentId,
+    })
+    setSubmitting(false)
+    if (err) {
+      setError('Could not remove report. Please try again.')
+      return
+    }
+    setSheet(null)
+    setReported(false)
+  }
+
   return (
-    <TouchableOpacity
-      style={[styles.button, reported && styles.reported]}
-      onPress={handleReport}
-      disabled={loading}
-      activeOpacity={0.7}
-    >
-      {loading ? (
-        <ActivityIndicator size="small" color={reported ? colors.severe : colors.textSecondary} />
-      ) : (
-        <Ionicons name="flag" size={14} color={reported ? colors.severe : colors.textSecondary} />
-      )}
-      <Text style={[styles.text, reported && styles.reportedText]}>
-        {reported ? 'Reported' : 'Report'}
-      </Text>
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity
+        style={[styles.button, reported && styles.reported]}
+        onPress={reported ? () => { setError(null); setSheet('confirm') } : handleReport}
+        disabled={submitting}
+        activeOpacity={0.7}
+      >
+        {submitting ? (
+          <ActivityIndicator size="small" color={reported ? colors.severe : colors.textSecondary} />
+        ) : (
+          <Ionicons name="flag" size={14} color={reported ? colors.severe : colors.textSecondary} />
+        )}
+        <Text style={[styles.text, reported && styles.reportedText]}>
+          {reported ? 'Reported' : 'Report'}
+        </Text>
+      </TouchableOpacity>
+
+      <ReportSheet
+        visible={sheet === 'reasons'}
+        mode="reasons"
+        title="Report content"
+        subtitle="Why are you reporting this?"
+        error={error}
+        submitting={submitting}
+        onSelectReason={submitReport}
+        onCancel={() => { setSheet(null); setError(null) }}
+      />
+      <ReportSheet
+        visible={sheet === 'confirm'}
+        mode="confirm"
+        title="Remove your report?"
+        subtitle="This content will no longer be flagged by you."
+        confirmLabel="Remove"
+        error={error}
+        submitting={submitting}
+        onConfirm={confirmUnreport}
+        onCancel={() => { setSheet(null); setError(null) }}
+      />
+    </>
   )
 }
 

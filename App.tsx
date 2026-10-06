@@ -32,6 +32,7 @@ import MapVerificationScreen from './screens/MapVerificationScreen'
 import PhotoCaptureScreen from './screens/PhotoCaptureScreen'
 import FeedScreen from './screens/FeedScreen'
 import FeedDetailScreen from './screens/FeedDetailScreen'
+import ReviewScreen from './screens/ReviewScreen'
 import OnboardingScreen from './screens/OnboardingScreen'
 import RidesScreen from './screens/RidesScreen'
 import ProfileScreen from './screens/ProfileScreen'
@@ -46,7 +47,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'feeddetail' | 'camera' | 'drive' | 'photo' | 'map' | 'rides' | 'profile' | 'publicprofile' | 'search' | 'about'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'review' | 'feeddetail' | 'camera' | 'drive' | 'photo' | 'map' | 'rides' | 'profile' | 'publicprofile' | 'search' | 'about'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -501,6 +502,7 @@ export default function App() {
       }
       switch (screen) {
         case 'feed':
+        case 'review':
         case 'camera':
         case 'photo':
         case 'map':
@@ -585,6 +587,7 @@ export default function App() {
           userId={user?.id ?? ''}
           onTabChange={(tab) => setScreen(tab)}
           onMenuPress={() => setSidebarVisible(true)}
+          onReview={() => setScreen('review')}
         />
       )}
       {screen === 'rides' && (
@@ -608,12 +611,24 @@ export default function App() {
           onPhoto={() => setScreen('photo')}
           onMenuPress={() => setSidebarVisible(true)}
           onSearch={() => { setSearchFrom('feed'); setScreen('search') }}
+          onReview={() => setScreen('review')}
           onViewDetail={(item) => {
             setDetailItem(item)
             setScreen('feeddetail')
           }}
           onViewOnMap={handleViewOnMap}
           onViewProfile={(uid) => { setPublicProfileUserId(uid); setScreen('publicprofile') }}
+        />
+      )}
+      {screen === 'review' && (
+        <ReviewScreen
+          onMenuPress={() => setSidebarVisible(true)}
+          onViewDetail={(item) => {
+            setDetailItem(item)
+            setScreen('feeddetail')
+          }}
+          onGoFeed={() => setScreen('feed')}
+          onGoMap={() => setScreen('map')}
         />
       )}
       {screen === 'feeddetail' && detailItem && (
@@ -690,7 +705,17 @@ export default function App() {
 
       <AppSidebar
         visible={sidebarVisible}
-        activeTab={screen === 'feed' ? 'feed' : screen === 'rides' ? 'rides' : screen === 'map' ? 'map' : 'dashboard'}
+        activeTab={
+          screen === 'feed'
+            ? 'feed'
+            : screen === 'review'
+              ? 'review'
+              : screen === 'rides'
+                ? 'rides'
+                : screen === 'map'
+                  ? 'map'
+                  : 'dashboard'
+        }
         user={user}
         onClose={() => setSidebarVisible(false)}
         onTabChange={(tab) => setScreen(tab)}
