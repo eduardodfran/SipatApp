@@ -59,14 +59,14 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
       const [profileRes, photosRes, potholesRes] = await Promise.all([
         supabase.from('profiles').select('id, username, full_name, avatar_url').eq('id', userId).single(),
         supabase.from('community_photos')
-          .select('id, image_url, created_at, detection_status, worst_severity')
+          .select('id, user_id, image_url, created_at, detection_status, worst_severity, caption, title, description')
           .eq('user_id', userId)
           .eq('activity_status', 'active')
           .neq('detection_status', 'hidden')
           .order('created_at', { ascending: false })
           .limit(50),
         supabase.from('v_unified_potholes')
-          .select('pothole_id, image_url, worst_severity, total_detection_hits, citizen_first_reported_at, caption, formatted_address')
+          .select('pothole_id, reporter_user_id, image_url, worst_severity, total_detection_hits, citizen_first_reported_at, caption, title, description, formatted_address')
           .eq('reporter_user_id', userId)
           .eq('activity_status', 'active')
           .eq('visibility_status', 'visible')

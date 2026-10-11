@@ -14,6 +14,8 @@ export interface ReviewItem {
   imageUrl: string | null
   eyebrow: string
   severity: string | null
+  title: string | null
+  description: string | null
   address: string
   reporter: string | null
   time: string
@@ -38,6 +40,8 @@ export interface PotholeRow {
   downvote_count?: number | null
   user_vote?: number | null
   caption?: string | null
+  title?: string | null
+  description?: string | null
   formatted_address?: string | null
   street?: string | null
   barangay?: string | null
@@ -61,6 +65,8 @@ export interface PhotoRow {
   downvote_count?: number | null
   user_vote?: number | null
   caption?: string | null
+  title?: string | null
+  description?: string | null
   formatted_address?: string | null
   street?: string | null
   barangay?: string | null
@@ -81,6 +87,8 @@ function toPotholeItem(p: PotholeRow): ReviewItem {
     imageUrl: p.image_url ?? null,
     eyebrow: `Detection ${p.pothole_id}`,
     severity: p.worst_severity ?? null,
+    title: p.title ?? null,
+    description: p.description ?? null,
     address: shortAddress(p),
     reporter: p.reporter_username ?? null,
     time: p.latest_activity_at || p.citizen_first_reported_at || '',
@@ -116,6 +124,8 @@ function toPhotoItem(ph: PhotoRow): ReviewItem {
     imageUrl: ph.image_url ?? null,
     eyebrow: `Community photo ${ph.id}`,
     severity: sev && SEVERITIES.includes(sev) ? sev : null,
+    title: ph.title ?? null,
+    description: ph.description ?? null,
     address: shortAddress(ph),
     reporter: ph.reporter_username ?? null,
     time: ph.created_at ?? '',

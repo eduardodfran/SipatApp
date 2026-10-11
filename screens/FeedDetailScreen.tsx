@@ -154,10 +154,14 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
     setSavingText(true)
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token
+      if (!token) {
+        Alert.alert('Could not save', 'Please sign in again.')
+        return
+      }
       const path = item.type === 'photo'
         ? `/community-photos/${item.data.id}`
         : `/verified-potholes/${item.data.pothole_id}`
-      await fetchFastApi(path, {
+      const res = await fetchFastApi(path, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -165,6 +169,24 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
         },
         body: JSON.stringify({ title: titleDraft.trim(), description: descriptionDraft.trim() }),
       })
+      // fetch() resolves on ANY status — only treat 2xx as success, otherwise
+      // surface the server's true error instead of faking a local save.
+      if (!res.ok) {
+        let detail = `Server responded ${res.status}.`
+        try {
+          const data = await res.json()
+          const raw = (data as any)?.detail ?? (data as any)?.error
+          if (typeof raw === 'string' && raw) detail = raw
+          else if (Array.isArray(raw) && raw.length > 0) {
+            const first = raw[0]
+            detail = typeof first?.msg === 'string'
+              ? `${first.msg}${first?.loc ? ` (${[].concat(first.loc).join(' > ')})` : ''}`
+              : detail
+          }
+        } catch {}
+        Alert.alert('Could not save', detail)
+        return
+      }
       item.data.title = titleDraft.trim() || null
       item.data.description = descriptionDraft.trim() || null
       setItem({ ...item })

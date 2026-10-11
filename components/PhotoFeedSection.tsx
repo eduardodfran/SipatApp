@@ -158,7 +158,7 @@ export default function PhotoFeedSection({ refreshKey, userId }: Props) {
           <View key={post.id} style={styles.postCard}>
             <Image source={{ uri: post.image_url }} style={styles.postImage} />
             <View style={styles.postBody}>
-              {post.caption ? <Text style={styles.postCaption}>{post.caption}</Text> : null}
+              {(post.title ?? post.caption) ? <Text style={styles.postCaption}>{post.title ?? post.caption}</Text> : null}
               {post.formatted_address && (
                 <Text style={styles.postAddress} numberOfLines={1}>{post.formatted_address}</Text>
               )}

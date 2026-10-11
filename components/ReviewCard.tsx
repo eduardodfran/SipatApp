@@ -373,6 +373,8 @@ export const ReviewCard = memo(function ReviewCard({
       {/* Meta */}
       <View style={styles.meta}>
         <Text style={styles.metaDetail}>{item.detail}</Text>
+        {item.title ? <Text style={styles.metaTitle} numberOfLines={1}>{item.title}</Text> : null}
+        {item.description ? <Text style={styles.metaDescription} numberOfLines={2}>{item.description}</Text> : null}
         <Text style={styles.metaAddress}>{item.address}</Text>
         <View style={styles.metaRow}>
           <Text style={styles.metaReporter}>{reporterName}</Text>
@@ -581,6 +583,20 @@ const styles = StyleSheet.create({
     letterSpacing: 1.4,
     textTransform: 'uppercase',
     color: 'rgba(255,255,255,0.65)',
+  },
+  metaTitle: {
+    marginTop: 6,
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    lineHeight: 21,
+    color: '#FFFFFF',
+  },
+  metaDescription: {
+    marginTop: 2,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 17,
+    color: 'rgba(255,255,255,0.75)',
   },
   metaAddress: {
     marginTop: 6,

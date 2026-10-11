@@ -92,16 +92,16 @@ export default function SearchScreen({ onBack, onViewProfile, onViewPhoto, onVie
         const [photosRes, potholesRes] = await Promise.all([
           supabase
             .from('community_photos')
-            .select('id, image_url, caption, created_at, detection_status, reporter_username')
-            .or(`caption.ilike.${pattern},reporter_username.ilike.${pattern}`)
+            .select('id, user_id, image_url, caption, title, description, created_at, detection_status, reporter_username')
+            .or(`caption.ilike.${pattern},title.ilike.${pattern},reporter_username.ilike.${pattern}`)
             .eq('activity_status', 'active')
             .neq('detection_status', 'hidden')
             .order('created_at', { ascending: false })
             .limit(15),
           supabase
             .from('v_unified_potholes')
-            .select('pothole_id, image_url, caption, formatted_address, worst_severity, citizen_first_reported_at, reporter_username')
-            .or(`caption.ilike.${pattern},formatted_address.ilike.${pattern},reporter_username.ilike.${pattern}`)
+            .select('pothole_id, reporter_user_id, image_url, caption, title, description, formatted_address, worst_severity, citizen_first_reported_at, reporter_username')
+            .or(`caption.ilike.${pattern},title.ilike.${pattern},formatted_address.ilike.${pattern},reporter_username.ilike.${pattern}`)
             .eq('activity_status', 'active')
             .eq('visibility_status', 'visible')
             .not('caption', 'like', '[HIDDEN]%')

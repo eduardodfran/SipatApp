@@ -582,7 +582,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
               </TouchableOpacity>
             </View>
             <Text style={styles.address}>{formatAddress(p)}</Text>
-            {p.caption ? <Text style={styles.potholeCaption} numberOfLines={1}>{p.caption}</Text> : null}
+            {(p.title ?? p.caption) ? <Text style={styles.potholeCaption} numberOfLines={1}>{p.title ?? p.caption}</Text> : null}
             <View style={styles.potholeMetaRow}>
               <View style={[styles.severityBadge, { backgroundColor: sev.bg }]}>
                 <View style={[styles.severityDot, { backgroundColor: sev.color }]} />
