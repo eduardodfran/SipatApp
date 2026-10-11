@@ -27,6 +27,7 @@ type UserPhoto = {
   created_at: string
   detection_status: string
   worst_severity: string | null
+  activity_status?: string | null
 }
 
 type UserPothole = {
@@ -37,16 +38,19 @@ type UserPothole = {
   citizen_first_reported_at: string | null
   caption: string | null
   formatted_address: string | null
+  activity_status?: string | null
 }
 
 type Props = {
   userId: string
+  /** Logged-in viewer id — when it matches userId, fixed posts are included so the owner can contest them. */
+  viewerId?: string
   onBack: () => void
   onViewPhoto?: (item: any) => void
   onViewPothole?: (item: any) => void
 }
 
-export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onViewPothole }: Props) {
+export default function PublicProfileScreen({ userId, viewerId = '', onBack, onViewPhoto, onViewPothole }: Props) {
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [photos, setPhotos] = useState<UserPhoto[]>([])
   const [potholes, setPotholes] = useState<UserPothole[]>([])
@@ -55,24 +59,31 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
 
   const loadProfile = useCallback(async () => {
     setLoading(true)
+    // Owners see their own fixed posts (badged) so a wrongful "fixed" can be
+    // contested from the detail screen; other viewers only see active posts.
+    const isOwn = !!viewerId && viewerId === userId
     try {
+      const photosQuery = supabase.from('community_photos')
+        .select('id, user_id, image_url, created_at, detection_status, worst_severity, caption, title, description, activity_status')
+        .eq('user_id', userId)
+        .neq('detection_status', 'hidden')
+        .order('created_at', { ascending: false })
+        .limit(50)
+      const potholesQuery = supabase.from('v_unified_potholes')
+        .select('pothole_id, reporter_user_id, image_url, worst_severity, total_detection_hits, citizen_first_reported_at, caption, title, description, formatted_address, activity_status')
+        .eq('reporter_user_id', userId)
+        .eq('visibility_status', 'visible')
+        .not('caption', 'like', '[HIDDEN]%')
+        .order('citizen_first_reported_at', { ascending: false, nullsFirst: false })
+        .limit(50)
+      if (!isOwn) {
+        photosQuery.eq('activity_status', 'active')
+        potholesQuery.eq('activity_status', 'active')
+      }
       const [profileRes, photosRes, potholesRes] = await Promise.all([
         supabase.from('profiles').select('id, username, full_name, avatar_url').eq('id', userId).single(),
-        supabase.from('community_photos')
-          .select('id, user_id, image_url, created_at, detection_status, worst_severity, caption, title, description')
-          .eq('user_id', userId)
-          .eq('activity_status', 'active')
-          .neq('detection_status', 'hidden')
-          .order('created_at', { ascending: false })
-          .limit(50),
-        supabase.from('v_unified_potholes')
-          .select('pothole_id, reporter_user_id, image_url, worst_severity, total_detection_hits, citizen_first_reported_at, caption, title, description, formatted_address')
-          .eq('reporter_user_id', userId)
-          .eq('activity_status', 'active')
-          .eq('visibility_status', 'visible')
-          .not('caption', 'like', '[HIDDEN]%')
-          .order('citizen_first_reported_at', { ascending: false, nullsFirst: false })
-          .limit(50),
+        photosQuery,
+        potholesQuery,
       ])
 
       if (profileRes.data) setProfile(profileRes.data)
@@ -82,7 +93,7 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
     } finally {
       setLoading(false)
     }
-  }, [userId])
+  }, [userId, viewerId])
 
   useEffect(() => {
     loadProfile()
@@ -178,6 +189,11 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
                     <Text style={styles.gridDate}>
                       {new Date(photo.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </Text>
+                    {photo.activity_status === 'fixed' && (
+                      <View style={styles.fixedBadge}>
+                        <Text style={styles.fixedBadgeText}>FIXED</Text>
+                      </View>
+                    )}
                   </View>
                 </TouchableOpacity>
               ))
@@ -204,6 +220,11 @@ export default function PublicProfileScreen({ userId, onBack, onViewPhoto, onVie
                       <View style={styles.potholeTop}>
                         <View style={[styles.severityDot, { backgroundColor: sevColor }]} />
                         <Text style={styles.severityText}>{p.worst_severity ?? 'Unknown'}</Text>
+                        {p.activity_status === 'fixed' && (
+                          <View style={styles.fixedBadge}>
+                            <Text style={styles.fixedBadgeText}>FIXED</Text>
+                          </View>
+                        )}
                         <Text style={styles.potholeHits}>{p.total_detection_hits} hit{p.total_detection_hits !== 1 ? 's' : ''}</Text>
                       </View>
                       {p.caption && <Text style={styles.potholeCaption} numberOfLines={1}>{p.caption}</Text>}
@@ -268,6 +289,15 @@ const styles = StyleSheet.create({
   gridOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     padding: spacing.sm, backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  fixedBadge: {
+    backgroundColor: 'rgba(34,197,94,0.2)',
+    borderWidth: 1, borderColor: 'rgba(34,197,94,0.5)',
+    borderRadius: 4, paddingHorizontal: 6, paddingVertical: 1,
+  },
+  fixedBadgeText: {
+    color: '#22c55e', fontFamily: fonts.bold, fontSize: 9, letterSpacing: 0.8,
   },
   gridDate: { color: colors.textPrimary, fontFamily: fonts.mono, fontSize: 11 },
   listSection: { paddingHorizontal: spacing.lg },

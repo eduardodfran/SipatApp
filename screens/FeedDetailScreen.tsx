@@ -236,6 +236,15 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
     </TouchableOpacity>
   )
 
+  // Shown when a post was community-marked fixed (hidden from all lists).
+  // The verify rail below still works, so the owner can contest with Still here.
+  const fixedBanner = item.data.activity_status === 'fixed' ? (
+    <View style={styles.fixedBanner}>
+      <Ionicons name="checkmark-circle" size={15} color="#22c55e" />
+      <Text style={styles.fixedBannerText}>Marked as fixed — tap Still here below if it's still there.</Text>
+    </View>
+  ) : null
+
   if (item.type === 'photo') {
     const post = item.data
     const badge = STATUS_BADGE[post.detection_status] ?? STATUS_BADGE.pending
@@ -243,6 +252,7 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
     return (
       <View style={styles.container}>
         <ScreenHeader onBack={onBack} title="Photo Report" right={mapBtn} />
+        {fixedBanner}
         <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity activeOpacity={0.9} onPress={() => setFullScreenImageUri(post.image_url)} style={styles.heroWrap}>
             <Image source={{ uri: post.image_url }} style={styles.heroImage} />
@@ -305,8 +315,9 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
 
   return (
     <View style={styles.container}>
-      <ScreenHeader onBack={onBack} title="Detection" right={mapBtn} />
-      <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScreenHeader onBack={onBack} title="Detection" right={mapBtn} />
+        {fixedBanner}
+        <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         {p.image_url ? (
           <TouchableOpacity activeOpacity={0.9} onPress={() => setFullScreenImageUri(p.image_url)} style={styles.heroWrap}>
             <Image source={{ uri: p.image_url }} style={styles.heroImage} />
@@ -615,6 +626,13 @@ const styles = StyleSheet.create({
     paddingVertical: 5, paddingHorizontal: spacing.md, borderRadius: radius.sm,
   },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap', marginTop: spacing.xs },
+  fixedBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    marginHorizontal: spacing.lg, marginTop: spacing.md, paddingVertical: 10, paddingHorizontal: spacing.md,
+    borderRadius: radius.md, backgroundColor: 'rgba(34,197,94,0.1)',
+    borderWidth: 1, borderColor: 'rgba(34,197,94,0.4)',
+  },
+  fixedBannerText: { flex: 1, color: '#4ade80', fontFamily: fonts.semibold, fontSize: 12, lineHeight: 17 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontFamily: fonts.bold, fontSize: 10, letterSpacing: 0.4 },
   tagPotholeBtn: {

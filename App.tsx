@@ -691,6 +691,7 @@ export default function App() {
       {screen === 'publicprofile' && publicProfileUserId && (
         <PublicProfileScreen
           userId={publicProfileUserId}
+          viewerId={user?.id ?? ''}
           onBack={() => setScreen('feed')}
           onViewPhoto={(item) => { setDetailItem(item); setScreen('feeddetail') }}
           onViewPothole={(item) => { setDetailItem(item); setScreen('feeddetail') }}
