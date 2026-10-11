@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { Recording } from '../lib/types'
 import { colors, fonts, radius, spacing } from '../theme/tokens'
 import Brackets from '../components/Brackets'
+import { NotificationBell } from '../components/NotificationBell'
 import LaneDivider from '../components/LaneDivider'
 import CommunityHazardsSection from '../components/CommunityHazardsSection'
 import { useCommunityHazards } from '../lib/useCommunityHazards'
@@ -39,6 +40,7 @@ type Props = {
   onTabChange: (tab: 'dashboard' | 'feed') => void
   onMenuPress: () => void
   onReview: () => void
+  onNotifications: () => void
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -67,6 +69,7 @@ export default function DashboardScreen({
   onTabChange,
   onMenuPress,
   onReview,
+  onNotifications,
 }: Props) {
 
   const lastPressRef = useRef<Record<string, number>>({})
@@ -133,6 +136,7 @@ export default function DashboardScreen({
           </View>
         </View>
         <View style={styles.headerRight}>
+          <NotificationBell userId={userId} onPress={onNotifications} />
           <TouchableOpacity onPress={onRefresh} style={styles.iconBtn}>
             {refreshing ? (
               <ActivityIndicator size="small" color={colors.signal} />

@@ -39,6 +39,7 @@ import ProfileScreen from './screens/ProfileScreen'
 import PublicProfileScreen from './screens/PublicProfileScreen'
 import SearchScreen from './screens/SearchScreen'
 import AboutScreen from './screens/AboutScreen'
+import NotificationsScreen from './screens/NotificationsScreen'
 import AppSidebar from './components/AppSidebar'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
@@ -47,7 +48,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'review' | 'feeddetail' | 'camera' | 'drive' | 'photo' | 'map' | 'rides' | 'profile' | 'publicprofile' | 'search' | 'about'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'review' | 'feeddetail' | 'camera' | 'drive' | 'photo' | 'map' | 'rides' | 'profile' | 'publicprofile' | 'search' | 'about' | 'notifications'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -59,6 +60,7 @@ export default function App() {
   const [feedRefreshKey, setFeedRefreshKey] = useState(0)
   const [lastUploadResult, setLastUploadResult] = useState<{ status: 'success' | 'error'; processStarted?: boolean; message?: string } | null>(null)
   const [searchFrom, setSearchFrom] = useState<Screen>('feed')
+  const [notifFrom, setNotifFrom] = useState<Screen>('feed')
 
   const [fontsLoaded, fontError] = useFonts({
     Overpass_400Regular,
@@ -588,6 +590,7 @@ export default function App() {
           onTabChange={(tab) => setScreen(tab)}
           onMenuPress={() => setSidebarVisible(true)}
           onReview={() => setScreen('review')}
+          onNotifications={() => { setNotifFrom('dashboard'); setScreen('notifications') }}
         />
       )}
       {screen === 'rides' && (
@@ -612,6 +615,7 @@ export default function App() {
           onMenuPress={() => setSidebarVisible(true)}
           onSearch={() => { setSearchFrom('feed'); setScreen('search') }}
           onReview={() => setScreen('review')}
+          onNotifications={() => { setNotifFrom('feed'); setScreen('notifications') }}
           onViewDetail={(item) => {
             setDetailItem(item)
             setScreen('feeddetail')
@@ -703,6 +707,13 @@ export default function App() {
           onViewProfile={(uid) => { setPublicProfileUserId(uid); setScreen('publicprofile') }}
           onViewPhoto={(item) => { setDetailItem(item); setScreen('feeddetail') }}
           onViewPothole={(item) => { setDetailItem(item); setScreen('feeddetail') }}
+        />
+      )}
+      {screen === 'notifications' && (
+        <NotificationsScreen
+          userId={user?.id ?? ''}
+          onBack={() => setScreen(notifFrom)}
+          onOpenItem={(item) => { setDetailItem(item); setScreen('feeddetail') }}
         />
       )}
 

@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import ReportButton from '../components/ReportButton'
 import VoteButtons from '../components/VoteButtons'
 import MenuHeader from '../components/MenuHeader'
+import { NotificationBell } from '../components/NotificationBell'
 import Brackets from '../components/Brackets'
 import LaneDivider from '../components/LaneDivider'
 import { colors, fonts, radius, spacing } from '../theme/tokens'
@@ -42,6 +43,7 @@ type Props = {
   onMenuPress: () => void
   onSearch: () => void
   onReview: () => void
+  onNotifications: () => void
   onViewDetail: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
   onViewOnMap: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
   onViewProfile: (userId: string) => void
@@ -100,7 +102,7 @@ function FilterBar({ filters, onFiltersChange }: { filters: { country: string; c
   )
 }
 
-export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto, onMenuPress, onSearch, onReview, onViewDetail, onViewOnMap, onViewProfile }: Props) {
+export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhoto, onMenuPress, onSearch, onReview, onNotifications, onViewDetail, onViewOnMap, onViewProfile }: Props) {
   const [pendingPosts, setPendingPosts] = useState<LocalPhotoPost[]>([])
   const [uploadedPosts, setUploadedPosts] = useState<any[]>([])
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set())
@@ -844,6 +846,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
             <TouchableOpacity onPress={onSearch} style={styles.iconBtn} activeOpacity={0.7}>
               <Ionicons name="search-outline" size={19} color={colors.textPrimary} />
             </TouchableOpacity>
+            <NotificationBell userId={userId} onPress={onNotifications} />
           </View>
         }
       />
