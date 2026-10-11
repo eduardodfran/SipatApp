@@ -446,7 +446,7 @@ export default function FeedScreen({ feedRefreshKey, userId, onTabChange, onPhot
                   <Ionicons name="map-outline" size={15} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
-              {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
+              {(post.title ?? post.caption) ? <Text style={styles.caption}>{post.title ?? post.caption}</Text> : null}
               <View style={styles.statusRow}>
                 <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
                   <View style={[styles.statusDot, { backgroundColor: badge.color }]} />

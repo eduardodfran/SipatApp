@@ -634,6 +634,7 @@ export default function App() {
       {screen === 'feeddetail' && detailItem && (
         <FeedDetailScreen
           item={detailItem}
+          userId={user?.id ?? ''}
           onBack={() => setScreen('feed')}
           onViewOnMap={handleViewOnMap}
           onViewProfile={(uid) => { setPublicProfileUserId(uid); setScreen('publicprofile') }}

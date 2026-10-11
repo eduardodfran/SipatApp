@@ -38,6 +38,7 @@ type Props = {
   onBack: () => void
   onViewOnMap: (item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => void
   onViewProfile?: (userId: string) => void
+  userId?: string
 }
 
 const SEVERITY_COLORS: Record<string, { color: string; bg: string }> = {
@@ -60,16 +61,23 @@ const formatAddress = (p: any) => {
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
 
-export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProfile }: Props) {
+export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProfile, userId = '' }: Props) {
   const [comments, setComments] = useState<Comment[] | null>(null)
   const [draft, setDraft] = useState('')
   const [posting, setPosting] = useState(false)
   const [fullScreenImageUri, setFullScreenImageUri] = useState<string | null>(null)
-  const [captionEditVisible, setCaptionEditVisible] = useState(false)
-  const [captionDraft, setCaptionDraft] = useState(item.type === 'pothole' ? (item.data.caption ?? '') : '')
-  const [savingCaption, setSavingCaption] = useState(false)
+  const [textEditVisible, setTextEditVisible] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(item.data.title ?? '')
+  const [descriptionDraft, setDescriptionDraft] = useState(item.data.description ?? '')
+  const [savingText, setSavingText] = useState(false)
   const [voteData, setVoteData] = useState({ upvotes: 0, downvotes: 0, userVote: 0 })
   const [itemState, setItem] = useState(item)
+
+  const isOwner = userId !== '' && (
+    item.type === 'photo'
+      ? item.data.user_id === userId
+      : item.data.reporter_user_id === userId
+  )
 
   const loadComments = useCallback(async () => {
     if (item.type === 'photo') {
@@ -141,26 +149,38 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
     setPosting(false)
   }, [draft, posting, item, loadComments])
 
-  const handleSaveCaption = useCallback(async () => {
-    if (item.type !== 'pothole' || savingCaption) return
-    setSavingCaption(true)
+  const handleSaveText = useCallback(async () => {
+    if (savingText) return
+    setSavingText(true)
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token
-      await fetchFastApi(`/verified-potholes/${item.data.pothole_id}`, {
+      const path = item.type === 'photo'
+        ? `/community-photos/${item.data.id}`
+        : `/verified-potholes/${item.data.pothole_id}`
+      await fetchFastApi(path, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ caption: captionDraft.trim() }),
+        body: JSON.stringify({ title: titleDraft.trim(), description: descriptionDraft.trim() }),
       })
-      item.data.caption = captionDraft.trim()
-      setCaptionEditVisible(false)
-    } catch {
+      item.data.title = titleDraft.trim() || null
+      item.data.description = descriptionDraft.trim() || null
+      setItem({ ...item })
+      setTextEditVisible(false)
+    } catch (e: any) {
+      Alert.alert('Could not save', e?.message ?? 'Please try again.')
     } finally {
-      setSavingCaption(false)
+      setSavingText(false)
     }
-  }, [item, captionDraft, savingCaption])
+  }, [item, titleDraft, descriptionDraft, savingText])
+
+  const openTextEditor = useCallback(() => {
+    setTitleDraft(item.data.title ?? '')
+    setDescriptionDraft(item.data.description ?? '')
+    setTextEditVisible(true)
+  }, [item])
 
   const handleTagAsPothole = useCallback(async () => {
     if (item.type !== 'photo') return
@@ -217,7 +237,20 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
                 })}
               </Text>
             </View>
-            {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
+            {post.title ? <Text style={styles.titleText}>{post.title}</Text> : null}
+            {post.description
+              ? <Text style={styles.descriptionText}>{post.description}</Text>
+              : (!post.title && post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null)}
+            <View style={styles.captionRow}>
+              {!post.title && !post.description
+                ? <Text style={styles.captionPlaceholder}>{isOwner ? 'Add a title & description.' : 'No description yet.'}</Text>
+                : <View style={{ flex: 1 }} />}
+              {isOwner && (
+                <TouchableOpacity onPress={openTextEditor} style={styles.captionEditBtn} activeOpacity={0.7}>
+                  <Ionicons name="pencil" size={14} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
             <View style={styles.statusRow}>
               <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
                 <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
@@ -240,6 +273,7 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
         {fullScreenImageUri && (
           <FullScreenViewer uri={fullScreenImageUri} onClose={() => setFullScreenImageUri(null)} />
         )}
+        {renderTextModal()}
       </View>
     )
   }
@@ -278,11 +312,18 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
             </Text>
           </View>
           <Text style={styles.address}>{formatAddress(p)}</Text>
+          {p.title ? <Text style={styles.titleText}>{p.title}</Text> : null}
           <View style={styles.captionRow}>
-            {p.caption ? <Text style={styles.captionText} numberOfLines={3}>{p.caption}</Text> : <Text style={styles.captionPlaceholder}>No description yet.</Text>}
-            <TouchableOpacity onPress={() => { setCaptionDraft(p.caption ?? ''); setCaptionEditVisible(true) }} style={styles.captionEditBtn} activeOpacity={0.7}>
-              <Ionicons name="pencil" size={14} color={colors.textMuted} />
-            </TouchableOpacity>
+            {p.description
+              ? <Text style={styles.captionText} numberOfLines={5}>{p.description}</Text>
+              : (p.caption
+                ? <Text style={styles.captionText} numberOfLines={3}>{p.caption}</Text>
+                : <Text style={styles.captionPlaceholder}>{isOwner ? 'Add a title & description.' : 'No description yet.'}</Text>)}
+            {isOwner && (
+              <TouchableOpacity onPress={openTextEditor} style={styles.captionEditBtn} activeOpacity={0.7}>
+                <Ionicons name="pencil" size={14} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
           </View>
           <View style={styles.metaRow}>
             <View style={[styles.severityBadge, { backgroundColor: sev.bg }]}>
@@ -305,24 +346,33 @@ export default function FeedDetailScreen({ item, onBack, onViewOnMap, onViewProf
       {fullScreenImageUri && (
         <FullScreenViewer uri={fullScreenImageUri} onClose={() => setFullScreenImageUri(null)} />
       )}
-      <Modal visible={captionEditVisible} transparent animationType="fade" onRequestClose={() => setCaptionEditVisible(false)}>
+      {renderTextModal()}
+    </View>
+  )
+
+  function renderTextModal() {
+    return (
+      <Modal visible={textEditVisible} transparent animationType="fade" onRequestClose={() => setTextEditVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Edit Caption</Text>
-            <TextInput style={styles.modalInput} value={captionDraft} onChangeText={setCaptionDraft} placeholder="Describe this pothole…" placeholderTextColor={colors.textMuted} multiline maxLength={280} autoFocus />
+            <Text style={styles.modalTitle}>{item.data.title || item.data.description ? 'Edit Title & Description' : 'Add Title & Description'}</Text>
+            <Text style={styles.modalLabel}>Title</Text>
+            <TextInput style={styles.modalTitleInput} value={titleDraft} onChangeText={setTitleDraft} placeholder="Give it a short title…" placeholderTextColor={colors.textMuted} maxLength={80} autoFocus />
+            <Text style={styles.modalLabel}>Description</Text>
+            <TextInput style={styles.modalInput} value={descriptionDraft} onChangeText={setDescriptionDraft} placeholder="Describe this road issue…" placeholderTextColor={colors.textMuted} multiline maxLength={280} />
             <View style={styles.modalActions}>
-              <TouchableOpacity onPress={() => setCaptionEditVisible(false)} style={styles.modalCancelBtn} activeOpacity={0.7}>
+              <TouchableOpacity onPress={() => setTextEditVisible(false)} style={styles.modalCancelBtn} activeOpacity={0.7}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleSaveCaption} style={[styles.modalSaveBtn, savingCaption && { opacity: 0.5 }]} activeOpacity={0.7} disabled={savingCaption}>
-                <Text style={styles.modalSaveText}>{savingCaption ? 'Saving…' : 'Save'}</Text>
+              <TouchableOpacity onPress={handleSaveText} style={[styles.modalSaveBtn, savingText && { opacity: 0.5 }]} activeOpacity={0.7} disabled={savingText}>
+                <Text style={styles.modalSaveText}>{savingText ? 'Saving…' : 'Save'}</Text>
               </TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
-  )
+    )
+  }
 
   function renderInteractions() {
     return (
@@ -536,6 +586,8 @@ const styles = StyleSheet.create({
   reporter: { color: colors.textSecondary, fontFamily: fonts.medium, fontSize: 14 },
   date: { color: colors.textMuted, fontFamily: fonts.mono, fontSize: 11 },
   caption: { color: colors.textPrimary, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, marginBottom: spacing.sm },
+  titleText: { color: colors.textPrimary, fontFamily: fonts.extrabold, fontSize: 16, lineHeight: 22, marginBottom: 4 },
+  descriptionText: { color: colors.textPrimary, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, marginBottom: spacing.sm },
   statusBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
     paddingVertical: 5, paddingHorizontal: spacing.md, borderRadius: radius.sm,
@@ -618,6 +670,8 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
   modalCard: { backgroundColor: colors.surfaceRaised, borderRadius: radius.lg, padding: spacing.xl, width: '100%', maxWidth: 400, borderWidth: 1, borderColor: colors.hairline },
   modalTitle: { color: colors.textPrimary, fontFamily: fonts.extrabold, fontSize: 16, marginBottom: spacing.md },
+  modalLabel: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, marginTop: spacing.sm, marginBottom: 6 },
+  modalTitleInput: { backgroundColor: colors.surface, borderRadius: radius.md, paddingVertical: 10, paddingHorizontal: spacing.md, color: colors.textPrimary, fontFamily: fonts.semibold, fontSize: 14, borderWidth: 1, borderColor: colors.hairline },
   modalInput: { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, color: colors.textPrimary, fontFamily: fonts.regular, fontSize: 14, minHeight: 80, textAlignVertical: 'top', borderWidth: 1, borderColor: colors.hairline },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.lg },
   modalCancelBtn: { paddingVertical: 10, paddingHorizontal: spacing.lg, borderRadius: radius.md, backgroundColor: colors.hairline },
