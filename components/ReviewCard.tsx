@@ -123,6 +123,7 @@ export const ReviewCard = memo(function ReviewCard({
   onSheetChange,
   onVoteChange,
   onViewDetail,
+  onViewProfile,
 }: {
   item: ReviewItem
   active: boolean
@@ -131,6 +132,7 @@ export const ReviewCard = memo(function ReviewCard({
   onSheetChange: (s: ReviewSheet) => void
   onVoteChange: (key: string, votes: VoteState) => void
   onViewDetail: (item: ReviewItem) => void
+  onViewProfile?: (userId: string) => void
 }) {
   const contentType = item.kind
   const contentId = String(item.id)
@@ -405,6 +407,7 @@ export const ReviewCard = memo(function ReviewCard({
         photoId={item.kind === 'photo' ? item.id : null}
         onClose={() => onSheetChange(null)}
         onCommented={onAction}
+        onViewProfile={onViewProfile}
       />
     </View>
   )

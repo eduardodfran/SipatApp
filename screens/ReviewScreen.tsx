@@ -21,9 +21,10 @@ type Props = {
   onViewDetail: (item: { type: 'photo' | 'pothole'; data: any }) => void
   onGoFeed: () => void
   onGoMap: () => void
+  onViewProfile?: (userId: string) => void
 }
 
-export default function ReviewScreen({ onMenuPress, onViewDetail, onGoFeed, onGoMap }: Props) {
+export default function ReviewScreen({ onMenuPress, onViewDetail, onGoFeed, onGoMap, onViewProfile }: Props) {
   const { items, loading, loadingMore, error, hasMore, loadMore, retry, updateItemVote } =
     useReviewQueue(true)
 
@@ -163,6 +164,7 @@ export default function ReviewScreen({ onMenuPress, onViewDetail, onGoFeed, onGo
                       onSheetChange={setSheet}
                       onVoteChange={updateItemVote}
                       onViewDetail={handleViewDetail}
+                      onViewProfile={onViewProfile}
                     />
                   )}
                 </View>

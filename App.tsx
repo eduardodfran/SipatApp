@@ -629,6 +629,7 @@ export default function App() {
           }}
           onGoFeed={() => setScreen('feed')}
           onGoMap={() => setScreen('map')}
+          onViewProfile={(uid) => { setPublicProfileUserId(uid); setScreen('publicprofile') }}
         />
       )}
       {screen === 'feeddetail' && detailItem && (

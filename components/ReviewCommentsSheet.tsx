@@ -26,23 +26,35 @@ interface ReviewCommentsSheetProps {
   photoId: number | null
   onClose: () => void
   onCommented: () => void
+  onViewProfile?: (userId: string) => void
 }
 
 function SheetCommentItem({
   comment,
+  onViewProfile,
 }: {
-  comment: { body: string; created_at: string; username: string | null }
+  comment: { body: string; created_at: string; username: string | null; user_id?: string | null }
+  onViewProfile?: (userId: string) => void
 }) {
   const isVerify = comment.body.startsWith('✅')
   const initial = (comment.username ?? '?')[0].toUpperCase()
   return (
     <View style={[styles.commentRow, isVerify && styles.commentRowVerify]}>
-      <View style={styles.commentAvatar}>
+      <TouchableOpacity
+        style={styles.commentAvatar}
+        onPress={() => comment.user_id && onViewProfile?.(comment.user_id)}
+        activeOpacity={0.7}
+      >
         <Text style={styles.commentAvatarText}>{initial}</Text>
-      </View>
+      </TouchableOpacity>
       <View style={styles.commentBody}>
         <View style={styles.commentHead}>
-          <Text style={styles.commentUsername}>{comment.username ?? 'Anonymous'}</Text>
+          <TouchableOpacity
+            onPress={() => comment.user_id && onViewProfile?.(comment.user_id)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.commentUsername}>{comment.username ?? 'Anonymous'}</Text>
+          </TouchableOpacity>
           <Text style={styles.commentTime}>{formatRelativeTime(comment.created_at)}</Text>
         </View>
         <Text style={[styles.commentText, isVerify && styles.commentTextVerify]}>
@@ -59,6 +71,7 @@ export default function ReviewCommentsSheet({
   photoId,
   onClose,
   onCommented,
+  onViewProfile,
 }: ReviewCommentsSheetProps) {
   const [input, setInput] = useState('')
   const [error, setError] = useState('')
@@ -149,7 +162,7 @@ export default function ReviewCommentsSheet({
 
               {!loading &&
                 count > 0 &&
-                comments.map((c) => <SheetCommentItem key={c.id} comment={c} />)}
+                comments.map((c) => <SheetCommentItem key={c.id} comment={c} onViewProfile={onViewProfile} />)}
             </ScrollView>
 
             <View
