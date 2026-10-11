@@ -35,7 +35,7 @@ import FeedDetailScreen from './screens/FeedDetailScreen'
 import ReviewScreen from './screens/ReviewScreen'
 import OnboardingScreen from './screens/OnboardingScreen'
 import RidesScreen from './screens/RidesScreen'
-import ProfileScreen from './screens/ProfileScreen'
+import SettingsScreen from './screens/SettingsScreen'
 import PublicProfileScreen from './screens/PublicProfileScreen'
 import SearchScreen from './screens/SearchScreen'
 import AboutScreen from './screens/AboutScreen'
@@ -48,7 +48,7 @@ import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRid
 
 SplashScreen.preventAutoHideAsync()
 
-type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'review' | 'feeddetail' | 'camera' | 'drive' | 'photo' | 'map' | 'rides' | 'profile' | 'publicprofile' | 'search' | 'about' | 'notifications'
+type Screen = 'onboarding' | 'login' | 'dashboard' | 'feed' | 'review' | 'feeddetail' | 'camera' | 'drive' | 'photo' | 'map' | 'rides' | 'settings' | 'publicprofile' | 'search' | 'about' | 'notifications'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen | null>(null)
@@ -61,6 +61,7 @@ export default function App() {
   const [lastUploadResult, setLastUploadResult] = useState<{ status: 'success' | 'error'; processStarted?: boolean; message?: string } | null>(null)
   const [searchFrom, setSearchFrom] = useState<Screen>('feed')
   const [notifFrom, setNotifFrom] = useState<Screen>('feed')
+  const [profileFrom, setProfileFrom] = useState<Screen>('feed')
 
   const [fontsLoaded, fontError] = useFonts({
     Overpass_400Regular,
@@ -509,12 +510,14 @@ export default function App() {
         case 'photo':
         case 'map':
         case 'rides':
-        case 'profile':
+        case 'settings':
           setScreen('dashboard')
           return true
         case 'feeddetail':
-        case 'publicprofile':
           setScreen('feed')
+          return true
+        case 'publicprofile':
+          setScreen(profileFrom)
           return true
         default:
           return false
@@ -522,7 +525,7 @@ export default function App() {
     }
     const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress)
     return () => sub.remove()
-  }, [screen, sidebarVisible])
+  }, [screen, sidebarVisible, profileFrom])
 
   const handleViewOnMap = useCallback((item: { type: 'photo'; data: any } | { type: 'pothole'; data: any }) => {
     const id = item.type === 'photo' ? item.data.id : item.data.pothole_id
@@ -686,8 +689,8 @@ export default function App() {
           </TouchableOpacity>
         </View>
       )}
-      {screen === 'profile' && user && (
-        <ProfileScreen user={user} onBack={() => setScreen('dashboard')} onAbout={() => setScreen('about')} />
+      {screen === 'settings' && user && (
+        <SettingsScreen user={user} onBack={() => setScreen('dashboard')} onAbout={() => setScreen('about')} />
       )}
       {screen === 'about' && (
         <AboutScreen onBack={() => setScreen('dashboard')} />
@@ -696,7 +699,7 @@ export default function App() {
         <PublicProfileScreen
           userId={publicProfileUserId}
           viewerId={user?.id ?? ''}
-          onBack={() => setScreen('feed')}
+          onBack={() => setScreen(profileFrom)}
           onViewPhoto={(item) => { setDetailItem(item); setScreen('feeddetail') }}
           onViewPothole={(item) => { setDetailItem(item); setScreen('feeddetail') }}
         />
@@ -734,7 +737,13 @@ export default function App() {
         onClose={() => setSidebarVisible(false)}
         onTabChange={(tab) => setScreen(tab)}
         onLogout={handleLogout}
-        onProfilePress={() => setScreen('profile')}
+        onProfilePress={() => {
+          if (!user?.id) return
+          setPublicProfileUserId(user.id)
+          setProfileFrom('dashboard')
+          setScreen('publicprofile')
+        }}
+        onSettingsPress={() => setScreen('settings')}
         onAbout={() => setScreen('about')}
       />
     </SafeAreaProvider>

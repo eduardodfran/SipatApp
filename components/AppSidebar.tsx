@@ -24,6 +24,7 @@ type Props = {
   onTabChange: (tab: 'dashboard' | 'feed' | 'review' | 'rides' | 'map') => void
   onLogout: () => void
   onProfilePress: () => void
+  onSettingsPress: () => void
   onAbout: () => void
 }
 
@@ -35,7 +36,7 @@ const NAV_ITEMS: { key: 'dashboard' | 'feed' | 'review' | 'rides' | 'map'; label
   { key: 'map', label: 'Map', icon: 'map-outline' },
 ]
 
-export default function AppSidebar({ visible, activeTab, user, onClose, onTabChange, onLogout, onProfilePress, onAbout }: Props) {
+export default function AppSidebar({ visible, activeTab, user, onClose, onTabChange, onLogout, onProfilePress, onSettingsPress, onAbout }: Props) {
   const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current
   const fadeAnim = useRef(new Animated.Value(0)).current
 
@@ -148,6 +149,21 @@ export default function AppSidebar({ visible, activeTab, user, onClose, onTabCha
 
           {/* Spacer */}
           <View style={{ flex: 1 }} />
+
+          {/* Settings */}
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => {
+              onSettingsPress()
+              onClose()
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.navIconWrap}>
+              <Ionicons name="settings-outline" size={20} color={colors.textSecondary} />
+            </View>
+            <Text style={styles.navLabel}>Settings</Text>
+          </TouchableOpacity>
 
           {/* About */}
           <TouchableOpacity

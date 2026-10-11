@@ -36,7 +36,7 @@ function getCooldownRemaining(editedAt: string | null): { locked: boolean; remai
   return { locked: true, remaining: `${days}d ${hours}h remaining` }
 }
 
-export default function ProfileScreen({ user, onBack, onAbout }: Props) {
+export default function SettingsScreen({ user, onBack, onAbout }: Props) {
   const [username, setUsername] = useState(user?.user_metadata?.username ?? '')
   const [email] = useState(user?.email ?? '')
   const [saving, setSaving] = useState(false)
@@ -218,7 +218,7 @@ export default function ProfileScreen({ user, onBack, onAbout }: Props) {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader onBack={onBack} title="Profile" />
+      <ScreenHeader onBack={onBack} title="Settings" />
 
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.avatarSection}>
