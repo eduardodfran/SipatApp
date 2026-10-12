@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Vibration } from 'react-native'
 import * as Location from 'expo-location'
+import * as Speech from 'expo-speech'
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio'
 import type { AudioPlayer } from 'expo-audio'
 import {
@@ -68,6 +69,11 @@ export function useProximityAlerts({ enabled, muted = false, externalGps = false
       bannerTimerRef.current = null
     }
     setBanner(null)
+    try {
+      void Speech.stop()
+    } catch {
+      // TTS unavailable — nothing to stop.
+    }
   }, [])
 
   const showBanner = useCallback(
@@ -100,6 +106,18 @@ export function useProximityAlerts({ enabled, muted = false, externalGps = false
         }
       } catch {
         // Audio session clash (e.g. camera recording) — vibration+banner still delivered.
+      }
+      // Voice announcement in the device-default language. Stopped first so
+      // rapid alerts never overlap; failures fall back to banner+vibration+beep.
+      try {
+        await Speech.stop()
+        Speech.speak(
+          alert.tier === 'urgent'
+            ? 'Slow down. Pothole ahead.'
+            : `Pothole ahead, in ${Math.round(alert.distM / 10) * 10} meters.`,
+        )
+      } catch {
+        // TTS unavailable (e.g. no engine) — banner+vibration+beep still delivered.
       }
     },
     [showBanner],
