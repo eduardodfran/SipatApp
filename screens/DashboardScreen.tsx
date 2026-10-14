@@ -41,6 +41,7 @@ type Props = {
   onMenuPress: () => void
   onReview: () => void
   onNotifications: () => void
+  uploadStatusText: Record<string, string>
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -70,6 +71,7 @@ export default function DashboardScreen({
   onMenuPress,
   onReview,
   onNotifications,
+  uploadStatusText,
 }: Props) {
 
   const lastPressRef = useRef<Record<string, number>>({})
@@ -366,7 +368,12 @@ export default function DashboardScreen({
                     </View>
                   </View>
                   <View style={styles.rideRight}>
-                    {statusCfg ? (
+                    {item.incomplete ? (
+                      <View style={[styles.rideStatus, { backgroundColor: colors.severeDim }]}>
+                        <View style={[styles.statusDot, { backgroundColor: colors.severe }]} />
+                        <Text style={[styles.rideStatusText, { color: colors.severe }]}>Incomplete</Text>
+                      </View>
+                    ) : statusCfg ? (
                       <View style={[styles.rideStatus, { backgroundColor: statusCfg.bg }]}>
                         <View style={[styles.statusDot, { backgroundColor: statusCfg.color }]} />
                         <Text style={[styles.rideStatusText, { color: statusCfg.color }]}>
@@ -381,7 +388,7 @@ export default function DashboardScreen({
                     )}
                   </View>
 
-                  {!item.uploaded && (
+                  {!item.uploaded && !item.incomplete && (
                     <TouchableOpacity
                       style={styles.rideAction}
                       onPress={() => debounce(`upload-${item.id}`) && onUpload(item)}
@@ -409,7 +416,29 @@ export default function DashboardScreen({
                       )}
                     </TouchableOpacity>
                   )}
+                  {item.incomplete && (
+                    <TouchableOpacity
+                      style={styles.rideAction}
+                      onPress={() => Alert.alert(
+                        'Delete Incomplete Ride',
+                        'This recording is missing files and cannot be uploaded. Delete it?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Delete', style: 'destructive', onPress: () => onDelete(item) },
+                        ],
+                      )}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={colors.severe} />
+                    </TouchableOpacity>
+                  )}
                 </View>
+                {item.incomplete && item.incompleteReason ? (
+                  <Text style={styles.incompleteReason}>{item.incompleteReason}</Text>
+                ) : null}
+                {uploadingIds.has(item.id) && uploadStatusText[item.id] ? (
+                  <Text style={styles.uploadStatusText}>{uploadStatusText[item.id]}</Text>
+                ) : null}
                 {item.status === 'processing' && item.progressPct != null && item.progressPct >= 0 && (
                   <View style={styles.progressContainer}>
                     <View style={styles.progressBarBg}>
@@ -947,6 +976,21 @@ const styles = StyleSheet.create({
     color: colors.moderate,
     fontSize: 10,
     marginTop: 4,
+  },
+  incompleteReason: {
+    fontFamily: fonts.regular,
+    color: colors.severe,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  uploadStatusText: {
+    fontFamily: fonts.monoMedium,
+    color: colors.queued,
+    fontSize: 10,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
   rideAction: {
     width: 40,

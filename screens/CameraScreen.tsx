@@ -12,6 +12,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Location from 'expo-location'
 import { requestRecordingPermissionsAsync } from 'expo-audio'
 import { File, Paths } from 'expo-file-system'
+import { moveAsync, getFreeDiskStorageAsync } from 'expo-file-system/legacy'
 import { Accelerometer, Gyroscope } from 'expo-sensors'
 import { Ionicons } from '@expo/vector-icons'
 import type { Recording } from '../lib/types'
@@ -246,6 +247,44 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
     return file.uri
   }
 
+  /**
+   * Move a finished segment video from expo-camera's cache output into the
+   * documents directory, which the OS never auto-purges under storage
+   * pressure (cache/ IS purged — previously caused "vanishing recordings").
+   * Move (not copy) avoids doubling disk usage on low-storage phones.
+   */
+  const persistVideoToDocuments = async (cacheUri: string, segmentNum: number): Promise<string> => {
+    const dest = new File(Paths.document, `vid_segment_${segmentNum}_${Date.now()}.mp4`)
+    await moveAsync({ from: cacheUri, to: dest.uri })
+    return dest.uri
+  }
+
+  /** Block recording when the disk is critically low; videos would fail or vanish. */
+  const MIN_FREE_BYTES = 500 * 1024 * 1024
+  const ensureFreeSpace = async (): Promise<boolean> => {
+    try {
+      const free = await getFreeDiskStorageAsync()
+      if (free < MIN_FREE_BYTES) {
+        const freeMb = Math.round(free / (1024 * 1024))
+        const proceed = await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            'Low Storage',
+            `Only ${freeMb} MB free. Recordings may fail or disappear. Free up space, or record a shorter ride.`,
+            [
+              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Record Anyway', onPress: () => resolve(true) },
+            ],
+          )
+        })
+        return proceed
+      }
+      return true
+    } catch {
+      // Storage query unsupported — don't block recording.
+      return true
+    }
+  }
+
   const acquireGpsFix = async (): Promise<{ lat: number; lng: number } | null> => {
     try {
       const fix = await Promise.race([
@@ -263,6 +302,8 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
 
   const startRecording = async () => {
     if (!cameraRef.current) return
+
+    if (!(await ensureFreeSpace())) return
 
     // Request audio permission for video recording
     const audioPerm = await requestRecordingPermissionsAsync()
@@ -317,7 +358,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
 
       const recording: Recording = {
         id: `rec_${Date.now()}`,
-        videoUri: video.uri,
+        videoUri: await persistVideoToDocuments(video.uri, 1),
         csvUri: csvPath || '',
         timestamp: Date.now(),
         uploaded: false,
@@ -386,7 +427,7 @@ export default function CameraScreen({ onFinish, onCancel, onViewRides, segmentC
 
       const recording: Recording = {
         id: `rec_${Date.now()}`,
-        videoUri: video.uri,
+        videoUri: await persistVideoToDocuments(video.uri, segNum),
         csvUri: csvPath,
         timestamp: Date.now(),
         uploaded: false,

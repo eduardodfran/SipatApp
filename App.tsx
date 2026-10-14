@@ -44,7 +44,7 @@ import AppSidebar from './components/AppSidebar'
 import type { Recording } from './lib/types'
 import { FASTAPI_URL } from './lib/env'
 import { colors, fonts, radius } from './theme/tokens'
-import { fetchMyRides, triggerProcessing, uploadRideData } from './lib/uploadRideData'
+import { fetchMyRides, formatElapsed, triggerProcessing, uploadRideData } from './lib/uploadRideData'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -55,6 +55,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null)
   const [recordings, setRecordings] = useState<Recording[]>([])
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set())
+  const [uploadStatusText, setUploadStatusText] = useState<Record<string, string>>({})
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [feedRefreshKey, setFeedRefreshKey] = useState(0)
@@ -152,18 +153,27 @@ export default function App() {
           } catch {}
         }
 
-        // Cache validation: check if videoUri and csvUri files still exist
+        // Cache validation: check if videoUri and csvUri files still exist.
+        // Entries with missing files are KEPT as incomplete (visible) instead
+        // of silently dropped — e.g. OS cache eviction deleting videos.
         const validatedLocal: Recording[] = []
         const validCsvPaths = new Set<string>()
         for (const r of localRecordings) {
-          const videoInfo = await FileSystem.getInfoAsync(r.videoUri)
-          const csvInfo = await FileSystem.getInfoAsync(r.csvUri)
+          const videoInfo = r.videoUri ? await FileSystem.getInfoAsync(r.videoUri) : { exists: false }
+          const csvInfo = r.csvUri ? await FileSystem.getInfoAsync(r.csvUri) : { exists: false }
           if (videoInfo.exists && csvInfo.exists) {
             validatedLocal.push(r)
             validCsvPaths.add(r.csvUri)
             console.log(`[restore] Validated recording ${r.id} — video=${r.videoUri}`)
           } else {
-            console.log(`[restore] Skipping recording ${r.id} — missing cache files (video=${r.videoUri} exists=${videoInfo.exists}, csv=${r.csvUri} exists=${csvInfo.exists})`)
+            const reason = !videoInfo.exists && !csvInfo.exists
+              ? 'Video and GPS files are gone'
+              : !videoInfo.exists
+                ? 'Video file is gone (possibly cleared by the system to free space)'
+                : 'GPS file is gone'
+            console.log(`[restore] Marking recording ${r.id} incomplete — ${reason}`)
+            validatedLocal.push({ ...r, uploaded: false, incomplete: true, incompleteReason: reason })
+            if (r.csvUri) validCsvPaths.add(r.csvUri)
           }
         }
 
@@ -200,7 +210,9 @@ export default function App() {
           }
           console.log(`[recover] Found ${csvFiles.length} orphaned CSVs`)
 
-          // Recursively scan cache dir for video files (.mp4 and .mov)
+          // Recursively scan cache AND document dirs for video files.
+          // Videos now persist to documents (OS never purges those); cache is
+          // still scanned for recordings made before the move.
           let mp4Files: { uri: string; modificationTime: number }[] = []
           try {
             const isVideoFile = (name: string) => /\.(mp4|mov)$/i.test(name)
@@ -208,11 +220,12 @@ export default function App() {
               try {
                 if (!dir.exists) return
                 const entries = dir.list()
-                if (depth === 0) console.log(`[recover] Cache dir: ${Paths.cache}, exists=${dir.exists}, has ${entries.length} entries`)
+                if (depth === 0) console.log(`[recover] Scan dir: ${dir.uri}, exists=${dir.exists}, has ${entries.length} entries`)
                 for (const entry of entries) {
                   try {
                     if (entry instanceof Directory) {
-                      scanDir(entry, depth + 1)
+                      // Only recurse one level to avoid walking the whole tree.
+                      if (depth < 1) scanDir(entry, depth + 1)
                     } else if (entry instanceof File && isVideoFile(entry.name) && !knownVideoUris.has(entry.uri)) {
                       const info = entry.info()
                       mp4Files.push({ uri: entry.uri, modificationTime: info.modificationTime ?? 0 })
@@ -226,6 +239,7 @@ export default function App() {
               }
             }
             scanDir(new Directory(Paths.cache))
+            scanDir(new Directory(Paths.document))
           } catch (cacheErr) {
             console.log(`[recover] Cache scan failed: ${cacheErr}`)
           }
@@ -252,7 +266,19 @@ export default function App() {
               validatedLocal.push(rec)
               console.log(`[recover] MATCHED: ${matched.uri} + ${csv.uri}`)
             } else {
-              console.log(`[recover] No video match for CSV ts=${csv.timestamp}`)
+              // GPS without a video (e.g. OS purged the cache file) — surface
+              // as incomplete instead of dropping silently.
+              console.log(`[recover] No video match for CSV ts=${csv.timestamp} — marking incomplete`)
+              validatedLocal.push({
+                id: `recovered_broken_${csv.timestamp}_${csv.segNum}`,
+                videoUri: '',
+                csvUri: csv.uri,
+                timestamp: csv.timestamp,
+                uploaded: false,
+                recovered: true,
+                incomplete: true,
+                incompleteReason: 'Video file is gone (possibly cleared by the system to free space)',
+              })
             }
           }
         } catch (e) {
@@ -434,7 +460,15 @@ export default function App() {
 
       setUploadingIds((prev) => new Set(prev).add(recording.id))
       try {
-        const uploaded = await uploadRideData(user.id, recording.videoUri, recording.csvUri)
+        const uploaded = await uploadRideData(user.id, recording.videoUri, recording.csvUri, undefined, (p) => {
+          const stage = p.stage === 'gps' ? 'GPS' : p.stage === 'video' ? 'Video' : 'Finishing'
+          const retryNote = p.attempt > 1 ? ` · retry ${p.attempt - 1}` : ''
+          const pts = p.gpsPoints != null ? ` · ${p.gpsPoints} pts` : ''
+          setUploadStatusText((prev) => ({
+            ...prev,
+            [recording.id]: `Uploading ${stage}…${retryNote} · ${formatElapsed(p.elapsedMs)}${pts}`,
+          }))
+        })
 
         setRecordings((prev) =>
           prev.map((item) =>
@@ -481,6 +515,12 @@ export default function App() {
       } catch (error: any) {
         setLastUploadResult({ status: 'error', message: error?.message ?? 'Unknown error' })
       } finally {
+        setUploadStatusText((prev) => {
+          if (!(recording.id in prev)) return prev
+          const next = { ...prev }
+          delete next[recording.id]
+          return next
+        })
         setUploadingIds((prev) => {
           const next = new Set(prev)
           next.delete(recording.id)
@@ -594,12 +634,14 @@ export default function App() {
           onMenuPress={() => setSidebarVisible(true)}
           onReview={() => setScreen('review')}
           onNotifications={() => { setNotifFrom('dashboard'); setScreen('notifications') }}
+          uploadStatusText={uploadStatusText}
         />
       )}
       {screen === 'rides' && (
         <RidesScreen
           recordings={recordings}
           uploadingIds={uploadingIds}
+          uploadStatusText={uploadStatusText}
           processingId={processingId}
           onUpload={handleUploadRecording}
           onProcess={handleProcessRecording}

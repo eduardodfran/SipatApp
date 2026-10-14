@@ -6,6 +6,9 @@ export type Recording = {
   timestamp: number
   uploaded: boolean
   recovered?: boolean
+  /** Local files gone (e.g. OS purged cache video) — entry kept so the loss is visible, not silent. */
+  incomplete?: boolean
+  incompleteReason?: string
   status?: 'queued' | 'processing' | 'completed' | 'failed'
   errorLog?: string
   progressPct?: number

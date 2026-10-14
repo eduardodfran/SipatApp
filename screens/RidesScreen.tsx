@@ -19,6 +19,7 @@ import Brackets from '../components/Brackets'
 type Props = {
   recordings: Recording[]
   uploadingIds: Set<string>
+  uploadStatusText: Record<string, string>
   processingId: string | null
   onUpload: (recording: Recording) => void | Promise<void>
   onProcess: (recording: Recording) => void | Promise<void>
@@ -38,6 +39,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 export default function RidesScreen({
   recordings,
   uploadingIds,
+  uploadStatusText,
   processingId,
   onUpload,
   onProcess,
@@ -164,6 +166,12 @@ export default function RidesScreen({
                     </View>
                   </View>
                   <View style={styles.rideRight}>
+                    {item.incomplete ? (
+                      <View style={[styles.rideStatus, { backgroundColor: colors.severeDim }]}>
+                        <View style={[styles.statusDot, { backgroundColor: colors.severe }]} />
+                        <Text style={[styles.rideStatusText, { color: colors.severe }]}>Incomplete</Text>
+                      </View>
+                    ) : null}
                     {noDetections && (
                       <View style={[styles.noDetBadge, { backgroundColor: colors.moderateDim }]}>
                         <Ionicons name="eye-off" size={10} color={colors.moderate} />
@@ -186,6 +194,16 @@ export default function RidesScreen({
                   </View>
                 </View>
 
+                {/* Incomplete explanation */}
+                {item.incomplete && item.incompleteReason ? (
+                  <Text style={styles.incompleteReason}>{item.incompleteReason}</Text>
+                ) : null}
+
+                {/* Live upload status (stage · retry · elapsed) */}
+                {uploadingIds.has(item.id) && uploadStatusText[item.id] ? (
+                  <Text style={styles.uploadStatusText}>{uploadStatusText[item.id]}</Text>
+                ) : null}
+
                 {/* Progress section — shown when processing */}
                 {hasProgress && (
                   <View style={styles.progressSection}>
@@ -207,7 +225,7 @@ export default function RidesScreen({
 
                 {/* Action buttons row */}
                 <View style={styles.actionsRow}>
-                  {!item.uploaded && (
+                  {!item.uploaded && !item.incomplete && (
                     <TouchableOpacity
                       style={[styles.actionBtn, { backgroundColor: colors.queuedDim }]}
                       onPress={() => debounce(`upload-${item.id}`) && onUpload(item)}
@@ -394,6 +412,19 @@ const styles = StyleSheet.create({
     color: colors.moderate,
     fontSize: 11,
     fontFamily: fonts.semibold,
+    marginTop: 6,
+  },
+  incompleteReason: {
+    color: colors.severe,
+    fontSize: 11,
+    fontFamily: fonts.regular,
+    lineHeight: 16,
+    marginTop: 6,
+  },
+  uploadStatusText: {
+    color: colors.queued,
+    fontSize: 11,
+    fontFamily: fonts.monoMedium,
     marginTop: 6,
   },
 
