@@ -708,10 +708,10 @@ function buildMapShell(
   function buildVideoMarkers() {
     videoData.forEach(function(p) {
       var marker = L.circleMarker([p.lat, p.lng], {
-        radius: 10,
-        color: p.color,
+        radius: 11,
+        color: '#ffffff',
         fillColor: p.color,
-        fillOpacity: 0.8,
+        fillOpacity: 0.95,
         weight: 2
       }).addTo(videoGroup);
 
