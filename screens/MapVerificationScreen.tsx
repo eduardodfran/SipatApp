@@ -200,6 +200,15 @@ function buildMapShell(
     setTimeout(function(){ t.remove(); }, 2500);
   }
 
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function createReportHandler(contentType, contentId, reportBtnEl, setReportedState) {
     return async function() {
       var currentReported = reportBtnEl.dataset.reported === 'true';
@@ -408,11 +417,11 @@ function buildMapShell(
     var html = '<div style="min-width:220px;font-family:system-ui,sans-serif;">';
 
     if (p.image_url) {
-      html += '<img src="' + p.image_url + '" loading="lazy" style="width:100%;height:160px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
+      html += '<img src="' + esc(p.image_url) + '" loading="lazy" style="width:100%;height:160px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
     }
 
     html += '<div style="display:flex;gap:6px;margin-bottom:10px;">';
-    html += '<span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;color:' + sevColor + ';background:' + sevColor + '15;">' + p.severity + '</span>';
+    html += '<span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;color:' + sevColor + ';background:' + sevColor + '15;">' + esc(p.severity) + '</span>';
     html += '<span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;color:' + stColor + ';background:' + stColor + '15;">' + stLabel + '</span>';
     html += '</div>';
 
@@ -432,7 +441,7 @@ function buildMapShell(
     if (addrLines.length > 0) {
       html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
       for (var a = 0; a < addrLines.length; a++) {
-        html += '<div style="font-size:12px;color:#fafafa;line-height:1.5;">' + addrLines[a] + '</div>';
+        html += '<div style="font-size:12px;color:#fafafa;line-height:1.5;">' + esc(addrLines[a]) + '</div>';
       }
       html += '</div>';
     } else {
@@ -450,10 +459,10 @@ function buildMapShell(
       var maxDetectors = detectors.slice(0, 5);
       for (var d = 0; d < maxDetectors.length; d++) {
         var det = maxDetectors[d];
-        var initial = (det.username || det.full_name || '?').charAt(0).toUpperCase();
+        var initial = esc((det.username || det.full_name || '?').charAt(0).toUpperCase() || '?');
         html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">';
         html += '<div style="width:24px;height:24px;border-radius:12px;background:rgba(6, 182, 212,0.15);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#06b6d4;flex-shrink:0;">' + initial + '</div>';
-        html += '<span style="font-size:12px;color:#fafafa;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (det.username || det.full_name || 'Unknown') + '</span>';
+        html += '<span style="font-size:12px;color:#fafafa;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(det.username || det.full_name || 'Unknown') + '</span>';
         html += '<span style="font-size:10px;color:#71717a;flex-shrink:0;">' + new Date(det.detected_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</span>';
         html += '</div>';
       }
@@ -470,8 +479,8 @@ function buildMapShell(
       for (var c = 0; c < maxComments.length; c++) {
         var com = maxComments[c];
         html += '<div style="display:flex;gap:6px;padding:4px 0;">';
-        html += '<div style="width:22px;height:22px;border-radius:11px;background:rgba(6, 182, 212,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#06b6d4;flex-shrink:0;margin-top:1px;">' + (com.username || '?').charAt(0).toUpperCase() + '</div>';
-        html += '<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#fafafa;">' + (com.username || 'Unknown') + '</div><div style="font-size:11px;color:#a1a1aa;margin-top:1px;">' + com.body + '</div></div>';
+        html += '<div style="width:22px;height:22px;border-radius:11px;background:rgba(6, 182, 212,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#06b6d4;flex-shrink:0;margin-top:1px;">' + esc((com.username || '?').charAt(0).toUpperCase() || '?') + '</div>';
+        html += '<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#fafafa;">' + esc(com.username || 'Unknown') + '</div><div style="font-size:11px;color:#a1a1aa;margin-top:1px;">' + esc(com.body) + '</div></div>';
         html += '</div>';
       }
       if (comments.length > 3) {
@@ -737,17 +746,17 @@ function buildMapShell(
     var html = '<div id="cp-popup-' + cp.id + '" style="min-width:220px;font-family:system-ui,sans-serif;">';
 
     if (cp.image_url) {
-      html += '<img src="' + cp.image_url + '" loading="lazy" style="width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
+      html += '<img src="' + esc(cp.image_url) + '" loading="lazy" style="width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />';
     }
     html += '<div style="display:flex;gap:6px;margin-bottom:10px;">';
     if (cp.severity) {
-      html += '<span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;color:' + sevColor + ';background:' + sevColor + '15;margin-right:4px;">' + cp.severity + '</span>';
+      html += '<span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;color:' + sevColor + ';background:' + sevColor + '15;margin-right:4px;">' + esc(cp.severity) + '</span>';
     }
     html += '<span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;color:' + sColor + ';background:' + sColor + '15;">' + statusLabel + '</span>';
     html += '</div>';
 
     if (cp.status === 'processed' && cp.class_name) {
-      html += '<div style="font-size:12px;color:#a1a1aa;margin-bottom:8px;"><span style="color:#fafafa;font-weight:600;">' + cp.class_name + '</span>' + (cp.confidence != null ? ' &middot; ' + (cp.confidence * 100).toFixed(0) + '% confidence' : '') + '</div>';
+      html += '<div style="font-size:12px;color:#a1a1aa;margin-bottom:8px;"><span style="color:#fafafa;font-weight:600;">' + esc(cp.class_name) + '</span>' + (cp.confidence != null ? ' &middot; ' + (cp.confidence * 100).toFixed(0) + '% confidence' : '') + '</div>';
     }
     if (cp.status === 'pending') {
       html += '<div style="font-size:12px;color:#71717a;margin-bottom:8px;">Awaiting analysis...</div>';
@@ -756,11 +765,11 @@ function buildMapShell(
     if (addrLines.length > 0) {
       html += '<div style="padding:8px;background:#18181b;border-radius:8px;margin-bottom:8px;">';
       for (var a = 0; a < addrLines.length; a++) {
-        html += '<div style="font-size:12px;color:#fafafa;line-height:1.5;">' + addrLines[a] + '</div>';
+        html += '<div style="font-size:12px;color:#fafafa;line-height:1.5;">' + esc(addrLines[a]) + '</div>';
       }
       html += '</div>';
     } else if (cp.formatted_address) {
-      html += '<div style="font-size:11px;color:#71717a;margin-bottom:8px;">' + cp.formatted_address + '</div>';
+      html += '<div style="font-size:11px;color:#71717a;margin-bottom:8px;">' + esc(cp.formatted_address) + '</div>';
     }
 
     if (comments && comments.length > 0) {
@@ -770,8 +779,8 @@ function buildMapShell(
       for (var c = 0; c < maxComments.length; c++) {
         var com = maxComments[c];
         html += '<div style="display:flex;gap:6px;padding:4px 0;">';
-        html += '<div style="width:22px;height:22px;border-radius:11px;background:rgba(6, 182, 212,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#06b6d4;flex-shrink:0;margin-top:1px;">' + (com.username || '?').charAt(0).toUpperCase() + '</div>';
-        html += '<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#fafafa;">' + (com.username || 'Unknown') + '</div><div style="font-size:11px;color:#a1a1aa;margin-top:1px;">' + com.body + '</div></div>';
+        html += '<div style="width:22px;height:22px;border-radius:11px;background:rgba(6, 182, 212,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#06b6d4;flex-shrink:0;margin-top:1px;">' + esc((com.username || '?').charAt(0).toUpperCase() || '?') + '</div>';
+        html += '<div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:600;color:#fafafa;">' + esc(com.username || 'Unknown') + '</div><div style="font-size:11px;color:#a1a1aa;margin-top:1px;">' + esc(com.body) + '</div></div>';
         html += '</div>';
       }
       if (comments.length > 3) {
@@ -823,7 +832,7 @@ function buildMapShell(
     html += '<button id="cp-feed-btn-' + cp.id + '" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:8px;border:1px solid rgba(37,99,235,0.2);background:rgba(37,99,235,0.05);color:#60a5fa;font-size:12px;font-weight:600;cursor:pointer;outline:none;margin-bottom:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>View in Feed</button>';
 
     html += '<div style="font-size:11px;color:#71717a;border-top:1px solid rgba(255, 255, 255, 0.06);padding-top:6px;">';
-    html += 'Photo by <span style="color:#a1a1aa;">' + (cp.reporter_username || 'Anonymous') + '</span> &middot; ' + (cp.created_at ? new Date(cp.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+    html += 'Photo by <span style="color:#a1a1aa;">' + esc(cp.reporter_username || 'Anonymous') + '</span> &middot; ' + (cp.created_at ? new Date(cp.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
     html += '</div></div>';
     return html;
   }
